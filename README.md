@@ -69,13 +69,7 @@ plotted only once.
 
 ![Official tau2 airline training reward trajectories](docs/assets/official_airline_reward_trajectories.svg)
 
-The source values are kept in an
-[editable CSV](docs/results/official_airline_reward_trajectories.csv). After
-editing them, regenerate the SVG with:
 
-```bash
-python scripts/eval/plot_reward_trajectories.py
-```
 
 ### What changes in E2 and E5
 
