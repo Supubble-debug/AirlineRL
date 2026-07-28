@@ -11,3 +11,5 @@ data/robustness/*.jsonl
 *.log
 # Python package metadata
 *.egg-info/
+agent-rl-evals/
+agent-rl-outputs/
