@@ -13,3 +13,6 @@ data/robustness/*.jsonl
 *.egg-info/
 agent-rl-evals/
 agent-rl-outputs/
+
+# Local device diagnostics
+/battery-health-report.html

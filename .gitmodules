@@ -4,3 +4,6 @@
 [submodule "verl"]
 	path = verl
 	url = https://github.com/verl-project/verl.git
+[submodule "Bench2"]
+	path = Bench2
+	url = https://github.com/Supubble-debug/Enterprise-Worlds.git
