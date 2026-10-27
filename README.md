@@ -104,6 +104,13 @@ plotted only once.
 
 ## Runtime
 
+`Bench2/` is included directly in this repository. A normal clone includes its
+source, data, and tests; commit and push changes to it through AirlineRL.
+It was imported from Enterprise-Worlds commit
+`37175af590d3b9c7d2288501b604020e547e3783`. The original license and attribution
+are preserved in [`Bench2/LICENSE`](Bench2/LICENSE) and
+[`Bench2/NOTICE`](Bench2/NOTICE).
+
 The validated remote profile targets one NVIDIA RTX PRO 6000 Blackwell GPU
 (96 GB), Python 3.12, PyTorch with CUDA, vLLM `0.24.0`, and editable pinned
 `tau2-bench` and `verl` submodules. DeepSeek V4 Pro is used at temperature zero
