@@ -9,7 +9,7 @@
 | 0：云端只读审计 | 用户认可 | 2026-10-28 用户原话：“我目前认为可以验收了，你可以额外检查一遍，没问题就执行第一步”。agent 补查第 0 步无问题后进入第 1 步。 |
 | 1：独立环境与现有测试基线 | 用户认可；GPU 训练环境延后（见阻塞） | 2026-10-28 用户原话：“未提交文件是什么，你认为是否需要接受？没问题就接受，开始第二步。实例等gpu充足的时候再创建”。 |
 | 2：接口与奖励契约 | 用户认可；D1–D6 已定，D5 改为 `deepseek/deepseek-v4-flash` | 2026-10-28 用户原话：“认可，除了D5我认为可以用deepseek-flash。至于风险，到了那一步再说。没问题就第三步”。 |
-| 3：离线环境与评分回归 | 进行中 | 未批准 |
+| 3：离线环境与评分回归 | **修订待验收**（第 1 次修订） | 未批准。2026-10-28 用户要求修订：补齐原方案验收依据、按原始响应边界区分裁判结果、明确 D5 模型角色；用户明确说明该消息不是第 3 步验收通过。 |
 | 4 及以后 | 未开始 | — |
 
 ## 运行环境
@@ -66,3 +66,25 @@
 - 依据：静态阅读 Bench2 的 `gym_agent`、`orchestrator`、`environment`、`toolkit`、`evaluator*`、`text_match_strategy`、`clock`、`run`、`user_simulator`，以及 AirLineRL 的 `tau_env`、`tau_agent_loop`、`schemas`、`process_reward`、`credit_encoding`、`verl_algorithms`。
 - 实测：对 `itsmbench_single_017` 做离线、只读的真实工具探测，包括正常调用、`ItsmError`、未知工具、错误参数名四种情况，没有调用 LLM。结果记在协议 §11.0。
 - 未验证：协议中所有 "须验证" 项，分别留给第 3、4、5、6、7、9 步。
+
+## 第 3 步证据（第 1 次修订后）
+
+- 改动（全部未提交，等待验收）：
+  - `src/agent_rl/envs/itsm_scoring.py`：任务时钟、严格 gold 回放、DB 评分，以及 `llm` 裁判原始响应的协议校验。
+  - `tests/unit/test_itsm_scoring.py`：345 项测试。
+  - `docs/itsm_protocol.md`：§8 裁判判定边界、§12 重试上限、§14.1 模型角色，以及待定项 D7、D8。
+  - Bench2 源码、数据和 airline 代码均未修改。
+- 产物目录：`/home/sar/work/EnterGym/output/itsm-step3/`（不入 git）。
+  - `pytest_itsm_scoring_r1.log`：345 passed，退出码 0。
+  - `pytest_airlinerl_full_r1.log`：`tests/unit tests/remote` 共 458 passed（原 113 项 + 新增 345 项），退出码 0。
+  - 第 1 次提交时的日志 `pytest_itsm_scoring.log` 和 `pytest_airlinerl_full.log` 保留作对照。
+  - Bench2 自带测试没有重跑：本次修订未改动 Bench2，第 1 次提交时为 242 passed、39 skipped。
+- 测试性质：
+  - 真实工具离线回放：53 题 gold、时钟、MSP-021 和 Single-017 的状态核验及正反例、DB 比对路径与 Bench2 `compare_dbs` 的对照。
+  - mock：裁判响应解析，以及 `llm` 路径端到端测试，都替换了 `generate`，没有联网。
+  - 未调用任何真实 LLM。
+- 关键结论：
+  - 53 题 gold 回放在任务时钟下全部 DB=1（exact 与 fuzzy 均如此），重复回放结果一致。
+  - 34 题在错误时钟下 DB=0；另外 19 题的 `current_time` 本身就等于 `DEFAULT_NOW`。
+  - 原方案"错写通知状态"对应真实字段 `notification.status`，取值为 queued、sent、delivered、opened、failed；gold 未传该参数，工具默认写入 `queued`。
+  - Single-017 中，problem 的自由文本可选字段 `workaround`、`fix_notes` 不受 DB 比对约束，这是 Bench2 的评分规则，已列为待定项 D8，本步未修改评分。

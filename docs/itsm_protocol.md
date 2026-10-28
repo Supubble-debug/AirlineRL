@@ -183,11 +183,17 @@ class ItsmTransition:
 | `env_build` | 读取种子、应用 delta、切分 org 或校验完整性失败 |
 | `user_sim` | 用户模拟器 LLM 异常、超时或返回空内容 |
 | `gold_replay` | 任一 gold action 回放失败（修正 F8） |
-| `text_judge` | 自由文本裁判异常、超时或输出无法解析：任一 verdict 的 reasoning 为 `"unparseable judge output"`，或某个 pending 对没有对应 verdict |
-| `nl_judge` | NL 裁判异常、超时或输出无法解析（同样依据 reasoning 判断） |
+| `text_judge_call` | 自由文本裁判调用本身抛异常或超时 |
+| `text_judge_protocol` | 裁判原始响应不符合判定协议，`kind` 为以下之一：`unparseable`（无法解析或缺 `results` 列表）、`invalid_item`、`invalid_index`（缺失、非整数或越界）、`duplicate_index`、`invalid_equivalent`（缺失或非布尔）、`missing_index`（有 pending 对没有判定） |
+| `nl_judge_call` / `nl_judge_protocol` | NL 裁判沿用同一原则，在接入 NL 评估时实现（第 8 步） |
 | `clock` | 时钟断言失败 |
 | `timeout` | 单步或整个 episode 的墙钟超时 |
 | `cancelled` | 外部取消 |
+
+**裁判判定的边界**（第 3 步修订，`agent_rl.envs.itsm_scoring.parse_text_judge_response`）：
+- 判定在原始响应的解析环节完成，不使用 Bench2 解析后的 `FreeTextVerdict`（它会把各种异常都默认成 `equivalent=False`），也不依据 reasoning 文本推断。
+- 一个结果项只要 `index` 是范围内且只出现一次的整数、`equivalent` 是布尔值，就是有效判定。`true` 和 `false` 都有效，没有 reasoning 也不影响判定结果。
+- 有效的 `false` 是正常的业务负判，计入 DB=0，不触发重试。
 
 工具在进程内同步执行，无法从外部强杀。如果出现 `timeout`，该 env 标记为 poisoned，不再接受任何调用。是否需要进程隔离，由第 5 步的测试结果决定。
 
@@ -328,6 +334,9 @@ class ItsmRewardInfo:
    - 相同策略版本，记录 `policy_version` 或 `global_step`；
    - 各自用 `get_environment` 新建 DB。
 2. 某个样本遇到基础设施故障时，在**同一 rollout 步**内重试，最多 `max_episode_attempts=3` 次，任务和策略版本都不变。
+   - 只有基础设施错误（含 `text_judge_call`、`text_judge_protocol`）会触发重试，有效判定（包括负判）一律不重试。
+   - 上限固定，不能一直重试到得到通过结果。
+   - 温度 0 时，同样的裁判协议错误可能反复出现；达到上限后按第 3 条整组丢弃。
 3. 重试用尽后，**整组丢弃**。不用 reward=0 补位，不从别的任务借样本，不跨策略版本凑组。
 4. 一个批次中被丢弃的组超过阈值（建议 25%，决策 D6）时，该训练步中止并报告，不做参数更新。
 5. 每步上报以下指标：
@@ -359,6 +368,22 @@ class ItsmRewardInfo:
 | D4 | 是否向模型公开 `current_time` | 不公开（与 Bench2 `LLMAgent` 一致） | 公开会改变任务难度。如果 policy 中有依赖当前时间的规则，第 6 步检查后再议 |
 | D5 | 用户模拟器的模型和温度 | `deepseek/deepseek-v4-flash`，温度 0（用户指定 flash，不沿用 airline 的 pro） | Bench2 默认是 `gpt-4o-mini`、温度 0.7；温度 0 时组内差异只来自策略本身。litellm 已登记该 ID；首次真实调用（第 7/8 步）时核实可用性 |
 | D6 | 丢弃组超过多少时中止训练步 | 25% | 防止有效样本过少时仍做更新 |
+
+### 14.1 模型角色（第 3 步修订时明确）
+
+| 角色 | 模型 | 何时调用 | 状态 |
+|---|---|---|---|
+| 策略模型（被训练） | verl 当前策略权重，由 verl rollout 的 vLLM 采样；基座为 `configs/model/qwen3_8b_lora.yaml` 中的 `Qwen/Qwen3-8B` | 每个策略回合 | 不使用任何外部 API；logprob 必须来自该采样服务（§10） |
+| 用户模拟器 | `deepseek/deepseek-v4-flash`，温度 0（D5） | 训练、E0 和最终评测中的每个用户回合 | **API 连通性未验证**，首次真实调用在第 7 步 |
+| DB 自由文本裁判 | 训练时不使用（D1b 定为 `fuzzy`）；评测时若并行报告 `llm` 策略，模型**待定（D7）** | 只在评测阶段 | 未接入 |
+| NL 断言裁判 | 训练时不使用（D1 定为 `db_only`）；E0 和最终评测时使用，模型**待定（D7）** | 只在评测阶段 | 未接入 |
+
+`deepseek/deepseek-v4-flash` 目前只用于用户模拟器。D5 没有涉及裁判模型，所以裁判不默认沿用 flash。
+
+| # | 待定 | 建议 | 截止 |
+|---|---|---|---|
+| D7 | 评测用的 DB 文本裁判和 NL 裁判模型 | `deepseek/deepseek-v4-pro`，温度 0，与 airline 的 `evaluator_llm` 一致；并且与用户模拟器使用不同模型 | 第 8 步（E0）开始前 |
+| D8 | 自由文本可选字段（例如 problem 的 `workaround`、`fix_notes`）：gold 没有设置时，Bench2 的 DB 比对不加约束 | 保持 Bench2 规则不变，由 NL 断言和误差分析覆盖；若要在 DB 层强制为空，属于修改评分规则，需单独批准 | 第 6 步冻结协议之前 |
 
 ## 15. 对后续步骤的约束（本步不实现）
 
