@@ -8,8 +8,9 @@
 |---|---|---|
 | 0：云端只读审计 | 用户认可 | 2026-10-28 用户原话：“我目前认为可以验收了，你可以额外检查一遍，没问题就执行第一步”。agent 补查第 0 步无问题后进入第 1 步。 |
 | 1：独立环境与现有测试基线 | 用户认可；GPU 训练环境延后（见阻塞） | 2026-10-28 用户原话：“未提交文件是什么，你认为是否需要接受？没问题就接受，开始第二步。实例等gpu充足的时候再创建”。 |
-| 2：接口与奖励契约 | 进行中 | 未批准 |
-| 3 及以后 | 未开始 | — |
+| 2：接口与奖励契约 | 用户认可；D1–D6 已定，D5 改为 `deepseek/deepseek-v4-flash` | 2026-10-28 用户原话：“认可，除了D5我认为可以用deepseek-flash。至于风险，到了那一步再说。没问题就第三步”。 |
+| 3：离线环境与评分回归 | 进行中 | 未批准 |
+| 4 及以后 | 未开始 | — |
 
 ## 运行环境
 
@@ -58,3 +59,10 @@
 
 1. **GPU 训练环境未建立。** 2026-10-28 AutoDL 的 pro6000-p 无库存。改为扩大候选重试后，平台分配到一台 H800（`pro-7931feabab3c`）。用户随即表示暂不租实例，该实例已 `release`（`acted: true`），列表核实已消失。该实例存在了几分钟，可能产生了少量计费。因此 CUDA、驱动、vLLM 0.24.0 与 GPU 的兼容性都未验证。
 2. 在 GPU 实例上，tests/remote 中依赖 GPU 的路径尚未执行。本机 113 项是在 CPU 版 torch 下通过的。
+
+## 第 2 步证据
+
+- 产物：`docs/itsm_protocol.md`。只有协议设计，没有实现 adapter，也没有修改代码。
+- 依据：静态阅读 Bench2 的 `gym_agent`、`orchestrator`、`environment`、`toolkit`、`evaluator*`、`text_match_strategy`、`clock`、`run`、`user_simulator`，以及 AirLineRL 的 `tau_env`、`tau_agent_loop`、`schemas`、`process_reward`、`credit_encoding`、`verl_algorithms`。
+- 实测：对 `itsmbench_single_017` 做离线、只读的真实工具探测，包括正常调用、`ItsmError`、未知工具、错误参数名四种情况，没有调用 LLM。结果记在协议 §11.0。
+- 未验证：协议中所有 "须验证" 项，分别留给第 3、4、5、6、7、9 步。
