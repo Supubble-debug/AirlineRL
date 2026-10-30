@@ -10,8 +10,9 @@
 | 1：独立环境与现有测试基线 | 用户认可；GPU 训练环境于 2026-10-29 补建完成（见“第 1 步补充：GPU 训练环境”），补充部分待验收 | 2026-10-28 用户原话：“未提交文件是什么，你认为是否需要接受？没问题就接受，开始第二步。实例等gpu充足的时候再创建”。 |
 | 2：接口与奖励契约 | 用户认可；D1–D6 已定，D5 改为 `deepseek/deepseek-v4-flash` | 2026-10-28 用户原话：“认可，除了D5我认为可以用deepseek-flash。至于风险，到了那一步再说。没问题就第三步”。 |
 | 3：离线环境与评分回归 | 用户认可（第 1 次修订后）；D7、D8 已定 | 2026-10-28 用户要求修订（该消息不是验收通过）。2026-10-29 用户原话：“根据本次修订报告，第 3 步验收通过。请记录以下决定：D8：保持 Bench2 现有自由文本比较规则……D7：评测时 DB 文本裁判与 NL 裁判均采用 deepseek/deepseek-v4-pro，温度 0……完成上述文档收尾后，仅执行第 4 步”。决定全文写入协议 §12、§14.2–§14.4。 |
-| 4：最小单 episode adapter | **第 2 次补修待验收**（第 1 次补修同时修订了第 2、3 步文档与评分，已经用户核对） | 未批准。2026-10-30 用户提出 GitHub 源码审查的补修要求：公开调用 ID 不含任务信息；内部工具异常不能得到有效 reward；补修范围增加第 2、3 步（协议同步、无效组排除表述、按来源判定泄漏、温度 0 表述、评分环境构造错误分类），先不进入第 5 步。2026-10-30 用户核对第 1 次补修后，用户原话：“最新补修已核对，原有问题均已修正。第 4 步再补一处兼容性问题”，要求 `tool_internal` 记录可转换为公共 `ToolCallRecord`。该消息不是第 4 步验收通过。 |
-| 5 及以后 | 未开始 | — |
+| 4：最小单 episode adapter | 用户认可（含第 1、2 次补修，提交 `223a3ac`） | 2026-10-30 用户原话：“第 4 步及相关补修验收通过，包含提交 223a3ac。记录本条批准，现在仅执行第 5 步：生命周期与隔离。” |
+| 5：生命周期与隔离 | **待验收** | 未批准 |
+| 6 及以后 | 未开始 | — |
 
 ## 运行环境
 
@@ -186,4 +187,34 @@
   - `pytest_itsm_env.log`：45 passed，退出码 0。
   - `pytest_airlinerl_full.log`：`tests/unit tests/remote` 共 510 passed（113 + 352 + 45），退出码 0。
 - 仍未做：评分失败状态与重新评分接口（第 5 步）；无效组排除与梯度检查（第 9 步）。
+
+## 第 5 步证据
+
+- 改动：
+  - `src/agent_rl/envs/itsm_env.py`：
+    - 状态机 `new / active / interaction_ended / scoring_retry_pending / scored / failed`，外加 `closed` 标志（协议 §7.1）；
+    - 新增 `score()`：基于结束时保存的轨迹和最终 DB 重新评分，评分前校验最终 DB 哈希；有效结果缓存复用；基础设施错误最多共 4 次；
+    - 预算：`max_steps` 必填，`step_count` 与 `agent_turns` 分开计数，`truncate("response_length" | "invalid_action")`；`invalid_action` 的 `training_reward=0`（D2）；
+    - 默认用户模拟器带 `timeout=60s`。
+  - 新增 `src/agent_rl/envs/itsm_worker.py`：`ItsmEnvWorker` 在 spawn 子进程中运行一个 episode，支持单次调用超时、episode 截止时间、跨线程 `cancel()`；超时、取消、崩溃时 kill 并 join 子进程，确认退出后才记 `execution_stopped=True`。
+  - 新增 `tests/unit/itsm_test_support.py`（确定性用户替身、子进程内可用的慢工具和崩溃工具注入、种子文件校验）、`tests/unit/test_itsm_lifecycle.py`（32 项）、`tests/unit/test_itsm_worker.py`（7 项）；`tests/unit/test_itsm_env.py` 改为显式传入测试预算 `max_steps=40`，用户替身移入辅助模块。
+  - `docs/itsm_protocol.md`：§2 接口、§7 计数与预算、§7.1 生命周期、§8.1 超时与取消、§13 隔离验证结果。
+  - Bench2、airline 代码和评分模块未修改。
+- 产物目录：`/home/sar/work/EnterGym/output/itsm-step5/`（不入 git）。
+  - `pytest_itsm_lifecycle.log`：32 passed，退出码 0。
+  - `pytest_itsm_worker.log`：7 passed，退出码 0，约 41 秒（每个子进程启动约 3 秒，超时与取消测试各等待慢工具 5 秒以确认其未完成）。
+  - `pytest_airlinerl_full.log`：`tests/unit tests/remote` 共 549 passed（113 + 352 + 45 + 32 + 7），退出码 0；测试结束后没有残留子进程。
+- 测试性质：真实 Bench2 工具、种子和 DB 评分；确定性用户替身；故障均为受控注入（monkeypatch 让环境构造失败、工具抛异常或变慢；`llm` 裁判为 mock；子进程内通过 initializer 让工具变慢或 `os._exit`）。没有启动 GPU，没有调用真实 LLM，没有实现分组调度。
+- 关键结论：
+  - 评分失败后业务动作被拒绝；重新评分不调用工具和用户、结束消息只有一条、轨迹和最终 DB 不变；DB=0 与 DB=1 都只评一次并复用；重试共 4 次后转 `failed`；裁判协议错误重评时两次请求完全相同。
+  - 生命周期矩阵中每个状态下被拒绝的调用都有测试；`close` 幂等；六条路径（正常、业务错误、工具内部异常、评分失败、预算截断、用户故障）结束后时钟都恢复。
+  - `max_steps` = 1、2、3、4、20 与 Bench2 `Orchestrator` 逐项一致；预算处的写调用不执行、DB 不变。
+  - 进程内线程超时不能停止执行（反例测试）；worker 超时和取消后子进程已退出，慢工具的完成标记在其原定完成时间之后仍不存在。
+  - 并行：线程内 4 个 episode（两个不同时钟任务）和同任务 4 路分组、两个 worker 进程，均互不影响；种子文件前后不变。
+- 未解决边界：
+  - 进程内 `ItsmEnv` 本身不能超时，需要可中断执行时必须用 `ItsmEnvWorker`；worker 被杀后最终 DB 随之消失，只能重跑 episode，不能重新评分。
+  - worker 的复用、进程池、并发数与启动开销（约 3 秒/个）留给第 7/9 步的 rollout 设计。
+  - 用户模拟器的 60 秒 HTTP 超时只在代码路径上接入，没有调用真实 API 验证。
+  - `kill_grace_s` 内未能回收子进程的情况（`not_reclaimed`）只有代码路径，没有构造出该故障。
+  - 正式 `max_steps` 和 token 预算留到第 6 步；无效组排除与梯度检查留到第 9 步。
 

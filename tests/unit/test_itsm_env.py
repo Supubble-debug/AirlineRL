@@ -32,6 +32,8 @@ from enterprise_worlds.utils.clock import get_now
 
 from agent_rl.data.schemas import ToolCallRecord
 from agent_rl.envs.action_parser import ActionFormatError, ModelToolCall
+from itsm_test_support import ScriptedUser
+
 from agent_rl.envs.itsm_env import (
     DEFAULT_USER_LLM,
     ItsmAction,
@@ -57,25 +59,8 @@ MSP_021 = "itsmbench_msp_021"
 SINGLE_017 = "itsmbench_single_017"
 OPENING = "Hi, I need help with a ticket."
 CLOSING_REPLY = "Great, thanks."
-
-
-class ScriptedUser:
-    """Deterministic user stand-in: replies from a fixed list, records what it was sent."""
-
-    def __init__(self, replies: list[str]) -> None:
-        self.replies = list(replies)
-        self.received: list[str | None] = []
-
-    def get_init_state(self) -> int:
-        return 0
-
-    def generate_next_message(self, agent_message, state: int):
-        self.received.append(agent_message.content)
-        return UserMessage(content=self.replies[state]), state + 1
-
-    @staticmethod
-    def is_stop(message) -> bool:
-        return STOP in (message.content or "")
+#: Explicit small test budget; the formal budget is fixed in step 6.
+TEST_MAX_STEPS = 40
 
 
 def _gold(task_id: str) -> list[ItsmAction]:
@@ -87,7 +72,7 @@ def _gold(task_id: str) -> list[ItsmAction]:
 
 def _env(task_id: str, replies: list[str], **kwargs) -> tuple[ItsmEnv, ScriptedUser]:
     user = ScriptedUser(replies)
-    config = ItsmEnvConfig(task_id=task_id, text_match=FUZZY)
+    config = ItsmEnvConfig(task_id=task_id, text_match=FUZZY, max_steps=TEST_MAX_STEPS)
     return ItsmEnv(config, user=user, episode_id=f"{task_id}:g0:0:test", **kwargs), user
 
 
@@ -187,16 +172,19 @@ def test_reset_observation_is_greeting_and_first_user_turn() -> None:
 
 
 def test_default_user_is_bench2_simulator_with_decision_d5() -> None:
-    env = ItsmEnv(ItsmEnvConfig(task_id=SINGLE_017, text_match=FUZZY))
+    env = ItsmEnv(ItsmEnvConfig(task_id=SINGLE_017, text_match=FUZZY, max_steps=TEST_MAX_STEPS))
 
     assert isinstance(env._user, UserSimulator)
-    assert (env._user.llm, env._user.llm_args) == (DEFAULT_USER_LLM, {"temperature": 0.0})
+    assert (env._user.llm, env._user.llm_args) == (
+        DEFAULT_USER_LLM,
+        {"temperature": 0.0, "timeout": 60.0},
+    )
     assert DEFAULT_USER_LLM == "deepseek/deepseek-v4-flash"
 
 
 def test_config_rejects_degrading_text_match() -> None:
     with pytest.raises(ValueError, match="degrade"):
-        ItsmEnvConfig(task_id=SINGLE_017, text_match=TextMatchConfig())
+        ItsmEnvConfig(task_id=SINGLE_017, text_match=TextMatchConfig(), max_steps=TEST_MAX_STEPS)
 
 
 # -- normal and error tool calls ----------------------------------------------------------------
@@ -687,7 +675,7 @@ class BrokenUser(ScriptedUser):
     ids=["raises_at_reset", "empty_reply", "stop_before_first_turn", "raises_mid_episode"],
 )
 def test_user_failures_are_infrastructure_not_reward(replies, stage, at_reset) -> None:
-    env = ItsmEnv(ItsmEnvConfig(task_id=SINGLE_017, text_match=FUZZY), user=BrokenUser(replies))
+    env = ItsmEnv(ItsmEnvConfig(task_id=SINGLE_017, text_match=FUZZY, max_steps=TEST_MAX_STEPS), user=BrokenUser(replies))
 
     with pytest.raises(ItsmInfrastructureError) as raised:
         env.reset()

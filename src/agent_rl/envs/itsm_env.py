@@ -1,16 +1,26 @@
-"""Single-episode ITSM environment adapter (protocol §2–§5, §8, §9; step 4).
+"""Single-episode ITSM environment adapter (protocol §2–§9; steps 4–5).
 
 One ``ItsmEnv`` drives one episode synchronously, with no background thread:
 ``step`` executes the policy's tool call, or obtains the next user turn, in the
 calling thread under the task clock, and returns only what is new. Business
 tools, the user simulator and DB scoring are Bench2's own; the message order
-matches Bench2's ``Orchestrator.run``.
+and the ``max_steps`` budget match Bench2's ``Orchestrator.run``.
 
 Model-visible call IDs (``call_001`` …) are independent of ``episode_id`` and
 ``task_id``; the global key for a call is ``(episode_id, call_id)``.
 
-Not handled here (step 5): step and token truncation, timeouts, cancellation,
-retries and process isolation.
+Lifecycle (protocol §7.1)::
+
+    new --reset--> active --step/truncate--> interaction_ended --score--> scored
+                     |                              |  ^
+                     |                              v  | score (same final DB)
+                     |                       scoring_retry_pending
+                     v                              |
+                   failed  <------------------------+ (attempts exhausted)
+
+``closed`` is a separate flag. Calls in this process cannot be interrupted, so
+this class has no timeout; ``agent_rl.envs.itsm_worker.ItsmEnvWorker`` runs it in
+a child process that is killed on timeout or cancellation.
 """
 
 from __future__ import annotations
@@ -60,11 +70,24 @@ DONE_TOOL_NAME = DONE_TOOL_SCHEMA["function"]["name"]
 #: Decision D5: the user simulator model, temperature 0.
 DEFAULT_USER_LLM = "deepseek/deepseek-v4-flash"
 DEFAULT_USER_LLM_ARGS = {"temperature": 0.0}
+#: Bound on each user-simulator HTTP call (passed to litellm as ``timeout``).
+DEFAULT_USER_LLM_TIMEOUT_S = 60.0
+#: Protocol §12: three retries after the first scoring attempt, four in total.
+DEFAULT_MAX_SCORING_RETRIES = 3
 ERROR_PREFIX = "Error: "
 
 ActionKind = Literal["message", "tool_call", "done"]
 ErrorClass = Literal["unknown_tool", "bad_arguments", "domain_error"]
-TerminationReason = Literal["agent_done", "user_stop"]
+TerminationReason = Literal[
+    "agent_done", "user_stop", "invalid_action", "max_steps", "response_length"
+]
+EpisodeStatus = Literal[
+    "new", "active", "interaction_ended", "scoring_retry_pending", "scored", "failed"
+]
+TERMINATED_REASONS = frozenset({"agent_done", "user_stop", "invalid_action"})
+TRUNCATED_REASONS = frozenset({"max_steps", "response_length"})
+#: Reasons the rollout loop may impose from outside (protocol §7).
+EXTERNAL_END_REASONS = frozenset({"response_length", "invalid_action"})
 
 
 @dataclass(frozen=True, slots=True)
@@ -135,16 +158,28 @@ def to_itsm_action(
 
 @dataclass(frozen=True)
 class ItsmEnvConfig:
+    """``max_steps`` has no default: the formal budget is fixed in step 6."""
+
     task_id: str
     text_match: TextMatchConfig
+    max_steps: int
     user_llm: str = DEFAULT_USER_LLM
     user_llm_args: dict[str, Any] = field(default_factory=lambda: dict(DEFAULT_USER_LLM_ARGS))
+    user_llm_timeout_s: float = DEFAULT_USER_LLM_TIMEOUT_S
+    max_scoring_retries: int = DEFAULT_MAX_SCORING_RETRIES
+    score_on_finish: bool = True
 
     def __post_init__(self) -> None:
         if not self.task_id.strip():
             raise ValueError("task_id must not be empty")
         if not self.user_llm.strip():
             raise ValueError("user_llm must not be empty")
+        if isinstance(self.max_steps, bool) or not isinstance(self.max_steps, int) or self.max_steps < 1:
+            raise ValueError("max_steps must be a positive integer")
+        if self.user_llm_timeout_s <= 0:
+            raise ValueError("user_llm_timeout_s must be positive")
+        if self.max_scoring_retries < 0:
+            raise ValueError("max_scoring_retries must be non-negative")
         validate_text_match(self.text_match)
 
 
@@ -205,6 +240,7 @@ class ItsmRewardInfo:
     training_reward_source: str
     gold_db_hash: str
     final_db_hash: str
+    scoring_attempts: int
 
 
 @dataclass(frozen=True, slots=True)
@@ -224,6 +260,7 @@ class ItsmTransition:
     tool_record: ItsmToolCallRecord | None
     reward_info: ItsmRewardInfo | None
     step_count: int
+    agent_turns: int
 
 
 @lru_cache(maxsize=1)
@@ -259,7 +296,7 @@ def argument_type_error(tool: Any, arguments: dict[str, Any]) -> str | None:
 
 
 class ItsmEnv:
-    """One ITSM episode: ``reset`` once, ``step`` until terminated, then ``close``."""
+    """One ITSM episode: ``reset`` once, ``step`` until it ends, ``score``, then ``close``."""
 
     def __init__(
         self,
@@ -275,7 +312,9 @@ class ItsmEnv:
         self.task = tasks[config.task_id]
         self.episode_id = episode_id or f"{self.task.id}:{uuid.uuid4().hex[:8]}"
         self._user = user if user is not None else UserSimulator(
-            self.task.scenario, llm=config.user_llm, llm_args=dict(config.user_llm_args)
+            self.task.scenario,
+            llm=config.user_llm,
+            llm_args={**config.user_llm_args, "timeout": config.user_llm_timeout_s},
         )
         self._environment: Environment | None = None
         self._user_state: Any = None
@@ -283,26 +322,29 @@ class ItsmEnv:
         self._tool_records: list[ItsmToolCallRecord] = []
         self._call_seq = 0
         self._step_count = 0
-        self._has_reset = False
-        self._done = False
-        self._failed = False
+        self._agent_turns = 0
+        self._status: EpisodeStatus = "new"
         self._closed = False
         self._termination_reason: TerminationReason | None = None
+        self._end_tool_record: ItsmToolCallRecord | None = None
+        self._final_db_hash: str | None = None
         self._reward_info: ItsmRewardInfo | None = None
-        self._failure: dict[str, str] | None = None
+        self._scoring_errors: list[dict[str, Any]] = []
+        self._failure: dict[str, Any] | None = None
 
     # -- public API ----------------------------------------------------------
 
     def reset(self) -> ItsmReset:
         if self._closed:
             raise RuntimeError("the environment is closed")
-        if self._has_reset:
+        if self._status != "new":
             raise RuntimeError("ItsmEnv runs exactly one episode; create a new instance")
-        self._has_reset = True
+        self._status = "active"
         try:
             self._environment = build_task_environment(self.task)
             self._user_state = self._user.get_init_state()
-        except TaskDefinitionError:
+        except TaskDefinitionError as error:
+            self._fail("task_definition", error)
             raise
         except Exception as error:
             raise self._infrastructure("env_build", error) from error
@@ -325,18 +367,109 @@ class ItsmEnv:
         self._require_active()
         if not isinstance(action, ItsmAction):
             raise TypeError(f"action must be an ItsmAction, got {type(action).__name__}")
+        self._agent_turns += 1
+        if action.kind == "done":
+            # Orchestrator checks the agent's stop before the budget.
+            return self._end_interaction("agent_done", AssistantMessage(content=STOP))
+        if self._step_count >= self.config.max_steps:
+            return self._end_on_step_budget(action)
         if action.kind == "tool_call":
             return self._step_tool_call(action)
-        if action.kind == "message":
-            return self._step_message(action)
-        return self._finish("agent_done", AssistantMessage(content=STOP))
+        return self._step_message(action)
+
+    def truncate(self, reason: str) -> ItsmTransition:
+        """End the interaction for a reason the rollout loop decides (protocol §7).
+
+        ``response_length``: the token budget cannot fit another action.
+        ``invalid_action``: the policy output could not be parsed (counts as a turn).
+        """
+        if reason not in EXTERNAL_END_REASONS:
+            raise ValueError(f"truncate() reason must be one of {sorted(EXTERNAL_END_REASONS)}")
+        self._require_active()
+        if reason == "invalid_action":
+            self._agent_turns += 1
+        return self._end_interaction(reason)
+
+    def score(self) -> ItsmTransition:
+        """Score the saved final DB once; a valid result (DB=1 or DB=0) is reused.
+
+        After an infrastructure scoring failure the same final DB and trajectory
+        are scored again on the next call; no tool, user or policy call is made.
+        At most ``1 + max_scoring_retries`` attempts, then the episode fails.
+        """
+        if self._closed:
+            raise RuntimeError("the environment is closed")
+        if self._status == "scored":
+            return self._terminal_transition()
+        if self._status not in ("interaction_ended", "scoring_retry_pending"):
+            raise RuntimeError(f"cannot score an episode in status {self._status!r}")
+        if self._environment.get_db_hash() != self._final_db_hash:
+            raise RuntimeError("the final DB changed after the interaction ended")
+
+        attempt = len(self._scoring_errors) + 1
+        try:
+            score = score_final_db(self.task, self._environment, text_match=self.config.text_match)
+        except ItsmInfrastructureError as error:
+            self._scoring_errors.append(
+                {"attempt": attempt, "stage": error.stage, "kind": error.kind, "detail": error.detail}
+            )
+            if attempt > self.config.max_scoring_retries:
+                self._fail(
+                    error.stage,
+                    f"{error.kind + ': ' if error.kind else ''}{error.detail}",
+                    reason="scoring_attempts_exhausted",
+                    attempts=attempt,
+                )
+            else:
+                self._status = "scoring_retry_pending"
+            raise
+        except TaskDefinitionError as error:
+            self._fail("task_definition", error)
+            raise
+        except Exception as error:
+            self._fail("score_internal", error)
+            raise
+
+        invalid = self._termination_reason == "invalid_action"
+        self._reward_info = ItsmRewardInfo(
+            db_evaluated=True,
+            db_match=score.db_match,
+            db_reward=score.db_reward,
+            db_mismatches=score.mismatches,
+            text_match_requested=score.text_match_requested,
+            text_match_effective=score.text_match_effective,
+            text_judge_model=score.text_judge_model,
+            nl_status="not_evaluated",
+            nl_reward=None,
+            joint_reward=None,
+            # Decision D2: an invalid action ends the episode with outcome 0.
+            training_reward=0.0 if invalid else score.db_reward,
+            training_reward_source="invalid_action" if invalid else "db_only",
+            gold_db_hash=score.gold_db_hash,
+            final_db_hash=score.final_db_hash,
+            scoring_attempts=attempt,
+        )
+        self._status = "scored"
+        return self._terminal_transition()
 
     def close(self) -> None:
+        """Idempotent; drops the DB and the user model. ``export_trace`` still works."""
         self._closed = True
+        self._environment = None
+        self._user = None
+
+    @property
+    def status(self) -> EpisodeStatus:
+        return self._status
+
+    @property
+    def closed(self) -> bool:
+        return self._closed
 
     @property
     def done(self) -> bool:
-        return self._done
+        """The business interaction has ended (scored or not)."""
+        return self._termination_reason is not None
 
     @property
     def trajectory(self) -> list[Message]:
@@ -348,11 +481,17 @@ class ItsmEnv:
         return tuple(self._tool_records)
 
     @property
-    def failure(self) -> dict[str, str] | None:
-        """Infrastructure failure detail (``stage``, ``detail``, ``call_id`` if any)."""
+    def failure(self) -> dict[str, Any] | None:
+        """Failure detail (``stage``, ``detail``; ``call_id``/``reason``/``attempts`` if any)."""
         return dict(self._failure) if self._failure is not None else None
 
+    @property
+    def scoring_errors(self) -> tuple[dict[str, Any], ...]:
+        return tuple(dict(error) for error in self._scoring_errors)
+
     def current_db_hash(self) -> str:
+        if self._closed:
+            raise RuntimeError("the environment is closed")
         if self._environment is None:
             raise RuntimeError("reset() must be called first")
         return self._environment.get_db_hash()
@@ -362,23 +501,51 @@ class ItsmEnv:
         return {
             "episode_id": self.episode_id,
             "task_id": self.task.id,
+            "status": self._status,
+            "closed": self._closed,
             "step_count": self._step_count,
+            "agent_turns": self._agent_turns,
             "termination_reason": self._termination_reason,
             "tool_calls": [asdict(record) for record in self._tool_records],
             "messages": [message.model_dump(mode="json") for message in self._messages],
+            "final_db_hash": self._final_db_hash,
             "reward_info": asdict(self._reward_info) if self._reward_info else None,
-            "failure": self._failure,
+            "scoring_errors": [dict(error) for error in self._scoring_errors],
+            "failure": dict(self._failure) if self._failure is not None else None,
         }
 
     # -- steps ---------------------------------------------------------------
 
-    def _step_tool_call(self, action: ItsmAction) -> ItsmTransition:
+    def _new_tool_call(self, action: ItsmAction) -> tuple[str, dict[str, Any]]:
         self._call_seq += 1
         call_id = public_call_id(self._call_seq)
         arguments = copy.deepcopy(action.arguments)
         self._messages.append(
             AssistantMessage(tool_calls=[ToolCall(id=call_id, name=action.name, arguments=arguments)])
         )
+        return call_id, arguments
+
+    def _unanswered_record(
+        self, call_id: str, action: ItsmAction, arguments: dict[str, Any], duration_ms: float
+    ) -> ItsmToolCallRecord:
+        record = ItsmToolCallRecord(
+            call_id=call_id,
+            name=action.name,
+            arguments=copy.deepcopy(arguments),
+            model_call_id=action.model_call_id,
+            result_received=False,
+            result=None,
+            error=None,
+            error_class=None,
+            error_code=None,
+            error_field=None,
+            duration_ms=duration_ms,
+        )
+        self._tool_records.append(record)
+        return record
+
+    def _step_tool_call(self, action: ItsmAction) -> ItsmTransition:
+        call_id, arguments = self._new_tool_call(action)
 
         started = time.perf_counter()
         with task_clock(self.task):
@@ -389,20 +556,8 @@ class ItsmEnv:
             except Exception as error:
                 # Arguments already passed validation, so the tool itself is broken. No
                 # result reached the model; the fault detail lives in ``failure``.
-                self._tool_records.append(
-                    ItsmToolCallRecord(
-                        call_id=call_id,
-                        name=action.name,
-                        arguments=copy.deepcopy(arguments),
-                        model_call_id=action.model_call_id,
-                        result_received=False,
-                        result=None,
-                        error=None,
-                        error_class=None,
-                        error_code=None,
-                        error_field=None,
-                        duration_ms=(time.perf_counter() - started) * 1000.0,
-                    )
+                self._unanswered_record(
+                    call_id, action, arguments, (time.perf_counter() - started) * 1000.0
                 )
                 raise self._infrastructure("tool_internal", error, call_id=call_id) from error
         duration_ms = (time.perf_counter() - started) * 1000.0
@@ -431,43 +586,60 @@ class ItsmEnv:
             observation = f"tool[{call_id}] ok: {'null' if content is None else content}"
         else:
             observation = f"tool[{call_id}] error({error_class}): {error}"
-        return ItsmTransition(observation, False, False, None, record, None, self._step_count)
+        return self._transition(observation, record)
 
     def _step_message(self, action: ItsmAction) -> ItsmTransition:
         agent_message = AssistantMessage(content=action.text)
         self._messages.append(agent_message)
         user_message = self._user_turn(agent_message)
         if STOP in user_message.content:
-            return self._finish("user_stop", None)
-        return ItsmTransition(
-            f"user: {user_message.content}", False, False, None, None, None, self._step_count
-        )
+            return self._end_interaction("user_stop")
+        return self._transition(f"user: {user_message.content}", None)
 
-    def _finish(
-        self, reason: TerminationReason, final_message: AssistantMessage | None
+    def _end_on_step_budget(self, action: ItsmAction) -> ItsmTransition:
+        """Orchestrator records the agent's message but neither executes the call
+        nor asks the user once ``steps >= max_steps``."""
+        if action.kind == "tool_call":
+            call_id, arguments = self._new_tool_call(action)
+            record = self._unanswered_record(call_id, action, arguments, 0.0)
+            return self._end_interaction("max_steps", tool_record=record)
+        self._messages.append(AssistantMessage(content=action.text))
+        return self._end_interaction("max_steps")
+
+    def _end_interaction(
+        self,
+        reason: TerminationReason,
+        final_message: AssistantMessage | None = None,
+        *,
+        tool_record: ItsmToolCallRecord | None = None,
     ) -> ItsmTransition:
         if final_message is not None:
             self._messages.append(final_message)
-        self._done = True
         self._termination_reason = reason
-        score = score_final_db(self.task, self._environment, text_match=self.config.text_match)
-        self._reward_info = ItsmRewardInfo(
-            db_evaluated=True,
-            db_match=score.db_match,
-            db_reward=score.db_reward,
-            db_mismatches=score.mismatches,
-            text_match_requested=score.text_match_requested,
-            text_match_effective=score.text_match_effective,
-            text_judge_model=score.text_judge_model,
-            nl_status="not_evaluated",
-            nl_reward=None,
-            joint_reward=None,
-            training_reward=score.db_reward,
-            training_reward_source="db_only",
-            gold_db_hash=score.gold_db_hash,
-            final_db_hash=score.final_db_hash,
+        self._end_tool_record = tool_record
+        self._final_db_hash = self._environment.get_db_hash()
+        self._status = "interaction_ended"
+        if not self.config.score_on_finish:
+            return self._terminal_transition()
+        return self.score()
+
+    def _transition(self, observation: str, record: ItsmToolCallRecord | None) -> ItsmTransition:
+        return ItsmTransition(
+            observation, False, False, None, record, None, self._step_count, self._agent_turns
         )
-        return ItsmTransition("", True, False, reason, None, self._reward_info, self._step_count)
+
+    def _terminal_transition(self) -> ItsmTransition:
+        reason = self._termination_reason
+        return ItsmTransition(
+            "",
+            reason in TERMINATED_REASONS,
+            reason in TRUNCATED_REASONS,
+            reason,
+            self._end_tool_record,
+            self._reward_info,
+            self._step_count,
+            self._agent_turns,
+        )
 
     # -- helpers -------------------------------------------------------------
 
@@ -525,22 +697,25 @@ class ItsmEnv:
             "tools": self._environment.get_tool_schemas() + [copy.deepcopy(DONE_TOOL_SCHEMA)],
         }
 
+    def _fail(self, stage: str, cause: Exception | str, **extra: Any) -> str:
+        self._status = "failed"
+        detail = cause if isinstance(cause, str) else f"{type(cause).__name__}: {cause}"
+        self._failure = {"stage": stage, "detail": detail, **extra}
+        return detail
+
     def _infrastructure(
         self, stage: str, cause: Exception | str, *, call_id: str | None = None
     ) -> ItsmInfrastructureError:
-        self._failed = True
-        detail = cause if isinstance(cause, str) else f"{type(cause).__name__}: {cause}"
-        self._failure = {"stage": stage, "detail": detail}
-        if call_id is not None:
-            self._failure["call_id"] = call_id
+        extra = {"call_id": call_id} if call_id is not None else {}
+        detail = self._fail(stage, cause, **extra)
         return ItsmInfrastructureError(stage, self.task.id, f"episode {self.episode_id}: {detail}")
 
     def _require_active(self) -> None:
         if self._closed:
             raise RuntimeError("the environment is closed")
-        if not self._has_reset:
+        if self._status == "new":
             raise RuntimeError("reset() must be called before step()")
-        if self._failed:
+        if self._status == "failed":
             raise RuntimeError("the episode ended with an infrastructure error")
-        if self._done:
+        if self._status != "active":
             raise RuntimeError("the episode has already finished")

@@ -56,8 +56,10 @@ class ItsmEnvConfig:
 class ItsmEnv:
     def reset(self) -> ItsmReset: ...                  # 只能调用一次
     def step(self, action: ItsmAction) -> ItsmTransition: ...
-    def truncate(self, reason: str) -> ItsmTransition: ...  # 由外部预算（token）触发截断
+    def truncate(self, reason: str) -> ItsmTransition: ...  # response_length / invalid_action（§7）
+    def score(self) -> ItsmTransition: ...             # 评分或重新评分，有效结果缓存复用（§7.1）
     def close(self) -> None: ...                       # 幂等
+    status: EpisodeStatus                              # §7.1
 
 @dataclass(frozen=True)
 class ItsmReset:
@@ -72,9 +74,12 @@ class ItsmTransition:
     truncated: bool
     termination_reason: str | None   # §7 枚举
     tool_record: ToolCallRecord | None   # 复用 agent_rl.data.schemas.ToolCallRecord
-    reward_info: ItsmRewardInfo | None   # 仅在 episode 结束时非空（§9）
+    reward_info: ItsmRewardInfo | None   # 仅在评分完成后非空（§9）
     step_count: int
+    agent_turns: int
 ```
+
+第 5 步实现说明：`max_steps` 在 `ItsmEnvConfig` 中没有默认值，测试显式传入小规模预算；`nl_mode`、`nl_llm`、`expose_current_time` 尚未实现（NL 在第 8 步接入，D4 定为不公开）。另有 `max_scoring_retries=3`、`score_on_finish=True`。
 
 动作 `ItsmAction` 只有三种，每轮只能选一种。这与 AirLineRL 的 `to_tau_action` 和 Bench2 `LLMAgent` 的 "一轮只做一件事" 一致：
 
@@ -162,7 +167,11 @@ class ItsmTransition:
 
 ## 7. 步数、终止与截断
 
-`step_count` 的口径与 `Orchestrator.run()` 一致：每次 "用户回复" 和每次 "工具执行" 各计 1 步，`reset()` 产生的用户首句算第 1 步。
+两个计数分开记录（第 5 步实现）：
+- `step_count`（底层步数，`max_steps` 约束的对象）：口径与 `Orchestrator.run()` 一致，每次 "用户回复" 和每次 "实际执行的工具调用" 各计 1 步，`reset()` 产生的用户首句算第 1 步。返回业务错误的工具调用也计 1 步；因预算未执行的调用不计。
+- `agent_turns`（agent 决策轮数）：每次 `step()` 计 1 轮（含 `done`），`truncate("invalid_action")` 也计 1 轮（策略确实产生了输出）；`truncate("response_length")` 不计。只记录，本步不设上限。
+
+预算判定顺序也与 `Orchestrator` 一致：先看是否 `done`，再看 `step_count >= max_steps`。所以预算用尽时收到 `done` 仍是 `agent_done`。
 
 | 情况 | 行为 | terminated | truncated | termination_reason |
 |---|---|---|---|---|
@@ -171,11 +180,32 @@ class ItsmTransition:
 | 收到 `tool_call` 时 `step_count >= max_steps` | **不执行**该调用，记 `result_received=False`，进入评分 | False | True | `max_steps` |
 | 收到 `message` 时 `step_count >= max_steps` | 不再调用用户模拟器，进入评分 | False | True | `max_steps` |
 | loop 发现剩余 token 预算不足 → `truncate("response_length")` | 进入评分 | False | True | `response_length` |
-| 模型输出无法解析 → `truncate("invalid_action")` | 进入评分，outcome 规则见决策 D2 | True | False | `invalid_action` |
+| 模型输出无法解析 → `truncate("invalid_action")` | 进入评分；DB 结果照常记录，但 `training_reward=0`、`training_reward_source="invalid_action"`（D2） | True | False | `invalid_action` |
 | 基础设施故障或超时 | 抛出 `ItsmInfrastructureError`，**不评分** | — | — | （记在异常的 `stage` 字段） |
 | `reset()` 时用户首句就是 STOP | 用户模拟器故障，按基础设施处理 | — | — | `stage=user_sim_empty_episode` |
 
-前两种 "不执行或不调用" 的行为，与 `Orchestrator` 在 `steps >= max_steps` 时跳出循环的效果相同，第 4 步要做对照测试。
+`max_steps` 两行的 "不执行或不调用"，与 `Orchestrator` 在 `steps >= max_steps` 时跳出循环的效果相同：被截断的 agent 消息或工具调用仍写入轨迹。第 5 步在 `max_steps` = 1、2、3、4、20 下与 `Orchestrator` 对照，轨迹、用户收到的消息和最终 DB 哈希都一致。`truncate()` 只接受 `response_length`、`invalid_action`，其他原因报 `ValueError`。
+
+### 7.1 生命周期状态（第 5 步实现）
+
+| 状态 | 含义 | 允许的调用 |
+|---|---|---|
+| `new` | 刚创建 | `reset`、`close` |
+| `active` | 业务交互进行中 | `step`、`truncate`、`close` |
+| `interaction_ended` | 业务交互已结束，最终 DB 和轨迹已保存，尚未评分（`score_on_finish=False` 时停在此处） | `score`、`close` |
+| `scoring_retry_pending` | 评分出现基础设施错误，等待重新评分 | `score`、`close` |
+| `scored` | 评分完成（DB=1 或 DB=0 都是有效结果） | `score`（返回缓存）、`close` |
+| `failed` | 执行故障（工具内部异常、用户模拟器故障、环境构造失败、任务定义错误），或评分重试用尽 | `close`、`export_trace` |
+
+另有 `closed` 标志，与状态独立：关闭后除 `close`、`export_trace` 外的调用一律报错；`close()` 幂等，并释放 DB 和用户模型。
+
+规则：
+- 业务交互一旦结束（任何终止或截断原因），`step`、`truncate`、`reset` 都被拒绝；结束消息（`###STOP###`）只追加一次。
+- `score()` 只用结束时保存的轨迹和最终 DB；评分前校验最终 DB 哈希未变，变了就报错。重新评分不调用工具、用户模拟器或策略。
+- 有效评分（包括 DB=0）得到后立即缓存，之后的 `score()` 原样返回，不再调用评分函数，不能反复评分挑结果。
+- 评分基础设施错误（`score_env_build`、`text_judge_call`、`text_judge_protocol`）：首次之外最多再试 `max_scoring_retries=3` 次，共 4 次；用尽后转为 `failed`（`failure.reason="scoring_attempts_exhausted"`），不产生 reward。每次失败都记在 `scoring_errors` 里。
+- 评分时的 `TaskDefinitionError` 或其他非基础设施异常直接转为 `failed`，不重试。
+- 任务时钟：执行工具和评分都在 `task_clock` 上下文里进行，正常、业务错误、工具内部异常、评分失败、预算截断、用户故障各条路径结束后，调用线程的时钟都恢复为进入前的值（第 5 步有测试）。
 
 `max_steps` 的取值不在本步决定。参考值：Bench2 `run_task` 默认 12，gym 默认 100，AirLineRL airline 是 64；gold action 数为 2–16，中位数 8。具体预算由第 6 步测定。
 
@@ -214,7 +244,17 @@ class ItsmTransition:
 - 一个结果项只要 `index` 是范围内且只出现一次的整数、`equivalent` 是布尔值，就是有效判定。`true` 和 `false` 都有效，没有 reasoning 也不影响判定结果。
 - 有效的 `false` 是正常的业务负判，计入 DB=0，不触发重试。
 
-工具在进程内同步执行，无法从外部强杀。如果出现 `timeout`，该 env 标记为 poisoned，不再接受任何调用。是否需要进程隔离，由第 5 步的测试结果决定。
+### 8.1 超时与取消（第 5 步实现）
+
+- **进程内 `ItsmEnv` 没有超时。** 工具、用户模拟器和评分在调用线程中同步执行，无法从外部中断。用线程等待加超时只会让调用方放弃等待，执行本身仍会继续并修改同一个 DB（第 5 步有反例测试 `test_in_process_wait_timeout_does_not_stop_the_call`）。所以"等待超时"不能当作"执行已停止"。
+- **能真正取消的执行：** `agent_rl.envs.itsm_worker.ItsmEnvWorker` 在独立子进程（默认 `spawn`）中运行一个 `ItsmEnv`，父进程对每次调用做有界等待：
+  - `call_timeout_s`：单次调用上限；`episode_timeout_s`：从 `reset` 起整个 episode 的上限；实际等待取两者较小值。
+  - `cancel()`：任意线程可调用；有进行中的调用时该调用以 `cancelled` 报错，空闲时立即回收子进程。
+  - 超时、取消或子进程崩溃时，父进程 `kill` 并 `join` 子进程，**确认进程已退出后**才在 `failure` 中记 `execution_stopped=True`，异常的 `kind` 为 `killed`；若在 `kill_grace_s` 内未能确认退出，记 `execution_stopped=False`、`kind="not_reclaimed"`，不得当作已停止。
+  - 子进程的 DB 只在其内存中，被杀后随进程消失，旧执行不可能修改后续 episode。该 episode 作废，没有 reward，也不能重新评分（最终 DB 已不存在），按 §12 作为 episode 级故障重跑。
+  - 对应的基础设施 `stage`：`timeout`、`cancelled`、`worker_crashed`。子进程内的业务异常和基础设施异常（如 `user_sim`）原样传回父进程，子进程保持存活，轨迹仍可导出。
+- **用户模拟器 HTTP 调用**：默认 `UserSimulator` 的 litellm 调用带 `timeout=user_llm_timeout_s`（默认 60 秒），失败归 `user_sim`。它只约束单次 HTTP 请求；整步和整个 episode 的上限由 worker 保证。
+- 代价：每个 worker 启动需要导入 `agent_rl.envs`（本机约 3 秒）。worker 的复用、进程池和并发数属于第 7/9 步的 rollout 设计，本步未定。
 
 ## 9. 奖励契约
 
@@ -375,9 +415,11 @@ class ItsmRewardInfo:
 - 每个 episode、每次 gold 回放、每个 baseline 都调用 `get_environment(...)`，从磁盘重新加载 JSON，得到彼此独立的 pydantic 对象。
 - 总是显式传入 `seed_db`（53 题都有），不依赖 `EW_ITSM_DB` 环境变量。
 - 除时钟（thread-local，§6）外，没有发现模块级的可变共享状态。
-- **须验证（第 5 步）：**
-  - 并行跑 4 个 episode，各写各的 DB，结束后彼此的 hash 不受影响；
-  - 种子文件的 hash 在运行前后保持不变。
+- **第 5 步已验证：**
+  - 同一进程内 4 个线程按屏障同步、交错执行：两个任务时钟不同的任务（msp_021、single_017）各 2 个 episode，最终 DB 哈希与顺序执行一致，DB 对象互不相同，主线程时钟不变；
+  - 同一任务 4 个 episode 并发走不同路径，reward 为 [1, 1, 0, 0]，记录 ID 没有串号（重复通知的那组才出现 `NOTIF_031`）；
+  - 两个 worker 子进程并行，进程号互不相同，均得 DB=1；
+  - 以上测试前后，`Bench2/data/itsmbench/` 下全部文件的 sha256 不变。
 
 ## 14. 已定决策
 
