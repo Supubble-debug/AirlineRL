@@ -253,6 +253,45 @@ def test_bench2_legacy_path_scores_the_same_gold_failure_as_zero() -> None:
     assert result.reward == 0.0
 
 
+def _fail_get_environment_on_call(monkeypatch, failing_call: int) -> None:
+    original = itsm_environment.get_environment
+    calls = 0
+
+    def get_environment(*args, **kwargs):
+        nonlocal calls
+        calls += 1
+        if calls == failing_call:
+            raise OSError("seed file unreadable")
+        return original(*args, **kwargs)
+
+    monkeypatch.setattr(itsm_environment, "get_environment", get_environment)
+
+
+@pytest.mark.parametrize(("failing_call", "role"), [(1, "gold"), (2, "baseline")])
+def test_scoring_env_build_failure_is_infrastructure(monkeypatch, failing_call: int, role: str) -> None:
+    """Fault injection at the two env builds inside score_final_db (gold, then baseline)."""
+    task = TASKS[MSP_021]
+    final_environment = replay_gold_actions(task)
+    _fail_get_environment_on_call(monkeypatch, failing_call)
+
+    with pytest.raises(ItsmInfrastructureError) as raised:
+        score_final_db(task, final_environment, text_match=FUZZY)
+
+    assert (raised.value.stage, raised.value.kind) == ("score_env_build", role)
+    assert isinstance(raised.value.__cause__, OSError)
+    assert str(raised.value.__cause__) == "seed file unreadable"
+
+
+def test_scoring_task_definition_error_is_not_wrapped() -> None:
+    task = TASKS[MSP_021]
+    final_environment = replay_gold_actions(task)
+
+    with pytest.raises(TaskDefinitionError) as raised:
+        score_final_db(task.model_copy(update={"seed_db": None}), final_environment, text_match=FUZZY)
+
+    assert not isinstance(raised.value, ItsmInfrastructureError)
+
+
 def test_infrastructure_error_round_trips_through_pickle() -> None:
     original = ItsmInfrastructureError("text_judge_protocol", MSP_021, "detail", kind="missing_index")
 

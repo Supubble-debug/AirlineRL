@@ -147,12 +147,29 @@ def environment_constructor(task: Task) -> Callable[..., Environment]:
     return construct
 
 
+def build_scoring_environment(task: Task, role: str) -> Environment:
+    """Build the gold or baseline env used for scoring.
+
+    A malformed task stays a :class:`TaskDefinitionError` (not retryable); any
+    other construction failure is infrastructure, with the original exception
+    kept as ``__cause__``.
+    """
+    try:
+        return build_task_environment(task)
+    except TaskDefinitionError:
+        raise
+    except Exception as error:
+        raise ItsmInfrastructureError(
+            "score_env_build", task.id, f"{type(error).__name__}: {error}", kind=role
+        ) from error
+
+
 def replay_gold_actions(task: Task) -> Environment:
     """Replay every gold action on a fresh environment; any failure is infrastructure."""
     if not task.evaluation_criteria.actions:
         raise TaskDefinitionError(f"{task.id}: gold actions are required for DB scoring")
     with task_clock(task):
-        environment = build_task_environment(task)
+        environment = build_scoring_environment(task, "gold")
         for index, action in enumerate(task.evaluation_criteria.actions):
             try:
                 environment.make_tool_call(action.name, **action.arguments)
@@ -323,7 +340,7 @@ def score_final_db(
     strategy = validate_text_match(text_match)
     gold_environment = replay_gold_actions(task)
     with task_clock(task):
-        baseline_db = build_task_environment(task).tools.db
+        baseline_db = build_scoring_environment(task, "baseline").tools.db
         mismatches, pending = collect_db_differences(
             gold_environment.tools.db,
             final_environment.tools.db,

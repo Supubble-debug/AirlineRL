@@ -10,7 +10,7 @@
 | 1：独立环境与现有测试基线 | 用户认可；GPU 训练环境于 2026-10-29 补建完成（见“第 1 步补充：GPU 训练环境”），补充部分待验收 | 2026-10-28 用户原话：“未提交文件是什么，你认为是否需要接受？没问题就接受，开始第二步。实例等gpu充足的时候再创建”。 |
 | 2：接口与奖励契约 | 用户认可；D1–D6 已定，D5 改为 `deepseek/deepseek-v4-flash` | 2026-10-28 用户原话：“认可，除了D5我认为可以用deepseek-flash。至于风险，到了那一步再说。没问题就第三步”。 |
 | 3：离线环境与评分回归 | 用户认可（第 1 次修订后）；D7、D8 已定 | 2026-10-28 用户要求修订（该消息不是验收通过）。2026-10-29 用户原话：“根据本次修订报告，第 3 步验收通过。请记录以下决定：D8：保持 Bench2 现有自由文本比较规则……D7：评测时 DB 文本裁判与 NL 裁判均采用 deepseek/deepseek-v4-pro，温度 0……完成上述文档收尾后，仅执行第 4 步”。决定全文写入协议 §12、§14.2–§14.4。 |
-| 4：最小单 episode adapter | **待验收** | 未批准 |
+| 4：最小单 episode adapter | **补修待验收**（第 1 次补修，同时修订第 2、3 步文档与评分） | 未批准。2026-10-30 用户提出 GitHub 源码审查的补修要求：公开调用 ID 不含任务信息；内部工具异常不能得到有效 reward；补修范围增加第 2、3 步（协议同步、无效组排除表述、按来源判定泄漏、温度 0 表述、评分环境构造错误分类），先不进入第 5 步。 |
 | 5 及以后 | 未开始 | — |
 
 ## 运行环境
@@ -147,11 +147,27 @@
   - 公开信息（§3）：只有 `policy` 和 `tools`，并且在 53 题之间完全相同（sha256 只有一种取值），因此不携带任何任务专属信息。任务描述、模拟器指引、NL 断言和 task_id 都没有出现。
     - 注意：`known_info` 中的通用值（例如枚举值 `agent`、组名、示例单号）会在 policy 或工具 schema 中以子串形式出现，这是碰撞，不是泄漏；任务不变性才是判据。
   - 增量观察（§4）：reset 返回问候语和用户首句；工具调用只返回 `tool[<call_id>] ok|error(<class>): …` 一行；消息动作只返回 `user: …`；结束时返回空串。各段内容不重复出现。
-  - 调用 ID（§5）：`{episode_id}/c{seq:03d}`；每个调用恰好对应一条 ToolMessage；ID 唯一，且与记录一致；模型自带的 ID 存为 `model_call_id`。
-  - 错误分类（§8）：`domain_error`（保留 `code` 和 `field`）、`unknown_tool`、`bad_arguments`（在调用前用签名绑定检查，观察中不含 Python 类名，且该调用不会执行）、`tool_exception_other`。出错后 episode 继续，可以恢复。
+  - 调用 ID（§5）：最初为 `{episode_id}/c{seq:03d}`，第 1 次补修改为与任务无关的 `call_{seq:03d}`（见下文补修证据）；每个调用恰好对应一条 ToolMessage；ID 在 episode 内唯一，且与记录一致；模型自带的 ID 存为 `model_call_id`。
+  - 错误分类（§8）：`domain_error`（保留 `code` 和 `field`）、`unknown_tool`、`bad_arguments`（在调用前检查，观察中不含 Python 类名，且该调用不会执行）。出错后 episode 继续，可以恢复。最初还有 `tool_exception_other`（可恢复），第 1 次补修改为基础设施错误 `tool_internal`。
   - 用户模拟器异常、空回复、首句就 STOP，按基础设施错误处理，不产生 reward。
   - 时钟（§6）：每一步都在独立线程中执行，msp_021（对时钟敏感）仍得到 DB=1，且执行线程的时钟在结束后恢复。
   - 奖励（§9）：`done` 或用户 STOP 时只评一次 DB；`nl_status=not_evaluated`，`joint_reward=None`，`training_reward_source=db_only`。走错路径时得到有效的 DB=0。
   - 与 Bench2 `Orchestrator.run` 对照：MSP-021 和 Single-017 各一条脚本（含业务错误和未知工具调用），消息序列、用户收到的消息、最终 DB 哈希完全相同。`bad_arguments` 的文本有意与 Bench2 不同，因此不在对照范围内。
 - 不在本步范围（第 5 步）：`max_steps` 与 token 截断、超时、取消、重试调度、进程隔离、并行隔离，以及评分失败后的重新评分接口。
+
+### 第 4 步第 1 次补修（2026-10-30）
+
+- 改动：
+  - `src/agent_rl/envs/itsm_env.py`：
+    - 公开调用 ID 改为 `call_{seq:03d}`，不由 `episode_id`/`task_id` 派生；
+    - 参数在签名绑定之外，再按工具类型注解做 pydantic 严格校验，不通过记为 `bad_arguments`；
+    - 校验通过后工具抛出的非 `ItsmError` 异常改为基础设施错误 `tool_internal`：不向模型返回结果，记录 `result_received=False`，env 作废，`export_trace()` 增加 `failure` 字段；
+    - reset 遇到 `TaskDefinitionError` 原样抛出，不包装成 `env_build`。
+  - `src/agent_rl/envs/itsm_scoring.py`：评分时构造 gold、baseline 环境失败，归为 `ItsmInfrastructureError(stage="score_env_build", kind="gold"|"baseline")`，原始异常保留为 `__cause__`；`TaskDefinitionError` 不包装。
+  - `docs/itsm_protocol.md`：§3 泄漏检查改为按信息来源判定；§5 公开调用 ID；§8 删除 `tool_exception_other`，新增 `tool_internal`、`score_env_build` 及 `TaskDefinitionError` 不重试的说明；§11 样例 ID；§12.6 删除"优势置零即丢弃"，要求真正移除或用有效性掩码覆盖全部损失项与统计分母（第 9 步验证）；D5、§12.2、§14.3 修正"温度 0 即确定"的表述。
+  - 测试：`test_itsm_env.py` 43 项（+5：类型错误、428 个 gold 调用通过严格校验、全部工具参数有校验器、`tool_internal` 后不能得到 reward、模型可见内容不含任务/episode 元数据、reset 时 `TaskDefinitionError` 不包装；删除旧的 `tool_exception_other` 测试）；`test_itsm_scoring.py` 352 项（+3：gold、baseline 两处构造故障注入，评分时 `TaskDefinitionError` 不包装）。
+- 产物：`/home/sar/work/EnterGym/output/itsm-step4-r1/`
+  - `pytest_itsm.log`：两套 ITSM 测试 395 passed，退出码 0。
+  - `pytest_airlinerl_full.log`：`tests/unit tests/remote` 共 508 passed（113 + 352 + 43），退出码 0。
+- 未做：评分失败后的 env 状态与重新评分接口（第 5 步）；无效组排除的实现与梯度验证（第 9 步）。没有重建环境，没有启动 GPU，没有调用 LLM。
 

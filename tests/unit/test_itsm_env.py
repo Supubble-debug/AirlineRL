@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import copy
 import hashlib
+import inspect
 import json
 import threading
 from typing import Any
@@ -36,10 +37,13 @@ from agent_rl.envs.itsm_env import (
     ItsmAction,
     ItsmEnv,
     ItsmEnvConfig,
+    _parameter_validators,
+    argument_type_error,
     to_itsm_action,
 )
 from agent_rl.envs.itsm_scoring import (
     ItsmInfrastructureError,
+    TaskDefinitionError,
     build_task_environment,
     load_itsm_tasks,
     task_clock,
@@ -208,7 +212,7 @@ def test_normal_tool_call_returns_the_real_tool_result() -> None:
     assert transition.observation.startswith(f"tool[{record.call_id}] ok: {{")
     assert json.loads(record.result)["incident_id"] == "INC_020"
     assert (record.call_id, record.result_received, record.error_class) == (
-        f"{SINGLE_017}:g0:0:test/c001",
+        "call_001",
         True,
         None,
     )
@@ -233,6 +237,11 @@ ERROR_CALLS = {
         "Invalid arguments for tool 'find_incident_by_number': got an unexpected keyword argument 'num'",
         (None, None),
     ),
+    "bad_arguments_type": (
+        ItsmAction.tool_call("find_incident_by_number", {"number": ["INC0000007"]}),
+        "Invalid arguments for tool 'find_incident_by_number': argument 'number': Input should be a valid string",
+        (None, None),
+    ),
     "bad_arguments_missing": (
         ItsmAction.tool_call("find_incident_by_number", {}),
         "Invalid arguments for tool 'find_incident_by_number': missing a required argument: 'number'",
@@ -244,7 +253,7 @@ ERROR_CALLS = {
 @pytest.mark.parametrize("case", sorted(ERROR_CALLS))
 def test_tool_error_is_classified_and_the_episode_continues(case: str) -> None:
     action, message, (code, error_field) = ERROR_CALLS[case]
-    error_class = case.removesuffix("_missing")
+    error_class = "bad_arguments" if case.startswith("bad_arguments") else case
     env, _ = _env(SINGLE_017, [OPENING])
     env.reset()
     before = env.current_db_hash()
@@ -268,17 +277,59 @@ def test_tool_error_is_classified_and_the_episode_continues(case: str) -> None:
     assert env.current_db_hash() == before
 
 
-def test_unexpected_tool_exception_is_its_own_class(monkeypatch) -> None:
+def test_every_gold_call_passes_the_strict_argument_check() -> None:
+    checked = 0
+    for task in TASKS.values():
+        tools = build_task_environment(task).tools
+        for action in task.evaluation_criteria.actions:
+            assert argument_type_error(tools.tools[action.name], action.arguments) is None, (
+                task.id,
+                action.name,
+            )
+            checked += 1
+    assert checked == 428
+
+
+def test_every_tool_parameter_has_a_type_validator() -> None:
+    for name in ItsmTools._tool_names:
+        function = getattr(ItsmTools, name)
+        parameters = set(inspect.signature(function).parameters) - {"self"}
+        assert parameters <= set(_parameter_validators(function)), name
+
+
+def test_internal_tool_exception_is_infrastructure_and_yields_no_reward(monkeypatch) -> None:
+    """Arguments were valid, so a non-ItsmError exception is an environment fault.
+
+    The gold path below would otherwise reach DB=1 (find_* is read-only); after
+    the fault no step, including done, can produce a reward.
+    """
+
     def broken(self, number: str):
         raise KeyError("index corrupted")
 
     monkeypatch.setattr(ItsmTools, "find_incident_by_number", broken)
-    env, _ = _env(SINGLE_017, [OPENING])
+    gold = _gold(SINGLE_017)
+    env, _ = _env(SINGLE_017, [OPENING, CLOSING_REPLY])
     env.reset()
+    for action in gold[:2]:
+        env.step(action)
 
-    record = env.step(ItsmAction.tool_call("find_incident_by_number", {"number": "INC0000007"})).tool_record
+    with pytest.raises(ItsmInfrastructureError) as raised:
+        env.step(gold[2])
 
-    assert (record.error_class, record.error) == ("tool_exception_other", "'index corrupted'")
+    assert raised.value.stage == "tool_internal"
+    assert isinstance(raised.value.__cause__, KeyError)
+    record = env.tool_records[-1]
+    assert (record.call_id, record.result_received, record.error_class) == ("call_003", False, None)
+    assert record.error == "KeyError: 'index corrupted'"
+    # The model never received a result for the failed call.
+    assert [m.id for m in env.trajectory if isinstance(m, ToolMessage)] == ["call_001", "call_002"]
+    for action in [*gold[3:], ItsmAction.message("Done."), ItsmAction.done()]:
+        with pytest.raises(RuntimeError, match="infrastructure"):
+            env.step(action)
+    trace = env.export_trace()
+    assert trace["reward_info"] is None
+    assert trace["failure"]["stage"] == "tool_internal"
 
 
 # -- recovery and done --------------------------------------------------------------------------
@@ -384,7 +435,23 @@ def test_every_call_has_a_unique_id_and_exactly_one_result() -> None:
 
     assert call_ids == tool_message_ids == [record.call_id for record in env.tool_records]
     assert len(set(call_ids)) == len(call_ids) == 12
-    assert call_ids == [f"{SINGLE_017}:g0:0:test/c{n:03d}" for n in range(1, 13)]
+    assert call_ids == [f"call_{n:03d}" for n in range(1, 13)]
+
+
+def test_model_visible_content_has_no_task_or_episode_metadata() -> None:
+    """Provenance check (protocol §3): the caller's episode_id deliberately embeds
+    the task_id; neither may reach anything the policy can see."""
+    env, _, reset, transitions = _mixed_single_017_run()
+    visible = [
+        reset.observation,
+        json.dumps(reset.public_info),
+        *(t.observation for t in transitions),
+        *(message.model_dump_json() for message in env.trajectory),
+    ]
+
+    assert SINGLE_017 in env.episode_id
+    for metadata in (SINGLE_017, env.episode_id, "g0:0:test", TASKS[SINGLE_017].seed_db):
+        assert not [text for text in visible if metadata in text], metadata
 
 
 def test_observations_are_incremental() -> None:
@@ -520,6 +587,14 @@ def test_env_runs_exactly_one_episode() -> None:
     env.close()
     with pytest.raises(RuntimeError, match="closed"):
         env.step(ItsmAction.done())
+
+
+def test_task_definition_error_at_reset_is_not_infrastructure() -> None:
+    env, _ = _env(SINGLE_017, [OPENING])
+    env.task = TASKS[SINGLE_017].model_copy(update={"seed_db": None})
+
+    with pytest.raises(TaskDefinitionError):
+        env.reset()
 
 
 class BrokenUser(ScriptedUser):

@@ -6,6 +6,9 @@ calling thread under the task clock, and returns only what is new. Business
 tools, the user simulator and DB scoring are Bench2's own; the message order
 matches Bench2's ``Orchestrator.run``.
 
+Model-visible call IDs (``call_001`` …) are independent of ``episode_id`` and
+``task_id``; the global key for a call is ``(episode_id, call_id)``.
+
 Not handled here (step 5): step and token truncation, timeouts, cancellation,
 retries and process isolation.
 """
@@ -15,11 +18,14 @@ from __future__ import annotations
 import copy
 import inspect
 import time
+import typing
 import uuid
 from collections.abc import Sequence
 from dataclasses import asdict, dataclass, field
 from functools import lru_cache
 from typing import Any, Literal, Protocol
+
+from pydantic import TypeAdapter, ValidationError
 
 from enterprise_worlds.data_model.message import (
     AssistantMessage,
@@ -41,6 +47,7 @@ from agent_rl.data.schemas import ToolCallRecord
 from agent_rl.envs.action_parser import ActionFormatError, ModelToolCall
 from agent_rl.envs.itsm_scoring import (
     ItsmInfrastructureError,
+    TaskDefinitionError,
     build_task_environment,
     load_itsm_tasks,
     score_final_db,
@@ -56,7 +63,7 @@ DEFAULT_USER_LLM_ARGS = {"temperature": 0.0}
 ERROR_PREFIX = "Error: "
 
 ActionKind = Literal["message", "tool_call", "done"]
-ErrorClass = Literal["unknown_tool", "bad_arguments", "domain_error", "tool_exception_other"]
+ErrorClass = Literal["unknown_tool", "bad_arguments", "domain_error"]
 TerminationReason = Literal["agent_done", "user_stop"]
 
 
@@ -219,6 +226,33 @@ def _tasks_by_id() -> dict[str, Task]:
     return load_itsm_tasks()
 
 
+def public_call_id(seq: int) -> str:
+    """Model-visible call ID: unique within one episode, carries no task or episode data."""
+    return f"call_{seq:03d}"
+
+
+@lru_cache(maxsize=None)
+def _parameter_validators(function: Any) -> dict[str, TypeAdapter]:
+    """Strict validators from the annotations that also generate the public tool schema."""
+    hints = typing.get_type_hints(function)
+    hints.pop("return", None)
+    return {name: TypeAdapter(hint) for name, hint in hints.items()}
+
+
+def argument_type_error(tool: Any, arguments: dict[str, Any]) -> str | None:
+    """Return why ``arguments`` do not match the tool's annotated types, else ``None``."""
+    validators = _parameter_validators(getattr(tool, "__func__", tool))
+    for name, value in arguments.items():
+        validator = validators.get(name)
+        if validator is None:
+            continue
+        try:
+            validator.validate_python(value, strict=True)
+        except ValidationError as error:
+            return f"argument {name!r}: {error.errors()[0]['msg']}"
+    return None
+
+
 class ItsmEnv:
     """One ITSM episode: ``reset`` once, ``step`` until terminated, then ``close``."""
 
@@ -250,6 +284,7 @@ class ItsmEnv:
         self._closed = False
         self._termination_reason: TerminationReason | None = None
         self._reward_info: ItsmRewardInfo | None = None
+        self._failure: dict[str, str] | None = None
 
     # -- public API ----------------------------------------------------------
 
@@ -262,6 +297,8 @@ class ItsmEnv:
         try:
             self._environment = build_task_environment(self.task)
             self._user_state = self._user.get_init_state()
+        except TaskDefinitionError:
+            raise
         except Exception as error:
             raise self._infrastructure("env_build", error) from error
 
@@ -320,13 +357,14 @@ class ItsmEnv:
             "tool_calls": [asdict(record) for record in self._tool_records],
             "messages": [message.model_dump(mode="json") for message in self._messages],
             "reward_info": asdict(self._reward_info) if self._reward_info else None,
+            "failure": self._failure,
         }
 
     # -- steps ---------------------------------------------------------------
 
     def _step_tool_call(self, action: ItsmAction) -> ItsmTransition:
         self._call_seq += 1
-        call_id = f"{self.episode_id}/c{self._call_seq:03d}"
+        call_id = public_call_id(self._call_seq)
         arguments = copy.deepcopy(action.arguments)
         self._messages.append(
             AssistantMessage(tool_calls=[ToolCall(id=call_id, name=action.name, arguments=arguments)])
@@ -334,7 +372,28 @@ class ItsmEnv:
 
         started = time.perf_counter()
         with task_clock(self.task):
-            content, error_class, error_code, error_field = self._execute(action.name, arguments)
+            try:
+                content, error_class, error_code, error_field = self._execute(
+                    action.name, arguments
+                )
+            except Exception as error:
+                # Arguments already passed validation, so the tool itself is broken.
+                self._tool_records.append(
+                    ItsmToolCallRecord(
+                        call_id=call_id,
+                        name=action.name,
+                        arguments=copy.deepcopy(arguments),
+                        model_call_id=action.model_call_id,
+                        result_received=False,
+                        result=None,
+                        error=f"{type(error).__name__}: {error}",
+                        error_class=None,
+                        error_code=None,
+                        error_field=None,
+                        duration_ms=(time.perf_counter() - started) * 1000.0,
+                    )
+                )
+                raise self._infrastructure("tool_internal", error) from error
         duration_ms = (time.perf_counter() - started) * 1000.0
 
         self._messages.append(
@@ -406,17 +465,25 @@ class ItsmEnv:
     ) -> tuple[str | None, ErrorClass | None, str | None, str | None]:
         """Run one tool call; return ``(content, error_class, error_code, error_field)``.
 
-        Content strings follow Bench2's ``Environment.get_response`` except for
+        Model input errors (unknown tool, arguments that fail the signature or the
+        strict type check, ``ItsmError``) are returned. Any other exception
+        propagates: the caller treats it as an infrastructure failure. Content
+        strings follow Bench2's ``Environment.get_response`` except for
         ``bad_arguments``, whose Bench2 text leaks the Python class name.
         """
         tools = self._environment.tools
         if not tools.has_tool(name):
             return f"{ERROR_PREFIX}Tool {name!r} not found.", "unknown_tool", None, None
+        tool = tools.tools[name]
         try:
-            inspect.signature(tools.tools[name]).bind(**arguments)
+            inspect.signature(tool).bind(**arguments)
         except TypeError as error:
+            problem: str | None = str(error)
+        else:
+            problem = argument_type_error(tool, arguments)
+        if problem is not None:
             return (
-                f"{ERROR_PREFIX}Invalid arguments for tool {name!r}: {error}",
+                f"{ERROR_PREFIX}Invalid arguments for tool {name!r}: {problem}",
                 "bad_arguments",
                 None,
                 None,
@@ -425,8 +492,6 @@ class ItsmEnv:
             result = self._environment.make_tool_call(name, **arguments)
         except ItsmError as error:
             return f"{ERROR_PREFIX}{error}", "domain_error", error.code, error.field
-        except Exception as error:
-            return f"{ERROR_PREFIX}{error}", "tool_exception_other", None, None
         return _stringify(result), None, None, None
 
     def _user_turn(self, agent_message: AssistantMessage) -> UserMessage:
@@ -452,6 +517,7 @@ class ItsmEnv:
     def _infrastructure(self, stage: str, cause: Exception | str) -> ItsmInfrastructureError:
         self._failed = True
         detail = cause if isinstance(cause, str) else f"{type(cause).__name__}: {cause}"
+        self._failure = {"stage": stage, "detail": detail}
         return ItsmInfrastructureError(stage, self.task.id, f"episode {self.episode_id}: {detail}")
 
     def _require_active(self) -> None:

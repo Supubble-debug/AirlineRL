@@ -102,7 +102,20 @@ class ItsmTransition:
 | `org_ids` / `seed_db` / `initial_state_delta` / `tenancy` | **私有** | 只用于构造 env |
 | `current_time` | 私有（默认） | Bench2 自带的 `LLMAgent` 不向模型展示时间；是否公开见决策 D4 |
 
-**泄漏检查（第 7 步实施）：** 对每个 episode 的全部 prompt 文本做子串检查，检查对象是 `known_info` 的值、gold action 的参数值和 NL 断言文本，要求在**用户首次说出之前**不得出现。用户在对话中说出 `known_info` 是合法的。
+**泄漏检查按信息来源判定（第 4 步补修修订）：** 判据是"每段模型输入从哪里来"，不是"某个字符串有没有出现"。
+- 允许进入模型输入的来源只有：
+  - 公开 policy 和工具 schema（53 题完全相同，不随任务变化）；
+  - 固定问候语；
+  - 用户模拟器产生的消息；
+  - 真实工具执行返回的结果和错误信息；
+  - 策略自己生成的内容；
+  - 由 adapter 生成、不含任务信息的公开调用 ID（§5）。
+- 禁止由 adapter 或 rollout loop 直接放进模型输入的私有元数据：`task_id`、`episode_id`、组 ID、`sample_index`、`seed_db`、`org_ids`、`tenancy`、`initial_state_delta`、gold actions、NL 断言、任务描述、模拟器指引、`known_info`、`current_time`（D4）。
+- 同一个值经由合法来源出现不算泄漏，例如：用户说出单号，工具结果里出现组名，`known_info` 的枚举值恰好写在 policy 或工具 schema 里。所以不能用"`known_info` 的值在用户说出前不得出现"这种子串规则来判定：它会把 schema 里的通用值误判为泄漏，又查不出经由 ID 或格式字段夹带的元数据。
+- 验证方式：
+  - 公开信息在全部任务间相同（第 4 步已测）；
+  - 调用方故意传入含 `task_id` 的 `episode_id` 时，`task_id`、`episode_id`、`seed_db` 不出现在任何观察、公开信息或轨迹消息中（第 4 步已测）；
+  - 第 7 步对实际渲染出的 prompt 逐段标注来源，并重复上述元数据检查。
 
 ## 4. 观察格式（增量）
 
@@ -122,12 +135,13 @@ class ItsmTransition:
 
 ## 5. 工具调用 ID
 
-- `episode_id = "{task_id}:{group_uid}:{sample_index}:{uuid8}"`
-- `call_id = "{episode_id}/c{seq:03d}"`，`seq` 在 episode 内从 1 递增。
+- `episode_id` 只用于日志、分组和追踪，例如 `"{task_id}:{group_uid}:{sample_index}:{uuid8}"`，**不得出现在模型输入中**。
+- 模型可见的调用 ID 是 `call_id = "call_{seq:03d}"`，`seq` 在 episode 内从 1 递增。它不由 `episode_id` 或 `task_id` 派生，所以调用方传入的 `episode_id` 无论包含什么，都不会经由调用 ID 泄漏（第 4 步补修：原先的 `{episode_id}/c{seq}` 会把 `task_id` 带进工具观察）。
+- `call_id` 只在 episode 内唯一；跨 episode 的全局主键是 `(episode_id, call_id)`，由导出的轨迹提供。
 - 模型自带的 ID（例如 hermes 解析得到的 ID）另存为 `model_call_id`，只用于对照，不作主键。
 - 一一对应规则：
   - 每个 `tool_call` 动作恰好生成一个 `ToolCallRecord(call_id=...)`，最多对应一个 `ToolMessage(id=call_id)`。
-  - `result_received=False` 只在 §7 的 "截断时有待执行调用" 这一种情况下出现。
+  - `result_received=False` 只在两种情况下出现：§7 的 "截断时有待执行调用"，以及 §8 的 `tool_internal` 基础设施故障（该 episode 作废，不产生 reward）。
   - 不存在没有对应调用的结果，也不存在重复 ID。
 
 ## 6. 任务时钟
@@ -172,15 +186,18 @@ class ItsmTransition:
 | error_class | 判定方式（adapter 在调用 `make_tool_call` 之前和之中判断） | 返回给模型的观察 |
 |---|---|---|
 | `unknown_tool` | 工具名不在 `ItsmTools._tool_names` 中 | `Error: Tool '<name>' not found.` |
-| `bad_arguments` | `inspect.signature(tool).bind(**args)` 失败（缺少参数或参数名不对） | 规范化信息，**不含** Python 类名（修正 F9） |
+| `bad_arguments` | `inspect.signature(tool).bind(**args)` 失败（缺少参数或参数名不对），或参数值不满足工具类型注解的严格校验（pydantic strict；公开 schema 由同一组注解生成） | 规范化信息，**不含** Python 类名（修正 F9）；该调用不执行 |
 | `domain_error` | 工具抛出 `ItsmError` | `Error: <message>`，并在记录里保留 `code`、`field` |
-| `tool_exception_other` | 工具抛出其他异常 | 与 Bench2 一致，返回 `Error: <e>` 给模型；单独计数并审计。如果在 gold 回放中出现，说明环境有缺陷（见下表） |
+
+模型侧错误只有以上三类。参数通过签名和类型校验之后，工具再抛出任何非 `ItsmError` 异常，都视为**环境缺陷**，归入下表的 `tool_internal`（第 4 步补修：原先的 `tool_exception_other` 把这种情况当作可恢复错误返回给模型，episode 仍能得到有效 reward，已删除）。严格类型校验已对 53 题全部 428 个 gold 调用验证不会误拒。
 
 **基础设施错误**：抛出 `ItsmInfrastructureError(stage, task_id, episode_id)`，不产生 reward。
 
 | stage | 触发条件 |
 |---|---|
-| `env_build` | 读取种子、应用 delta、切分 org 或校验完整性失败 |
+| `env_build` | episode 开始时读取种子、应用 delta、切分 org 或校验完整性失败 |
+| `tool_internal` | 参数已通过校验，工具仍抛出非 `ItsmError` 异常。不向模型返回结果，记录 `result_received=False`，env 作废，不产生 reward；按 episode 级故障重试（§12） |
+| `score_env_build` | 评分时构造 gold 环境（`kind=gold`）或 baseline 环境（`kind=baseline`）失败；原始异常保留为 `__cause__`。属评分级故障，按 §12 用同一最终状态重新评分 |
 | `user_sim` | 用户模拟器 LLM 异常、超时或返回空内容 |
 | `gold_replay` | 任一 gold action 回放失败（修正 F8） |
 | `text_judge_call` | 自由文本裁判调用本身抛异常或超时 |
@@ -189,6 +206,8 @@ class ItsmTransition:
 | `clock` | 时钟断言失败 |
 | `timeout` | 单步或整个 episode 的墙钟超时 |
 | `cancelled` | 外部取消 |
+
+**不属于基础设施错误：** `TaskDefinitionError`（任务缺少 `current_time`、`seed_db` 或 gold actions 等必需字段）表示任务本身有误，重试不会改变结果，所以在 `env_build`、`score_env_build` 等位置都原样抛出，不包装成可重试的基础设施错误。
 
 **裁判判定的边界**（第 3 步修订，`agent_rl.envs.itsm_scoring.parse_text_judge_response`）：
 - 判定在原始响应的解析环节完成，不使用 Bench2 解析后的 `FreeTextVerdict`（它会把各种异常都默认成 `equivalent=False`），也不依据 reasoning 文本推断。
@@ -254,7 +273,7 @@ class ItsmRewardInfo:
 | `find_incident_by_numbr()` | `error=True`，`Error: Tool 'find_incident_by_numbr' not found.` |
 | `find_incident_by_number(num="x")` | `error=True`，`Error: IncidentToolsMixin.find_incident_by_number() got an unexpected keyword argument 'num'` |
 
-以下样例中的 `episode_id` 简写为 `E` = `itsmbench_single_017:g7:0:1a2b3c4d`。
+以下样例中的 `episode_id` 简写为 `E` = `itsmbench_single_017:g7:0:1a2b3c4d`；`E` 只出现在调用方记录里，模型可见的调用 ID 是与之无关的 `call_NNN`（§5）。
 
 11.1–11.6 是**设计样例**，表示协议要求的输入和输出，不是运行结果：
 - 11.1 和 11.2 的工具返回文本取自 11.0 的实测；
@@ -265,9 +284,9 @@ class ItsmRewardInfo:
 ```json
 {"action": {"kind": "tool_call", "name": "find_incident_by_number",
             "arguments": {"number": "INC0000007"}, "model_call_id": "call_0"},
- "transition": {"observation": "tool[E/c001] ok: {\"incident_id\":\"INC_020\",\"number\":\"INC0000007\",...}",
+ "transition": {"observation": "tool[call_001] ok: {\"incident_id\":\"INC_020\",\"number\":\"INC0000007\",...}",
                 "terminated": false, "truncated": false, "termination_reason": null, "step_count": 2,
-                "tool_record": {"call_id": "E/c001", "name": "find_incident_by_number",
+                "tool_record": {"call_id": "call_001", "name": "find_incident_by_number",
                                 "arguments": {"number": "INC0000007"}, "result_received": true,
                                 "error": null, "error_class": null}}}
 ```
@@ -277,9 +296,9 @@ class ItsmRewardInfo:
 
 ```json
 {"action": {"kind": "tool_call", "name": "find_incident_by_number", "arguments": {"number": "INC9999999"}},
- "transition": {"observation": "tool[E/c002] error(domain_error): Incident with number 'INC9999999' not found",
+ "transition": {"observation": "tool[call_002] error(domain_error): Incident with number 'INC9999999' not found",
                 "terminated": false, "truncated": false, "step_count": 3,
-                "tool_record": {"call_id": "E/c002", "result_received": true,
+                "tool_record": {"call_id": "call_002", "result_received": true,
                                 "error": "Incident with number 'INC9999999' not found",
                                 "error_class": "domain_error", "error_code": "VALIDATION_ERROR",
                                 "error_field": "number"}}}
@@ -316,7 +335,7 @@ class ItsmRewardInfo:
  "action": {"kind": "tool_call", "name": "update_problem", "arguments": {"problem_id": "PRB_004", "state": "resolved"}},
  "transition": {"observation": "", "terminated": false, "truncated": true,
                 "termination_reason": "max_steps", "step_count": 12,
-                "tool_record": {"call_id": "E/c011", "name": "update_problem", "result_received": false},
+                "tool_record": {"call_id": "call_011", "name": "update_problem", "result_received": false},
                 "reward_info": {"db_evaluated": true, "db_match": false, "db_reward": 0.0,
                                 "db_mismatches": ["problem/PRB_004 state: 'resolved' != 'in_progress'"],
                                 "nl_status": "not_evaluated", "training_reward": 0.0}}}
@@ -337,7 +356,7 @@ class ItsmRewardInfo:
    - **episode 级故障**（`env_build`、`user_sim`、`timeout` 等，episode 本身没有跑完）：在同一 rollout 步内用相同任务、相同策略版本、新建的 DB 重跑该样本。
    - **评分级故障**（`text_judge_call`、`text_judge_protocol`、`nl_judge_*`，episode 已跑完）：只重做评分调用，使用**同一条已保存的轨迹和同一个最终 DB 状态**，不重跑 episode，也不重新采样策略。
    - 只有基础设施错误会触发重试。有效判定（包括没有理由的负判）一律不重试。
-   - 上限固定，不能一直重试到得到通过结果。温度 0 时，同样的裁判协议错误可能反复出现；用尽 4 次后按第 3 条处理。
+   - 上限固定，不能一直重试到得到通过结果。温度 0 降低了采样随机性，但同样的裁判协议错误仍可能反复出现；用尽 4 次后按第 3 条处理。
 3. 重试用尽后，**整组丢弃**。不用 reward=0 补位，不从别的任务借样本，不跨策略版本凑组。每次丢弃都要记录：`task_id`、组 ID、策略版本、触发丢弃的样本、最终的 `stage`/`kind`、已用尝试次数；并按 `stage`/`kind` 汇总每步的丢弃数量。
 4. 一个批次中被丢弃的组超过阈值（建议 25%，决策 D6）时，该训练步中止并报告，不做参数更新。
 5. 每步上报以下指标：
@@ -345,7 +364,11 @@ class ItsmRewardInfo:
    - 全 0 组和全 1 组的数量；
    - 丢弃的组数及原因（按 `stage` 统计）；
    - 截断率与终止原因分布。
-6. **须验证（第 9 步）：** verl 当前的 agent loop 能否在批次内丢弃整组，而不是让整步训练崩溃。AirLineRL 现在的做法是重试用尽就抛异常（F13）。如果 verl 不支持，最小方案是在 loop 层把该组标记为无效，并让该组优势为 0、不计入 loss，同时单独计数。这一方案也需要第 9 步验证。
+6. **无效组必须真正排除（第 9 步实现并验证）。** AirLineRL 现在的做法是重试用尽就抛异常（F13）。可接受的做法只有两种：
+   - 把无效组从批次中真正移除，不进入任何前向、loss 或统计；
+   - 或者保留张量形状，但用**有效性掩码**覆盖全部损失项（策略梯度、KL、熵及其他正则项）**以及所有统计分母**（token-mean / seq-mean 的分母、reward 和有效组比例等指标的分母）。
+
+   **只把优势置零不等于丢弃样本。** 优势为 0 只消掉了策略梯度项；KL、熵等其他项仍会对这些样本产生梯度，它们的 token 也仍计入 loss 归一化分母和统计分母，会改变有效样本的权重和报告的指标。第 9 步需用梯度检查证明：无效组对参数梯度的贡献为 0，并且与"直接移除该组"的 loss 和梯度在数值容限内一致。
 
 ## 13. 数据库隔离
 
@@ -367,7 +390,7 @@ class ItsmRewardInfo:
 | D2 | `invalid_action` 的 outcome | 沿用 AirLineRL：outcome 记 0，episode 终止 | 与 airline 实验协议一致，便于对照；另一种做法是 "返回错误观察让模型重试" |
 | D3 | 上下文轮换 | 首版禁用，预算不够就以 `response_length` 截断 | 避免 "只训练最后一段" 带来的信用丢失；第 6 步测出预算后再复核 |
 | D4 | 是否向模型公开 `current_time` | 不公开（与 Bench2 `LLMAgent` 一致） | 公开会改变任务难度。如果 policy 中有依赖当前时间的规则，第 6 步检查后再议 |
-| D5 | 用户模拟器的模型和温度 | `deepseek/deepseek-v4-flash`，温度 0（用户指定 flash，不沿用 airline 的 pro） | Bench2 默认是 `gpt-4o-mini`、温度 0.7；温度 0 时组内差异只来自策略本身。litellm 已登记该 ID；首次真实调用（第 7/8 步）时核实可用性 |
+| D5 | 用户模拟器的模型和温度 | `deepseek/deepseek-v4-flash`，温度 0（用户指定 flash，不沿用 airline 的 pro） | Bench2 默认是 `gpt-4o-mini`、温度 0.7。温度 0 能减少用户模拟器带来的组内差异，但**不等于完全确定**：服务端批处理、浮点非确定性、模型版本更新等都可能让同一输入得到不同输出，所以组内差异不能全部归因于策略。第 7/8 步用同一输入重复调用，实测并记录用户回复的一致率。litellm 已登记该 ID；首次真实调用（第 7/8 步）时核实可用性 |
 | D6 | 丢弃组超过多少时中止训练步 | 25% | 防止有效样本过少时仍做更新 |
 | D7 | 评测用的 DB 文本裁判与 NL 裁判 | 两者都用 `deepseek/deepseek-v4-pro`，温度 0；调用参数见 §14.3 | 与 airline 的 `evaluator_llm` 一致，并与用户模拟器（flash）使用不同模型 |
 | D8 | gold 未改变的自由文本字段 | 保持 Bench2 规则，见 §14.4；本轮不在训练 reward 或 benchmark 分数中增加严格字段检查 | 修改评分规则会使结果与 Bench2 不可比 |
@@ -417,6 +440,7 @@ class ItsmRewardInfo:
 - **第 7/8 步的有界验证**（仅几次调用）：确认服务端接受 `disabled`；响应中没有 `reasoning_content`；`finish_reason == "stop"`；模型 ID 与请求一致。
 - **失败处理：** 调用失败、参数被拒绝或 `finish_reason == "length"`，都按基础设施错误处理（`text_judge_call`/`text_judge_protocol`、`nl_judge_*`），并按 §12 重试。**不得静默换模型、去掉思考参数或退回 `fuzzy`。**
 - 实际发出的模型、参数和提示词 sha256 要写进每次评测的运行记录。
+- 温度 0 不保证同一输入得到完全相同的判定。评测报告不得假设裁判完全确定；第 8 步对少量固定输入重复调用，记录判定一致率。
 
 ### 14.4 gold 未改变的自由文本字段（D8）
 
