@@ -2,6 +2,16 @@
 
 本目录与下列文件一起构成第 6 步的产物。经用户验收后，它们才成为冻结协议；之后若要调整，需要说明原因并重新验收。
 
+2026-10-30 用户选定划分 v1（train 29 / dev 13 / held-out 11），并要求按下列口径收尾（尚未最终验收）。
+
+## 0. 实验定位
+
+本实验检验的是**跨家族与工作流组合泛化**：整个工作流家族被留出，但子流程（例如授权变更、把问题推进到根因、建立变更与问题的映射）会在不同划分里以新的组合重复出现。因此：
+
+- 不声称 held-out 与训练集之间没有共享子流程；`family_audit.json` 的 `cross_split_shared_subworkflows` 列出了全部共享 ≥ 2 个写工具的 train/held-out 对（68 对，涉及 held-out 的 5 题）。
+- 写工具 Jaccard 低于家族阈值，**不单独作为不存在近重复的证明**。
+- single_015 / single_022 保留跨划分，记录见 §1.4。
+
 | 产物 | 位置 | 说明 |
 |---|---|---|
 | 划分 manifest | `configs/data/itsm_split_v1.json` | 任务 ID、家族、业务类型、tenancy、数据校验值、划分方法、各划分分布 |
@@ -58,7 +68,7 @@
 完整列表见 `family_audit.json` 的 `unlinked_similarity_signals`。
 
 - **任务间共享 ID 不等于共享对象。** delta 和新建工具会复用下一个顺序编号，例如 single_007、015、022 里的 CHG_004 是三张不同的、由 delta 新建的变更单。审计里另列了 `same_seed_entities`，只保留两边都指向同一条种子原有记录的 ID。
-- **唯一同时涉及 train 和 held-out 的一对是 single_015（train）与 single_022（held-out）。** 两者没有共同的种子实体，但工作流部分相同：都是授权变更、把问题推进到根因、建立映射。写工具 Jaccard 为 0.5，低于阈值。
+- **single_015（train）与 single_022（held-out）有意保留在不同划分。** 两者没有共同的种子实体（CHG_004、PRB_003 在两题中是各自由 delta 新建的不同记录），但共享同一个子流程：`update_change` → `update_problem` → `map_change_request`（授权变更、问题推进到根因、建立映射）。组合不同：single_015 接着 `create_knowledge_article`、`link_knowledge_to_incident`；single_022 接着 `send_notification`。这是本实验"工作流组合泛化"要考察的情形，不是"因 Jaccard 0.5 低于阈值所以不是近重复"。报告 held-out 结果时应注明这一点。
 - **dev 与 held-out 之间有两对共享同一条种子事件单**：single_009 / 017，single_020 / 021。它们都不在训练集里，不构成训练泄漏。
 
 ### 1.5 残余重叠
@@ -94,7 +104,7 @@
 
 | 方案 | train | dev | held-out | 问题 |
 |---|---|---|---|---|
-| **v1（本次提交）** | 29（2 个大家族 + 1） | 13（"挂起并通知"12 + 1） | 11，6 个家族，5 种业务类型 | 训练集没有"挂起并通知"工作流；dev 实际上只反映这一个工作流，用 dev 选 checkpoint 会偏向它 |
+| **v1（用户已选定）** | 29（2 个大家族 + 1） | 13（"挂起并通知"12 + 1） | 11，6 个家族，5 种业务类型 | 训练集没有"挂起并通知"工作流；dev 实际上只反映这一个工作流，因此不用 dev 选 checkpoint（见 §2.4） |
 | 三个大家族都放训练集 | 40 | 6，5 个家族 | 7，3 个家族，其中一个占 71% | held-out 太小，只有约 3 个独立工作流，按任务汇总后不确定性很大 |
 | 只按规模和 tenancy 打分（最初的版本） | 31 | 9 | 13，其中 12 题是"挂起并通知" | held-out 基本只有一个没见过的工作流 |
 
@@ -105,6 +115,13 @@
 - held-out 只用于最终冻结评测，不用于调试、调参或选 checkpoint。
 - `split_task_ids("heldout")` 必须显式传入 `final_evaluation=True`，否则抛出 `PermissionError`。
 - 本步的 token 测量只读取了 train 和 dev。
+
+### 2.5 checkpoint 规则
+
+- **不**用 dev 分数挑最佳 checkpoint：dev 13 题里有 12 题属于同一工作流。
+- 训练步数和 checkpoint 规则事先确定，最迟在第 8 步冻结（预算文件 `checkpoint_selection: pre_registered_steps_and_rule_frozen_by_step8`）。
+- held-out 不参与任何选择。
+- dev 只用于调试、长度和预算检查。
 
 ## 3. token 测量
 
@@ -139,17 +156,32 @@
 | 不带过滤的 list/find 调用最坏情况 | `list_users` 10,371，`list_incidents` 9,656，`find_service_offerings` 8,014 |
 | 本机耗时 | 单次工具调用 ≤ 0.9 ms；建环境 + reset ≤ 112 ms；fuzzy DB 评分 ≤ 26 ms |
 
+### 3.3 无损紧凑序列化对照（用户批准的离线测量）
+
+- **范围**：只改变 `<tools>…</tools>` 块内工具 schema 的文本格式。不删除工具、参数、约束、描述或 policy，不按 gold 筛选工具。
+- **无损证明**：每个变体的块解析回来后，与原 94 个 schema 深度相等，规范化 JSON 也完全相同；`<tools>` 块以外的 prompt 逐字不变。`template_default` 与 chat template 的 `tojson` 输出逐字节一致（脚本会校验）。
+- **脚本与结果**：`scripts/data/measure_itsm_schema_serialization.py`，`docs/itsm_step6/schema_serialization.json`（含每个变体渲染块的 sha256）；序列化代码在 `src/agent_rl/prompts/tool_serialization.py`，测试 `tests/unit/test_itsm_tool_serialization.py`。
+
+| 变体 | 工具块 token | 初始 prompt | 节省 | 32,768 下剩余 | 40,960 下剩余 |
+|---|---|---|---|---|---|
+| `template_default`（现用，chat template `tojson`） | 19,974 | 28,104 | 0 | 4,664 | 12,856 |
+| `json_compact`（去掉 `, `、`: ` 后的空格） | 16,202 | 24,332 | 3,772（18.9%） | 8,436 | 16,628 |
+| `yaml_block`（YAML 块格式） | 17,847 | 25,977 | 2,127（10.7%） | 6,791 | 14,983 |
+
+- **结论**：紧凑格式只能缓解，**不能解决**长度问题。即使用 `json_compact`，32,768 下剩余 8,436，只是 gold 回放最长响应 5,764 的 1.46 倍；不带过滤的 list 结果（最大约 1 万 token）单条就放不下。
+- **未采用**：预算仍用 `template_default`。`json_compact`、`yaml_block` 都不是 Qwen3 工具调用训练时见过的格式，采用前需要单独的行为验证和批准。
+
 ## 4. 初版预算（`configs/itsm/budget_v1.yaml`）
 
 | 项 | 值 | 依据 |
 |---|---|---|
-| 上下文 `max_model_len` | 40,960 | 等于模型的 `max_position_embeddings`。gold 回放的完整序列已有 33,868，超过原生 32,768 |
+| 上下文 `max_model_len` | 40,960（**待验证候选**） | Qwen3-8B 原生上下文是 32,768；40,960 是 config 声明的 `max_position_embeddings`，不带 rope scaling，超出 32,768 的部分质量、生成和显存均未验证。不自动加入或更换 RoPE/YaRN 配置。gold 回放完整序列 33,868 已超过 32,768；在 32,768 下初始 prompt 只剩 4,664，少于 gold 最长响应 5,764。第 7 步先做单并发、有限生成的实际长度与推理显存验证，第 9 步再验证训练显存 |
 | `max_prompt_length` | 28,672 | 初始 prompt 28,104，余量 568 留给更长的真实首句 |
 | `max_response_length`（整段响应） | 12,288 | 40,960 − 28,672；是 gold 回放最大值 5,764 的 2.1 倍 |
 | `max_action_tokens`（单次生成） | 512 | 最长 gold 调用 127 的 4 倍，为发给用户的消息留余量（这部分没有测）。没有照搬 airline 的 256 |
 | `max_steps`（底层步数） | 40 | gold 工具调用最多 16，加约 8 次真实用户回合，再乘约 1.7 留出出错重试的余量；按中位数单步成本（39 + 224 token）计算，约等于响应预算 |
 | agent 决策轮数 | 不单独设上限 | 每个非终止动作都会消耗一步，所以 agent_turns ≤ max_steps 自然成立 |
-| 单条观察上限 `max_observation_tokens` | 4,096（建议） | 大于 gold 最大观察 2,690；不设上限的话，一次不带过滤的 list 调用（约 1 万 token）就会耗尽响应预算。**截断机制尚未实现，留到第 7 步** |
+| 观察规则 `observation_rule` | `full_tool_results_no_truncation` | 第一版不裁剪工具观察，完整保留工具结果。整段上下文放不下下一条观察或动作时，按 `truncate("response_length")` 结束 episode，env 轨迹保留完整观察供诊断。`token_measurements.json` 使用同一规则（字段 `observation_rule`）。一次不带过滤的 list 调用（约 1 万 token）可能因此直接结束 episode；若认为必须裁剪，会先提交具体规则和信息保留方案供验收 |
 | worker：用户模拟器 / 单次调用 / episode 超时 | 60 / 90 / 1800 秒 | 环境和评分都在毫秒级，主要耗时在用户模拟器的 HTTP 调用，这部分**待第 7 步实测** |
 | 评分重试 | 3 次（共 4 次） | 协议 §12 |
 
@@ -160,8 +192,8 @@
 - **实际策略输出长度**：真实的消息长度、单次生成被截断的比例、最终使用的响应长度分布，都要在第 7 步用真实采样核实。
 - **用户回合**：真实用户回复的长度和轮数没有测过，`max_steps=40` 里约 8 次用户回合是假设值。
 - **时间预算**：用户模拟器 HTTP 的耗时、调用失败率、episode 总耗时都没有测，worker 超时取值待第 7 步验证。
-- **观察截断**：`max_observation_tokens` 还只是建议值，截断方式和截断比例要在第 7 步实现和统计。
+- **观察规则**：不裁剪观察时，因单条大结果触发 `response_length` 结束的比例要在第 7 步统计；未提出裁剪规则。
 - **训练资源**：约 28k 的初始 prompt 加约 12k 的响应，每个样本接近 40k token。G=4 时的显存需求和单卡能否放下，要在第 9 步的 smoke 中实测，本步没有启动 GPU。
-- **超出原生窗口**：完整序列超过 Qwen3 原生的 32,768，用的是 config 声明的 40,960 位置。这一段的模型质量本步没有验证。
-- **缩短 prompt 的办法**：工具 schema 占 20k token，精简 schema 或按需提供工具都会改变公开接口，本步没有做，需要单独批准。
-- **残余重叠**：single_015 与 single_022 的工作流部分重叠（见 1.4），以及子操作层面的普遍重叠（见 1.5）。
+- **超出原生窗口**：40,960 只是候选；超出 32,768 的部分模型质量、生成长度和推理显存在第 7 步验证，训练显存在第 9 步验证。
+- **缩短 prompt 的办法**：无损紧凑序列化最多省 3,772 token（§3.3），不足以单独解决长度问题，且未采用。删减 schema 或按需提供工具会改变公开接口，本步没有做，需要单独批准。
+- **残余重叠**：single_015 与 single_022 共享子流程、组合不同（见 1.4），以及子操作层面的普遍重叠（见 1.5、§0）；held-out 结果应按"工作流组合泛化"解读。

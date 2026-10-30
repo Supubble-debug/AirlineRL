@@ -12,7 +12,7 @@
 | 3：离线环境与评分回归 | 用户认可（第 1 次修订后）；D7、D8 已定 | 2026-10-28 用户要求修订（该消息不是验收通过）。2026-10-29 用户原话：“根据本次修订报告，第 3 步验收通过。请记录以下决定：D8：保持 Bench2 现有自由文本比较规则……D7：评测时 DB 文本裁判与 NL 裁判均采用 deepseek/deepseek-v4-pro，温度 0……完成上述文档收尾后，仅执行第 4 步”。决定全文写入协议 §12、§14.2–§14.4。 |
 | 4：最小单 episode adapter | 用户认可（含第 1、2 次补修，提交 `223a3ac`） | 2026-10-30 用户原话：“第 4 步及相关补修验收通过，包含提交 223a3ac。记录本条批准，现在仅执行第 5 步：生命周期与隔离。” |
 | 5：生命周期与隔离 | 用户认可（含第 1 次补修，提交 `b067d90`） | 2026-10-30 用户原话：“第 5 步及补修 b067d90 验收通过。记录本条批准，现在仅执行第 6 步：数据划分与预算冻结。” |
-| 6：数据划分与预算冻结 | **待验收**（含一项待你决定的划分取舍） | 未批准 |
+| 6：数据划分与预算冻结 | **收尾待验收**（划分已选 v1） | 未批准。2026-10-30 用户原话：“第 6 步划分选择 v1：train 29 / dev 13 / held-out 11。暂不最终验收，不进入第 7 步。仅完成以下收尾”（实验定位、checkpoint 规则、无损紧凑序列化对照、40,960 待验证、不裁剪观察）。 |
 | 7 及以后 | 未开始 | — |
 
 ## 运行环境
@@ -248,4 +248,15 @@
   - `pytest tests/unit/test_itsm_split.py tests/unit/test_itsm_budget.py -v`：21 passed（`pytest_itsm_step6.log`）；
   - `pytest tests/unit tests/remote -q`：572 passed（`pytest_airlinerl_full.log`）。
 - 没有启动 GPU，没有加载模型权重，没有调用真实 LLM，没有接入第 7 步采样或第 9 步调度。
+
+### 第 6 步收尾（2026-10-30）
+
+- 划分：用户选定 v1，划分结果未变（train 29 / dev 13 / held-out 11）。
+- 实验定位：跨家族与工作流组合泛化。manifest 新增 `positioning`；审计新增 `cross_split_shared_subworkflows`（68 对 train/held-out 共享 ≥ 2 个写工具）。single_015/022 保留跨划分，记录共享子流程 `update_change → update_problem → map_change_request` 及各自不同的后续组合；不以 Jaccard 低于阈值作为无近重复的证明。
+- checkpoint：不用 dev 选最佳 checkpoint，held-out 不参与；训练步数与规则事先确定，最迟第 8 步冻结（预算文件 `checkpoint_selection`、manifest `usage`）。
+- 无损紧凑序列化（离线）：新增 `src/agent_rl/prompts/tool_serialization.py`、`scripts/data/measure_itsm_schema_serialization.py`、`docs/itsm_step6/schema_serialization.json`。三个变体解析后与原 94 个 schema 完全相等，工具块以外 prompt 不变。`json_compact` 省 3,772 token（初始 prompt 28,104 → 24,332），`yaml_block` 省 2,127；不足以解决长度问题，未采用。
+- 上下文：40,960 记为待验证候选（原生 32,768），不加 RoPE 扩展；第 7 步单并发有限生成验证长度与推理显存，第 9 步验证训练显存。
+- 观察规则：删除 `max_observation_tokens: 4096`，改为 `observation_rule: full_tool_results_no_truncation`；放不下时以 `response_length` 结束并保留完整诊断轨迹。`token_measurements.json` 重跑后写明同一规则，token 数字与上次完全一致，仅计时变化。
+- 测试：`test_itsm_split.py` 17 项、`test_itsm_budget.py` 8 项、新增 `test_itsm_tool_serialization.py` 5 项。
+- 产物：`/home/sar/work/EnterGym/output/itsm-step6-r1/`（`measure_schema_serialization.log`、`measure_tokens.log`、`pytest_itsm_step6.log`、`pytest_airlinerl_full.log`）。
 

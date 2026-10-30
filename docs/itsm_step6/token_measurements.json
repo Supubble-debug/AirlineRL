@@ -17,6 +17,8 @@
     "max_position_embeddings": 40960
   },
   "prompt_construction": "initial prompt = chat template of build_action_messages(policy, reset observation) with tools=<93 ITSM schemas + done> and the generation prompt; then, as TauAgentLoop concatenates ids, each action adds its generated tokens and each observation adds a newline separator plus one user turn (OBSERVATION_PROMPT) rendered alone with the generation prompt. Re-rendering the whole conversation differs because Qwen3's template drops earlier empty <think> blocks.",
+  "observation_rule": "full_tool_results_no_truncation",
+  "observation_rule_note": "Every tool result is counted in full, as configs/itsm/budget_v1.yaml requires. unfiltered_read_observations shows single results (up to ~10k tokens) that can exhaust the response budget; under this rule such an episode ends with truncate('response_length') and keeps the full observation in its trace.",
   "data": {
     "split_version": "itsm_split_v1",
     "tasks_measured": [
@@ -201,24 +203,24 @@
       "n": 42,
       "min": 0.0002,
       "median": 0.0002,
-      "p90": 0.0004,
-      "max": 0.0009,
+      "p90": 0.0005,
+      "max": 0.0008,
       "mean": 0.0
     },
     "seconds_env_build_and_reset": {
       "n": 42,
       "min": 0.0082,
-      "median": 0.01265,
-      "p90": 0.0168,
-      "max": 0.1124,
+      "median": 0.01285,
+      "p90": 0.0172,
+      "max": 0.1066,
       "mean": 0.01
     },
     "seconds_db_scoring_fuzzy": {
       "n": 42,
-      "min": 0.0043,
-      "median": 0.01675,
-      "p90": 0.0245,
-      "max": 0.0255,
+      "min": 0.0041,
+      "median": 0.0169,
+      "p90": 0.0248,
+      "max": 0.0257,
       "mean": 0.01
     }
   },
@@ -518,10 +520,10 @@
         }
       ],
       "seconds": {
-        "env_build_and_reset": 0.0183,
-        "tool_calls_total": 0.0015,
+        "env_build_and_reset": 0.0179,
+        "tool_calls_total": 0.0014,
         "tool_call_max": 0.0004,
-        "db_scoring_fuzzy": 0.0236
+        "db_scoring_fuzzy": 0.0235
       }
     },
     {
@@ -615,10 +617,10 @@
         }
       ],
       "seconds": {
-        "env_build_and_reset": 0.016,
-        "tool_calls_total": 0.0007,
+        "env_build_and_reset": 0.0162,
+        "tool_calls_total": 0.0006,
         "tool_call_max": 0.0002,
-        "db_scoring_fuzzy": 0.0241
+        "db_scoring_fuzzy": 0.0245
       }
     },
     {
@@ -712,10 +714,10 @@
         }
       ],
       "seconds": {
-        "env_build_and_reset": 0.0158,
+        "env_build_and_reset": 0.0165,
         "tool_calls_total": 0.001,
         "tool_call_max": 0.0004,
-        "db_scoring_fuzzy": 0.0241
+        "db_scoring_fuzzy": 0.0239
       }
     },
     {
@@ -829,10 +831,10 @@
         }
       ],
       "seconds": {
-        "env_build_and_reset": 0.0161,
+        "env_build_and_reset": 0.0166,
         "tool_calls_total": 0.0013,
         "tool_call_max": 0.0003,
-        "db_scoring_fuzzy": 0.0237
+        "db_scoring_fuzzy": 0.0242
       }
     },
     {
@@ -976,10 +978,10 @@
         }
       ],
       "seconds": {
-        "env_build_and_reset": 0.013,
-        "tool_calls_total": 0.0033,
-        "tool_call_max": 0.0009,
-        "db_scoring_fuzzy": 0.0173
+        "env_build_and_reset": 0.0129,
+        "tool_calls_total": 0.0031,
+        "tool_call_max": 0.0008,
+        "db_scoring_fuzzy": 0.0171
       }
     },
     {
@@ -1113,10 +1115,10 @@
         }
       ],
       "seconds": {
-        "env_build_and_reset": 0.0132,
-        "tool_calls_total": 0.0018,
-        "tool_call_max": 0.0005,
-        "db_scoring_fuzzy": 0.0175
+        "env_build_and_reset": 0.0131,
+        "tool_calls_total": 0.0017,
+        "tool_call_max": 0.0006,
+        "db_scoring_fuzzy": 0.0169
       }
     },
     {
@@ -1250,10 +1252,10 @@
         }
       ],
       "seconds": {
-        "env_build_and_reset": 0.0131,
-        "tool_calls_total": 0.0018,
+        "env_build_and_reset": 0.013,
+        "tool_calls_total": 0.0016,
         "tool_call_max": 0.0006,
-        "db_scoring_fuzzy": 0.0175
+        "db_scoring_fuzzy": 0.0172
       }
     },
     {
@@ -1367,10 +1369,10 @@
         }
       ],
       "seconds": {
-        "env_build_and_reset": 0.0132,
-        "tool_calls_total": 0.0009,
+        "env_build_and_reset": 0.0129,
+        "tool_calls_total": 0.0008,
         "tool_call_max": 0.0002,
-        "db_scoring_fuzzy": 0.0175
+        "db_scoring_fuzzy": 0.0181
       }
     },
     {
@@ -1484,10 +1486,10 @@
         }
       ],
       "seconds": {
-        "env_build_and_reset": 0.0132,
+        "env_build_and_reset": 0.0128,
         "tool_calls_total": 0.0009,
         "tool_call_max": 0.0002,
-        "db_scoring_fuzzy": 0.0177
+        "db_scoring_fuzzy": 0.0169
       }
     },
     {
@@ -1604,7 +1606,7 @@
         "env_build_and_reset": 0.0127,
         "tool_calls_total": 0.0009,
         "tool_call_max": 0.0002,
-        "db_scoring_fuzzy": 0.0168
+        "db_scoring_fuzzy": 0.0166
       }
     },
     {
@@ -1738,10 +1740,10 @@
         }
       ],
       "seconds": {
-        "env_build_and_reset": 0.0126,
+        "env_build_and_reset": 0.0132,
         "tool_calls_total": 0.001,
         "tool_call_max": 0.0002,
-        "db_scoring_fuzzy": 0.0167
+        "db_scoring_fuzzy": 0.0175
       }
     },
     {
@@ -1885,10 +1887,10 @@
         }
       ],
       "seconds": {
-        "env_build_and_reset": 0.0125,
+        "env_build_and_reset": 0.0128,
         "tool_calls_total": 0.0011,
         "tool_call_max": 0.0002,
-        "db_scoring_fuzzy": 0.0164
+        "db_scoring_fuzzy": 0.0168
       }
     },
     {
@@ -2032,10 +2034,10 @@
         }
       ],
       "seconds": {
-        "env_build_and_reset": 0.0125,
-        "tool_calls_total": 0.0012,
+        "env_build_and_reset": 0.0128,
+        "tool_calls_total": 0.0013,
         "tool_call_max": 0.0002,
-        "db_scoring_fuzzy": 0.0166
+        "db_scoring_fuzzy": 0.0175
       }
     },
     {
@@ -2179,10 +2181,10 @@
         }
       ],
       "seconds": {
-        "env_build_and_reset": 0.0128,
+        "env_build_and_reset": 0.0131,
         "tool_calls_total": 0.0011,
         "tool_call_max": 0.0002,
-        "db_scoring_fuzzy": 0.0163
+        "db_scoring_fuzzy": 0.0167
       }
     },
     {
@@ -2316,10 +2318,10 @@
         }
       ],
       "seconds": {
-        "env_build_and_reset": 0.0125,
-        "tool_calls_total": 0.0011,
+        "env_build_and_reset": 0.0129,
+        "tool_calls_total": 0.001,
         "tool_call_max": 0.0002,
-        "db_scoring_fuzzy": 0.0163
+        "db_scoring_fuzzy": 0.0167
       }
     },
     {
@@ -2453,10 +2455,10 @@
         }
       ],
       "seconds": {
-        "env_build_and_reset": 0.0125,
+        "env_build_and_reset": 0.0127,
         "tool_calls_total": 0.001,
         "tool_call_max": 0.0002,
-        "db_scoring_fuzzy": 0.0172
+        "db_scoring_fuzzy": 0.0169
       }
     },
     {
@@ -2590,10 +2592,10 @@
         }
       ],
       "seconds": {
-        "env_build_and_reset": 0.013,
+        "env_build_and_reset": 0.0129,
         "tool_calls_total": 0.001,
         "tool_call_max": 0.0002,
-        "db_scoring_fuzzy": 0.0171
+        "db_scoring_fuzzy": 0.0175
       }
     },
     {
@@ -2707,10 +2709,10 @@
         }
       ],
       "seconds": {
-        "env_build_and_reset": 0.1124,
+        "env_build_and_reset": 0.1066,
         "tool_calls_total": 0.0009,
         "tool_call_max": 0.0002,
-        "db_scoring_fuzzy": 0.0168
+        "db_scoring_fuzzy": 0.0172
       }
     },
     {
@@ -2951,10 +2953,10 @@
         }
       ],
       "seconds": {
-        "env_build_and_reset": 0.0095,
-        "tool_calls_total": 0.0013,
-        "tool_call_max": 0.0004,
-        "db_scoring_fuzzy": 0.0056
+        "env_build_and_reset": 0.0091,
+        "tool_calls_total": 0.0014,
+        "tool_call_max": 0.0005,
+        "db_scoring_fuzzy": 0.0057
       }
     },
     {
@@ -3098,7 +3100,7 @@
         }
       ],
       "seconds": {
-        "env_build_and_reset": 0.0082,
+        "env_build_and_reset": 0.0085,
         "tool_calls_total": 0.0017,
         "tool_call_max": 0.0004,
         "db_scoring_fuzzy": 0.0044
@@ -3215,10 +3217,10 @@
         }
       ],
       "seconds": {
-        "env_build_and_reset": 0.009,
+        "env_build_and_reset": 0.0093,
         "tool_calls_total": 0.0012,
-        "tool_call_max": 0.0003,
-        "db_scoring_fuzzy": 0.0059
+        "tool_call_max": 0.0004,
+        "db_scoring_fuzzy": 0.006
       }
     },
     {
@@ -3342,8 +3344,8 @@
         }
       ],
       "seconds": {
-        "env_build_and_reset": 0.0092,
-        "tool_calls_total": 0.0012,
+        "env_build_and_reset": 0.0089,
+        "tool_calls_total": 0.0013,
         "tool_call_max": 0.0004,
         "db_scoring_fuzzy": 0.006
       }
@@ -3479,10 +3481,10 @@
         }
       ],
       "seconds": {
-        "env_build_and_reset": 0.0093,
+        "env_build_and_reset": 0.0094,
         "tool_calls_total": 0.0013,
-        "tool_call_max": 0.0004,
-        "db_scoring_fuzzy": 0.0058
+        "tool_call_max": 0.0003,
+        "db_scoring_fuzzy": 0.0061
       }
     },
     {
@@ -3626,10 +3628,10 @@
         }
       ],
       "seconds": {
-        "env_build_and_reset": 0.0089,
-        "tool_calls_total": 0.0018,
+        "env_build_and_reset": 0.0091,
+        "tool_calls_total": 0.0017,
         "tool_call_max": 0.0003,
-        "db_scoring_fuzzy": 0.006
+        "db_scoring_fuzzy": 0.0059
       }
     },
     {
@@ -3823,8 +3825,8 @@
         }
       ],
       "seconds": {
-        "env_build_and_reset": 0.0084,
-        "tool_calls_total": 0.0024,
+        "env_build_and_reset": 0.0085,
+        "tool_calls_total": 0.0023,
         "tool_call_max": 0.0008,
         "db_scoring_fuzzy": 0.0044
       }
@@ -3971,9 +3973,9 @@
       ],
       "seconds": {
         "env_build_and_reset": 0.0082,
-        "tool_calls_total": 0.0015,
+        "tool_calls_total": 0.0016,
         "tool_call_max": 0.0003,
-        "db_scoring_fuzzy": 0.0045
+        "db_scoring_fuzzy": 0.0047
       }
     },
     {
@@ -4117,10 +4119,10 @@
         }
       ],
       "seconds": {
-        "env_build_and_reset": 0.0085,
-        "tool_calls_total": 0.0011,
-        "tool_call_max": 0.0002,
-        "db_scoring_fuzzy": 0.0047
+        "env_build_and_reset": 0.0084,
+        "tool_calls_total": 0.0014,
+        "tool_call_max": 0.0004,
+        "db_scoring_fuzzy": 0.0045
       }
     },
     {
@@ -4174,10 +4176,10 @@
         }
       ],
       "seconds": {
-        "env_build_and_reset": 0.0091,
+        "env_build_and_reset": 0.0096,
         "tool_calls_total": 0.0003,
         "tool_call_max": 0.0002,
-        "db_scoring_fuzzy": 0.0061
+        "db_scoring_fuzzy": 0.006
       }
     },
     {
@@ -4291,10 +4293,10 @@
         }
       ],
       "seconds": {
-        "env_build_and_reset": 0.0168,
+        "env_build_and_reset": 0.0179,
         "tool_calls_total": 0.0009,
         "tool_call_max": 0.0002,
-        "db_scoring_fuzzy": 0.0249
+        "db_scoring_fuzzy": 0.0252
       }
     },
     {
@@ -4388,10 +4390,10 @@
         }
       ],
       "seconds": {
-        "env_build_and_reset": 0.0168,
+        "env_build_and_reset": 0.0172,
         "tool_calls_total": 0.0007,
         "tool_call_max": 0.0002,
-        "db_scoring_fuzzy": 0.0245
+        "db_scoring_fuzzy": 0.0248
       }
     },
     {
@@ -4485,10 +4487,10 @@
         }
       ],
       "seconds": {
-        "env_build_and_reset": 0.0169,
+        "env_build_and_reset": 0.017,
         "tool_calls_total": 0.0007,
         "tool_call_max": 0.0002,
-        "db_scoring_fuzzy": 0.0245
+        "db_scoring_fuzzy": 0.0252
       }
     },
     {
@@ -4572,10 +4574,10 @@
         }
       ],
       "seconds": {
-        "env_build_and_reset": 0.0169,
-        "tool_calls_total": 0.0006,
-        "tool_call_max": 0.0002,
-        "db_scoring_fuzzy": 0.0254
+        "env_build_and_reset": 0.017,
+        "tool_calls_total": 0.0007,
+        "tool_call_max": 0.0003,
+        "db_scoring_fuzzy": 0.0251
       }
     },
     {
@@ -4649,10 +4651,10 @@
         }
       ],
       "seconds": {
-        "env_build_and_reset": 0.0166,
-        "tool_calls_total": 0.0006,
+        "env_build_and_reset": 0.0172,
+        "tool_calls_total": 0.0005,
         "tool_call_max": 0.0002,
-        "db_scoring_fuzzy": 0.0255
+        "db_scoring_fuzzy": 0.0257
       }
     },
     {
@@ -4726,10 +4728,10 @@
         }
       ],
       "seconds": {
-        "env_build_and_reset": 0.0164,
+        "env_build_and_reset": 0.0167,
         "tool_calls_total": 0.0005,
         "tool_call_max": 0.0002,
-        "db_scoring_fuzzy": 0.0248
+        "db_scoring_fuzzy": 0.0245
       }
     },
     {
@@ -4793,10 +4795,10 @@
         }
       ],
       "seconds": {
-        "env_build_and_reset": 0.0163,
+        "env_build_and_reset": 0.0167,
         "tool_calls_total": 0.0005,
-        "tool_call_max": 0.0002,
-        "db_scoring_fuzzy": 0.0244
+        "tool_call_max": 0.0003,
+        "db_scoring_fuzzy": 0.0246
       }
     },
     {
@@ -4890,10 +4892,10 @@
         }
       ],
       "seconds": {
-        "env_build_and_reset": 0.009,
+        "env_build_and_reset": 0.0095,
         "tool_calls_total": 0.0007,
         "tool_call_max": 0.0002,
-        "db_scoring_fuzzy": 0.0059
+        "db_scoring_fuzzy": 0.0062
       }
     },
     {
@@ -5007,10 +5009,10 @@
         }
       ],
       "seconds": {
-        "env_build_and_reset": 0.0087,
-        "tool_calls_total": 0.0013,
+        "env_build_and_reset": 0.0085,
+        "tool_calls_total": 0.0012,
         "tool_call_max": 0.0004,
-        "db_scoring_fuzzy": 0.0044
+        "db_scoring_fuzzy": 0.0041
       }
     },
     {
@@ -5104,10 +5106,10 @@
         }
       ],
       "seconds": {
-        "env_build_and_reset": 0.0091,
+        "env_build_and_reset": 0.009,
         "tool_calls_total": 0.0008,
         "tool_call_max": 0.0002,
-        "db_scoring_fuzzy": 0.0057
+        "db_scoring_fuzzy": 0.0059
       }
     },
     {
@@ -5231,10 +5233,10 @@
         }
       ],
       "seconds": {
-        "env_build_and_reset": 0.0082,
-        "tool_calls_total": 0.001,
+        "env_build_and_reset": 0.0085,
+        "tool_calls_total": 0.0012,
         "tool_call_max": 0.0002,
-        "db_scoring_fuzzy": 0.0044
+        "db_scoring_fuzzy": 0.0042
       }
     },
     {
@@ -5328,10 +5330,10 @@
         }
       ],
       "seconds": {
-        "env_build_and_reset": 0.0093,
+        "env_build_and_reset": 0.0092,
         "tool_calls_total": 0.0007,
         "tool_call_max": 0.0002,
-        "db_scoring_fuzzy": 0.0057
+        "db_scoring_fuzzy": 0.0058
       }
     },
     {
@@ -5435,10 +5437,10 @@
         }
       ],
       "seconds": {
-        "env_build_and_reset": 0.0082,
+        "env_build_and_reset": 0.0083,
         "tool_calls_total": 0.0008,
         "tool_call_max": 0.0002,
-        "db_scoring_fuzzy": 0.0043
+        "db_scoring_fuzzy": 0.0041
       }
     }
   ]

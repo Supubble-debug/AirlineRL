@@ -294,6 +294,13 @@ def main() -> int:
             "rendered alone with the generation prompt. Re-rendering the whole conversation "
             "differs because Qwen3's template drops earlier empty <think> blocks."
         ),
+        "observation_rule": "full_tool_results_no_truncation",
+        "observation_rule_note": (
+            "Every tool result is counted in full, as configs/itsm/budget_v1.yaml requires. "
+            "unfiltered_read_observations shows single results (up to ~10k tokens) that can "
+            "exhaust the response budget; under this rule such an episode ends with "
+            "truncate('response_length') and keeps the full observation in its trace."
+        ),
         "data": {
             "split_version": manifest["version"],
             "tasks_measured": task_ids,

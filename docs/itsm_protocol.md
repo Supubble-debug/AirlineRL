@@ -207,7 +207,7 @@ class ItsmTransition:
 - 评分时的 `TaskDefinitionError` 或其他非基础设施异常直接转为 `failed`，不重试。
 - 任务时钟：执行工具和评分都在 `task_clock` 上下文里进行，正常、业务错误、工具内部异常、评分失败、预算截断、用户故障各条路径结束后，调用线程的时钟都恢复为进入前的值（第 5 步有测试）。
 
-预算（第 6 步提交，待验收）：`configs/itsm/budget_v1.yaml`，依据见 `docs/itsm_step6/README.md`。初版取 `max_steps=40`、`max_action_tokens=512`、`max_prompt_length=28672`、`max_response_length=12288`、`max_model_len=40960`；训练与评测使用同一套 episode 预算。数据划分见 `configs/data/itsm_split_v1.json`。
+预算（第 6 步提交，待验收）：`configs/itsm/budget_v1.yaml`，依据见 `docs/itsm_step6/README.md`。初版取 `max_steps=40`、`max_action_tokens=512`、`max_prompt_length=28672`、`max_response_length=12288`、`max_model_len=40960`（待验证候选，原生上下文为 32,768，不加 RoPE 扩展）；工具观察完整保留，放不下时以 `response_length` 结束；训练与评测使用同一套 episode 预算。数据划分见 `configs/data/itsm_split_v1.json`。
 
 ## 8. 错误分类
 
@@ -298,6 +298,7 @@ class ItsmRewardInfo:
   - mask=0 的位置写 0.0 作占位，并记录 `logprob_source="placeholder_masked"`，训练器不得使用这些值。
   - 是否改为由训练器在当前策略版本下重算，第 7 步需核实 verl 实际读取的是哪一份。
 - **turn span：** 每个策略回合记录 `(turn_index, start, end)`，与 `TurnRecord.token_trace` 一一对应。
+- **观察规则（第 6 步）：** 第一版不裁剪工具观察，完整保留工具结果；整段上下文放不下下一条观察或动作时，loop 调用 `truncate("response_length")`，env 轨迹保留完整观察供诊断。任何裁剪规则须先提交具体规则与信息保留方案供验收。
 - **上下文策略（决策 D3）：** 首版建议**禁用轮换**。token 预算不够时调用 `truncate("response_length")`，episode 以截断结束，保留的策略 token 占比恒为 1。由第 6 步测定的预算保证大多数 episode 不触发截断。截断率作为指标上报。
 
 ## 11. 数据样例

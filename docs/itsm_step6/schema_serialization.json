@@ -1,0 +1,60 @@
+{
+  "caveat": "Offline token count only; no variant is used by the rollout. Formats other than template_default differ from the JSON tool block Qwen3 was trained with, so a behavioural check would be needed before adopting any of them.",
+  "tokenizer": {
+    "repo": "Qwen/Qwen3-8B",
+    "revision": "b968826d9c46dd6066d109eabc6255188de91218",
+    "chat_template_sha256": "a55ee1b1660128b7098723e0abcd92caa0788061051c62d51cbe87d9cf1974d8",
+    "transformers_version": "5.21.0",
+    "enable_thinking": false
+  },
+  "prompt": {
+    "task_used_for_reset": "itsmbench_msp_001",
+    "tool_count_including_done": 94,
+    "policy_unchanged": true,
+    "template_default_initial_prompt_tokens": 28104
+  },
+  "variants": {
+    "template_default": {
+      "description": "Qwen3 chat template tojson: json.dumps, separators ', ' and ': ' (current)",
+      "parse_equal": true,
+      "parse_equal_canonical_json": true,
+      "outside_tools_block_unchanged": true,
+      "tools_block_sha256": "d33ad857a9e9fc2007179a8c935213d7f455ed90e1cfe59337c70ce80c7400ce",
+      "tools_block_chars": 79672,
+      "tools_block_tokens": 19974,
+      "initial_prompt_tokens": 28104,
+      "saved_tokens_vs_template_default": 0,
+      "saved_fraction_of_tools_block": 0.0,
+      "room_left_at_native_32768": 4664,
+      "room_left_at_candidate_40960": 12856
+    },
+    "json_compact": {
+      "description": "json.dumps with separators ',' and ':' (whitespace between tokens removed)",
+      "parse_equal": true,
+      "parse_equal_canonical_json": true,
+      "outside_tools_block_unchanged": true,
+      "tools_block_sha256": "693acfb60c49536443d19ae570295da588811e553956faaebb8d2f2d1a8b472d",
+      "tools_block_chars": 75856,
+      "tools_block_tokens": 16202,
+      "initial_prompt_tokens": 24332,
+      "saved_tokens_vs_template_default": 3772,
+      "saved_fraction_of_tools_block": 0.1888,
+      "room_left_at_native_32768": 8436,
+      "room_left_at_candidate_40960": 16628
+    },
+    "yaml_block": {
+      "description": "YAML block style, one document per tool (not the JSON format Qwen3 tool use is trained on)",
+      "parse_equal": true,
+      "parse_equal_canonical_json": true,
+      "outside_tools_block_unchanged": true,
+      "tools_block_sha256": "b0583ebe381f34f5c3b658205d85b3db36a96249c1470d7771fa84cfd2eb66bd",
+      "tools_block_chars": 83483,
+      "tools_block_tokens": 17847,
+      "initial_prompt_tokens": 25977,
+      "saved_tokens_vs_template_default": 2127,
+      "saved_fraction_of_tools_block": 0.1065,
+      "room_left_at_native_32768": 6791,
+      "room_left_at_candidate_40960": 14983
+    }
+  }
+}

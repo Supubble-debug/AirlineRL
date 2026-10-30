@@ -1,6 +1,2041 @@
 {
   "manifest_version": "itsm_split_v1",
-  "note": "links: every pair joined by the family rule (all same_family by construction). unlinked_similarity_signals: pairs below the rule but with similar descriptions (token Jaccard >= 0.35) or >= 3 shared gold IDs. A shared ID is often not a shared object: deltas and creation tools reuse the next sequential ID for different objects (e.g. CHG_004 in single_007/015/022 are three different delta-created changes). same_seed_entities keeps only IDs that are the same pre-existing seed record in both tasks; these are reported for review, not used as a rule. residual_to_train: highest write-tool overlap of each dev/heldout task with any train task (sub-workflows such as update_incident remain shared across splits).",
+  "note": "links: every pair joined by the family rule (all same_family by construction). unlinked_similarity_signals: pairs below the rule but with similar descriptions (token Jaccard >= 0.35) or >= 3 shared gold IDs. A shared ID is often not a shared object: deltas and creation tools reuse the next sequential ID for different objects (e.g. CHG_004 in single_007/015/022 are three different delta-created changes). same_seed_entities keeps only IDs that are the same pre-existing seed record in both tasks; these are reported for review, not used as a rule. residual_to_train: highest write-tool overlap of each dev/heldout task with any train task (sub-workflows such as update_incident remain shared across splits). cross_split_shared_subworkflows: every train/heldout pair sharing >= 2 write tools, with the shared sub-workflow and what each task combines it with; these pairs are deliberately kept across splits (workflow-composition generalisation), and a Jaccard below the family threshold is not treated as proof that they are not near-duplicates.",
+  "cross_split_shared_subworkflows": [
+    {
+      "train_task": "itsmbench_msp_005",
+      "heldout_task": "itsmbench_msp_030",
+      "write_jaccard": 0.333,
+      "shared_write_tools": [
+        "link_knowledge_to_incident",
+        "update_incident"
+      ],
+      "only_in_train_task": [
+        "update_incident_sla_details",
+        "update_user_details"
+      ],
+      "only_in_heldout_task": [
+        "link_affected_ci_to_incident",
+        "update_change"
+      ],
+      "train_write_sequence": [
+        "update_user_details",
+        "update_incident",
+        "update_incident_sla_details",
+        "link_knowledge_to_incident"
+      ],
+      "heldout_write_sequence": [
+        "update_change",
+        "link_affected_ci_to_incident",
+        "update_incident",
+        "link_knowledge_to_incident"
+      ],
+      "same_seed_entities": []
+    },
+    {
+      "train_task": "itsmbench_msp_005",
+      "heldout_task": "itsmbench_single_012",
+      "write_jaccard": 0.4,
+      "shared_write_tools": [
+        "link_knowledge_to_incident",
+        "update_incident"
+      ],
+      "only_in_train_task": [
+        "update_incident_sla_details",
+        "update_user_details"
+      ],
+      "only_in_heldout_task": [
+        "add_child_incident"
+      ],
+      "train_write_sequence": [
+        "update_user_details",
+        "update_incident",
+        "update_incident_sla_details",
+        "link_knowledge_to_incident"
+      ],
+      "heldout_write_sequence": [
+        "link_knowledge_to_incident",
+        "update_incident",
+        "add_child_incident"
+      ],
+      "same_seed_entities": []
+    },
+    {
+      "train_task": "itsmbench_msp_006",
+      "heldout_task": "itsmbench_msp_030",
+      "write_jaccard": 0.333,
+      "shared_write_tools": [
+        "link_knowledge_to_incident",
+        "update_incident"
+      ],
+      "only_in_train_task": [
+        "update_incident_sla_details",
+        "update_problem"
+      ],
+      "only_in_heldout_task": [
+        "link_affected_ci_to_incident",
+        "update_change"
+      ],
+      "train_write_sequence": [
+        "update_problem",
+        "update_incident",
+        "update_incident_sla_details",
+        "link_knowledge_to_incident"
+      ],
+      "heldout_write_sequence": [
+        "update_change",
+        "link_affected_ci_to_incident",
+        "update_incident",
+        "link_knowledge_to_incident"
+      ],
+      "same_seed_entities": []
+    },
+    {
+      "train_task": "itsmbench_msp_006",
+      "heldout_task": "itsmbench_single_012",
+      "write_jaccard": 0.4,
+      "shared_write_tools": [
+        "link_knowledge_to_incident",
+        "update_incident"
+      ],
+      "only_in_train_task": [
+        "update_incident_sla_details",
+        "update_problem"
+      ],
+      "only_in_heldout_task": [
+        "add_child_incident"
+      ],
+      "train_write_sequence": [
+        "update_problem",
+        "update_incident",
+        "update_incident_sla_details",
+        "link_knowledge_to_incident"
+      ],
+      "heldout_write_sequence": [
+        "link_knowledge_to_incident",
+        "update_incident",
+        "add_child_incident"
+      ],
+      "same_seed_entities": []
+    },
+    {
+      "train_task": "itsmbench_msp_007",
+      "heldout_task": "itsmbench_msp_030",
+      "write_jaccard": 0.4,
+      "shared_write_tools": [
+        "link_knowledge_to_incident",
+        "update_change"
+      ],
+      "only_in_train_task": [
+        "update_problem"
+      ],
+      "only_in_heldout_task": [
+        "link_affected_ci_to_incident",
+        "update_incident"
+      ],
+      "train_write_sequence": [
+        "update_change",
+        "update_problem",
+        "link_knowledge_to_incident"
+      ],
+      "heldout_write_sequence": [
+        "update_change",
+        "link_affected_ci_to_incident",
+        "update_incident",
+        "link_knowledge_to_incident"
+      ],
+      "same_seed_entities": []
+    },
+    {
+      "train_task": "itsmbench_msp_007",
+      "heldout_task": "itsmbench_single_017",
+      "write_jaccard": 0.4,
+      "shared_write_tools": [
+        "update_change",
+        "update_problem"
+      ],
+      "only_in_train_task": [
+        "link_knowledge_to_incident"
+      ],
+      "only_in_heldout_task": [
+        "create_problem",
+        "map_change_request"
+      ],
+      "train_write_sequence": [
+        "update_change",
+        "update_problem",
+        "link_knowledge_to_incident"
+      ],
+      "heldout_write_sequence": [
+        "create_problem",
+        "update_problem",
+        "update_change",
+        "map_change_request"
+      ],
+      "same_seed_entities": []
+    },
+    {
+      "train_task": "itsmbench_msp_007",
+      "heldout_task": "itsmbench_single_021",
+      "write_jaccard": 0.4,
+      "shared_write_tools": [
+        "link_knowledge_to_incident",
+        "update_change"
+      ],
+      "only_in_train_task": [
+        "update_problem"
+      ],
+      "only_in_heldout_task": [
+        "map_change_request",
+        "send_notification"
+      ],
+      "train_write_sequence": [
+        "update_change",
+        "update_problem",
+        "link_knowledge_to_incident"
+      ],
+      "heldout_write_sequence": [
+        "update_change",
+        "map_change_request",
+        "link_knowledge_to_incident",
+        "send_notification"
+      ],
+      "same_seed_entities": []
+    },
+    {
+      "train_task": "itsmbench_msp_007",
+      "heldout_task": "itsmbench_single_022",
+      "write_jaccard": 0.4,
+      "shared_write_tools": [
+        "update_change",
+        "update_problem"
+      ],
+      "only_in_train_task": [
+        "link_knowledge_to_incident"
+      ],
+      "only_in_heldout_task": [
+        "map_change_request",
+        "send_notification"
+      ],
+      "train_write_sequence": [
+        "update_change",
+        "update_problem",
+        "link_knowledge_to_incident"
+      ],
+      "heldout_write_sequence": [
+        "update_change",
+        "update_problem",
+        "map_change_request",
+        "send_notification"
+      ],
+      "same_seed_entities": []
+    },
+    {
+      "train_task": "itsmbench_msp_008",
+      "heldout_task": "itsmbench_msp_030",
+      "write_jaccard": 0.4,
+      "shared_write_tools": [
+        "link_knowledge_to_incident",
+        "update_change"
+      ],
+      "only_in_train_task": [
+        "update_problem"
+      ],
+      "only_in_heldout_task": [
+        "link_affected_ci_to_incident",
+        "update_incident"
+      ],
+      "train_write_sequence": [
+        "update_change",
+        "update_problem",
+        "link_knowledge_to_incident"
+      ],
+      "heldout_write_sequence": [
+        "update_change",
+        "link_affected_ci_to_incident",
+        "update_incident",
+        "link_knowledge_to_incident"
+      ],
+      "same_seed_entities": []
+    },
+    {
+      "train_task": "itsmbench_msp_008",
+      "heldout_task": "itsmbench_single_017",
+      "write_jaccard": 0.4,
+      "shared_write_tools": [
+        "update_change",
+        "update_problem"
+      ],
+      "only_in_train_task": [
+        "link_knowledge_to_incident"
+      ],
+      "only_in_heldout_task": [
+        "create_problem",
+        "map_change_request"
+      ],
+      "train_write_sequence": [
+        "update_change",
+        "update_problem",
+        "link_knowledge_to_incident"
+      ],
+      "heldout_write_sequence": [
+        "create_problem",
+        "update_problem",
+        "update_change",
+        "map_change_request"
+      ],
+      "same_seed_entities": []
+    },
+    {
+      "train_task": "itsmbench_msp_008",
+      "heldout_task": "itsmbench_single_021",
+      "write_jaccard": 0.4,
+      "shared_write_tools": [
+        "link_knowledge_to_incident",
+        "update_change"
+      ],
+      "only_in_train_task": [
+        "update_problem"
+      ],
+      "only_in_heldout_task": [
+        "map_change_request",
+        "send_notification"
+      ],
+      "train_write_sequence": [
+        "update_change",
+        "update_problem",
+        "link_knowledge_to_incident"
+      ],
+      "heldout_write_sequence": [
+        "update_change",
+        "map_change_request",
+        "link_knowledge_to_incident",
+        "send_notification"
+      ],
+      "same_seed_entities": []
+    },
+    {
+      "train_task": "itsmbench_msp_008",
+      "heldout_task": "itsmbench_single_022",
+      "write_jaccard": 0.4,
+      "shared_write_tools": [
+        "update_change",
+        "update_problem"
+      ],
+      "only_in_train_task": [
+        "link_knowledge_to_incident"
+      ],
+      "only_in_heldout_task": [
+        "map_change_request",
+        "send_notification"
+      ],
+      "train_write_sequence": [
+        "update_change",
+        "update_problem",
+        "link_knowledge_to_incident"
+      ],
+      "heldout_write_sequence": [
+        "update_change",
+        "update_problem",
+        "map_change_request",
+        "send_notification"
+      ],
+      "same_seed_entities": []
+    },
+    {
+      "train_task": "itsmbench_msp_009",
+      "heldout_task": "itsmbench_msp_030",
+      "write_jaccard": 0.4,
+      "shared_write_tools": [
+        "link_knowledge_to_incident",
+        "update_change"
+      ],
+      "only_in_train_task": [
+        "update_problem"
+      ],
+      "only_in_heldout_task": [
+        "link_affected_ci_to_incident",
+        "update_incident"
+      ],
+      "train_write_sequence": [
+        "update_change",
+        "update_problem",
+        "link_knowledge_to_incident"
+      ],
+      "heldout_write_sequence": [
+        "update_change",
+        "link_affected_ci_to_incident",
+        "update_incident",
+        "link_knowledge_to_incident"
+      ],
+      "same_seed_entities": []
+    },
+    {
+      "train_task": "itsmbench_msp_009",
+      "heldout_task": "itsmbench_single_017",
+      "write_jaccard": 0.4,
+      "shared_write_tools": [
+        "update_change",
+        "update_problem"
+      ],
+      "only_in_train_task": [
+        "link_knowledge_to_incident"
+      ],
+      "only_in_heldout_task": [
+        "create_problem",
+        "map_change_request"
+      ],
+      "train_write_sequence": [
+        "update_change",
+        "update_problem",
+        "link_knowledge_to_incident"
+      ],
+      "heldout_write_sequence": [
+        "create_problem",
+        "update_problem",
+        "update_change",
+        "map_change_request"
+      ],
+      "same_seed_entities": []
+    },
+    {
+      "train_task": "itsmbench_msp_009",
+      "heldout_task": "itsmbench_single_021",
+      "write_jaccard": 0.4,
+      "shared_write_tools": [
+        "link_knowledge_to_incident",
+        "update_change"
+      ],
+      "only_in_train_task": [
+        "update_problem"
+      ],
+      "only_in_heldout_task": [
+        "map_change_request",
+        "send_notification"
+      ],
+      "train_write_sequence": [
+        "update_change",
+        "update_problem",
+        "link_knowledge_to_incident"
+      ],
+      "heldout_write_sequence": [
+        "update_change",
+        "map_change_request",
+        "link_knowledge_to_incident",
+        "send_notification"
+      ],
+      "same_seed_entities": []
+    },
+    {
+      "train_task": "itsmbench_msp_009",
+      "heldout_task": "itsmbench_single_022",
+      "write_jaccard": 0.4,
+      "shared_write_tools": [
+        "update_change",
+        "update_problem"
+      ],
+      "only_in_train_task": [
+        "link_knowledge_to_incident"
+      ],
+      "only_in_heldout_task": [
+        "map_change_request",
+        "send_notification"
+      ],
+      "train_write_sequence": [
+        "update_change",
+        "update_problem",
+        "link_knowledge_to_incident"
+      ],
+      "heldout_write_sequence": [
+        "update_change",
+        "update_problem",
+        "map_change_request",
+        "send_notification"
+      ],
+      "same_seed_entities": []
+    },
+    {
+      "train_task": "itsmbench_msp_010",
+      "heldout_task": "itsmbench_msp_030",
+      "write_jaccard": 0.4,
+      "shared_write_tools": [
+        "link_knowledge_to_incident",
+        "update_change"
+      ],
+      "only_in_train_task": [
+        "update_problem"
+      ],
+      "only_in_heldout_task": [
+        "link_affected_ci_to_incident",
+        "update_incident"
+      ],
+      "train_write_sequence": [
+        "update_problem",
+        "update_change",
+        "link_knowledge_to_incident"
+      ],
+      "heldout_write_sequence": [
+        "update_change",
+        "link_affected_ci_to_incident",
+        "update_incident",
+        "link_knowledge_to_incident"
+      ],
+      "same_seed_entities": [
+        "CHG_008"
+      ]
+    },
+    {
+      "train_task": "itsmbench_msp_010",
+      "heldout_task": "itsmbench_single_017",
+      "write_jaccard": 0.4,
+      "shared_write_tools": [
+        "update_change",
+        "update_problem"
+      ],
+      "only_in_train_task": [
+        "link_knowledge_to_incident"
+      ],
+      "only_in_heldout_task": [
+        "create_problem",
+        "map_change_request"
+      ],
+      "train_write_sequence": [
+        "update_problem",
+        "update_change",
+        "link_knowledge_to_incident"
+      ],
+      "heldout_write_sequence": [
+        "create_problem",
+        "update_problem",
+        "update_change",
+        "map_change_request"
+      ],
+      "same_seed_entities": []
+    },
+    {
+      "train_task": "itsmbench_msp_010",
+      "heldout_task": "itsmbench_single_021",
+      "write_jaccard": 0.4,
+      "shared_write_tools": [
+        "link_knowledge_to_incident",
+        "update_change"
+      ],
+      "only_in_train_task": [
+        "update_problem"
+      ],
+      "only_in_heldout_task": [
+        "map_change_request",
+        "send_notification"
+      ],
+      "train_write_sequence": [
+        "update_problem",
+        "update_change",
+        "link_knowledge_to_incident"
+      ],
+      "heldout_write_sequence": [
+        "update_change",
+        "map_change_request",
+        "link_knowledge_to_incident",
+        "send_notification"
+      ],
+      "same_seed_entities": []
+    },
+    {
+      "train_task": "itsmbench_msp_010",
+      "heldout_task": "itsmbench_single_022",
+      "write_jaccard": 0.4,
+      "shared_write_tools": [
+        "update_change",
+        "update_problem"
+      ],
+      "only_in_train_task": [
+        "link_knowledge_to_incident"
+      ],
+      "only_in_heldout_task": [
+        "map_change_request",
+        "send_notification"
+      ],
+      "train_write_sequence": [
+        "update_problem",
+        "update_change",
+        "link_knowledge_to_incident"
+      ],
+      "heldout_write_sequence": [
+        "update_change",
+        "update_problem",
+        "map_change_request",
+        "send_notification"
+      ],
+      "same_seed_entities": []
+    },
+    {
+      "train_task": "itsmbench_msp_011",
+      "heldout_task": "itsmbench_msp_030",
+      "write_jaccard": 0.333,
+      "shared_write_tools": [
+        "link_knowledge_to_incident",
+        "update_change"
+      ],
+      "only_in_train_task": [
+        "update_problem",
+        "update_user_details"
+      ],
+      "only_in_heldout_task": [
+        "link_affected_ci_to_incident",
+        "update_incident"
+      ],
+      "train_write_sequence": [
+        "update_user_details",
+        "update_change",
+        "update_problem",
+        "link_knowledge_to_incident"
+      ],
+      "heldout_write_sequence": [
+        "update_change",
+        "link_affected_ci_to_incident",
+        "update_incident",
+        "link_knowledge_to_incident"
+      ],
+      "same_seed_entities": []
+    },
+    {
+      "train_task": "itsmbench_msp_011",
+      "heldout_task": "itsmbench_single_017",
+      "write_jaccard": 0.333,
+      "shared_write_tools": [
+        "update_change",
+        "update_problem"
+      ],
+      "only_in_train_task": [
+        "link_knowledge_to_incident",
+        "update_user_details"
+      ],
+      "only_in_heldout_task": [
+        "create_problem",
+        "map_change_request"
+      ],
+      "train_write_sequence": [
+        "update_user_details",
+        "update_change",
+        "update_problem",
+        "link_knowledge_to_incident"
+      ],
+      "heldout_write_sequence": [
+        "create_problem",
+        "update_problem",
+        "update_change",
+        "map_change_request"
+      ],
+      "same_seed_entities": []
+    },
+    {
+      "train_task": "itsmbench_msp_011",
+      "heldout_task": "itsmbench_single_021",
+      "write_jaccard": 0.333,
+      "shared_write_tools": [
+        "link_knowledge_to_incident",
+        "update_change"
+      ],
+      "only_in_train_task": [
+        "update_problem",
+        "update_user_details"
+      ],
+      "only_in_heldout_task": [
+        "map_change_request",
+        "send_notification"
+      ],
+      "train_write_sequence": [
+        "update_user_details",
+        "update_change",
+        "update_problem",
+        "link_knowledge_to_incident"
+      ],
+      "heldout_write_sequence": [
+        "update_change",
+        "map_change_request",
+        "link_knowledge_to_incident",
+        "send_notification"
+      ],
+      "same_seed_entities": []
+    },
+    {
+      "train_task": "itsmbench_msp_011",
+      "heldout_task": "itsmbench_single_022",
+      "write_jaccard": 0.333,
+      "shared_write_tools": [
+        "update_change",
+        "update_problem"
+      ],
+      "only_in_train_task": [
+        "link_knowledge_to_incident",
+        "update_user_details"
+      ],
+      "only_in_heldout_task": [
+        "map_change_request",
+        "send_notification"
+      ],
+      "train_write_sequence": [
+        "update_user_details",
+        "update_change",
+        "update_problem",
+        "link_knowledge_to_incident"
+      ],
+      "heldout_write_sequence": [
+        "update_change",
+        "update_problem",
+        "map_change_request",
+        "send_notification"
+      ],
+      "same_seed_entities": []
+    },
+    {
+      "train_task": "itsmbench_msp_012",
+      "heldout_task": "itsmbench_msp_030",
+      "write_jaccard": 0.333,
+      "shared_write_tools": [
+        "link_knowledge_to_incident",
+        "update_change"
+      ],
+      "only_in_train_task": [
+        "update_problem",
+        "update_user_details"
+      ],
+      "only_in_heldout_task": [
+        "link_affected_ci_to_incident",
+        "update_incident"
+      ],
+      "train_write_sequence": [
+        "update_user_details",
+        "update_change",
+        "update_problem",
+        "link_knowledge_to_incident"
+      ],
+      "heldout_write_sequence": [
+        "update_change",
+        "link_affected_ci_to_incident",
+        "update_incident",
+        "link_knowledge_to_incident"
+      ],
+      "same_seed_entities": []
+    },
+    {
+      "train_task": "itsmbench_msp_012",
+      "heldout_task": "itsmbench_single_017",
+      "write_jaccard": 0.333,
+      "shared_write_tools": [
+        "update_change",
+        "update_problem"
+      ],
+      "only_in_train_task": [
+        "link_knowledge_to_incident",
+        "update_user_details"
+      ],
+      "only_in_heldout_task": [
+        "create_problem",
+        "map_change_request"
+      ],
+      "train_write_sequence": [
+        "update_user_details",
+        "update_change",
+        "update_problem",
+        "link_knowledge_to_incident"
+      ],
+      "heldout_write_sequence": [
+        "create_problem",
+        "update_problem",
+        "update_change",
+        "map_change_request"
+      ],
+      "same_seed_entities": []
+    },
+    {
+      "train_task": "itsmbench_msp_012",
+      "heldout_task": "itsmbench_single_021",
+      "write_jaccard": 0.333,
+      "shared_write_tools": [
+        "link_knowledge_to_incident",
+        "update_change"
+      ],
+      "only_in_train_task": [
+        "update_problem",
+        "update_user_details"
+      ],
+      "only_in_heldout_task": [
+        "map_change_request",
+        "send_notification"
+      ],
+      "train_write_sequence": [
+        "update_user_details",
+        "update_change",
+        "update_problem",
+        "link_knowledge_to_incident"
+      ],
+      "heldout_write_sequence": [
+        "update_change",
+        "map_change_request",
+        "link_knowledge_to_incident",
+        "send_notification"
+      ],
+      "same_seed_entities": []
+    },
+    {
+      "train_task": "itsmbench_msp_012",
+      "heldout_task": "itsmbench_single_022",
+      "write_jaccard": 0.333,
+      "shared_write_tools": [
+        "update_change",
+        "update_problem"
+      ],
+      "only_in_train_task": [
+        "link_knowledge_to_incident",
+        "update_user_details"
+      ],
+      "only_in_heldout_task": [
+        "map_change_request",
+        "send_notification"
+      ],
+      "train_write_sequence": [
+        "update_user_details",
+        "update_change",
+        "update_problem",
+        "link_knowledge_to_incident"
+      ],
+      "heldout_write_sequence": [
+        "update_change",
+        "update_problem",
+        "map_change_request",
+        "send_notification"
+      ],
+      "same_seed_entities": []
+    },
+    {
+      "train_task": "itsmbench_msp_013",
+      "heldout_task": "itsmbench_msp_030",
+      "write_jaccard": 0.5,
+      "shared_write_tools": [
+        "link_knowledge_to_incident",
+        "update_change",
+        "update_incident"
+      ],
+      "only_in_train_task": [
+        "update_incident_sla_details",
+        "update_problem"
+      ],
+      "only_in_heldout_task": [
+        "link_affected_ci_to_incident"
+      ],
+      "train_write_sequence": [
+        "update_change",
+        "update_problem",
+        "update_incident",
+        "update_incident_sla_details",
+        "link_knowledge_to_incident"
+      ],
+      "heldout_write_sequence": [
+        "update_change",
+        "link_affected_ci_to_incident",
+        "update_incident",
+        "link_knowledge_to_incident"
+      ],
+      "same_seed_entities": []
+    },
+    {
+      "train_task": "itsmbench_msp_013",
+      "heldout_task": "itsmbench_single_012",
+      "write_jaccard": 0.333,
+      "shared_write_tools": [
+        "link_knowledge_to_incident",
+        "update_incident"
+      ],
+      "only_in_train_task": [
+        "update_change",
+        "update_incident_sla_details",
+        "update_problem"
+      ],
+      "only_in_heldout_task": [
+        "add_child_incident"
+      ],
+      "train_write_sequence": [
+        "update_change",
+        "update_problem",
+        "update_incident",
+        "update_incident_sla_details",
+        "link_knowledge_to_incident"
+      ],
+      "heldout_write_sequence": [
+        "link_knowledge_to_incident",
+        "update_incident",
+        "add_child_incident"
+      ],
+      "same_seed_entities": []
+    },
+    {
+      "train_task": "itsmbench_msp_013",
+      "heldout_task": "itsmbench_single_017",
+      "write_jaccard": 0.286,
+      "shared_write_tools": [
+        "update_change",
+        "update_problem"
+      ],
+      "only_in_train_task": [
+        "link_knowledge_to_incident",
+        "update_incident",
+        "update_incident_sla_details"
+      ],
+      "only_in_heldout_task": [
+        "create_problem",
+        "map_change_request"
+      ],
+      "train_write_sequence": [
+        "update_change",
+        "update_problem",
+        "update_incident",
+        "update_incident_sla_details",
+        "link_knowledge_to_incident"
+      ],
+      "heldout_write_sequence": [
+        "create_problem",
+        "update_problem",
+        "update_change",
+        "map_change_request"
+      ],
+      "same_seed_entities": []
+    },
+    {
+      "train_task": "itsmbench_msp_013",
+      "heldout_task": "itsmbench_single_021",
+      "write_jaccard": 0.286,
+      "shared_write_tools": [
+        "link_knowledge_to_incident",
+        "update_change"
+      ],
+      "only_in_train_task": [
+        "update_incident",
+        "update_incident_sla_details",
+        "update_problem"
+      ],
+      "only_in_heldout_task": [
+        "map_change_request",
+        "send_notification"
+      ],
+      "train_write_sequence": [
+        "update_change",
+        "update_problem",
+        "update_incident",
+        "update_incident_sla_details",
+        "link_knowledge_to_incident"
+      ],
+      "heldout_write_sequence": [
+        "update_change",
+        "map_change_request",
+        "link_knowledge_to_incident",
+        "send_notification"
+      ],
+      "same_seed_entities": []
+    },
+    {
+      "train_task": "itsmbench_msp_013",
+      "heldout_task": "itsmbench_single_022",
+      "write_jaccard": 0.286,
+      "shared_write_tools": [
+        "update_change",
+        "update_problem"
+      ],
+      "only_in_train_task": [
+        "link_knowledge_to_incident",
+        "update_incident",
+        "update_incident_sla_details"
+      ],
+      "only_in_heldout_task": [
+        "map_change_request",
+        "send_notification"
+      ],
+      "train_write_sequence": [
+        "update_change",
+        "update_problem",
+        "update_incident",
+        "update_incident_sla_details",
+        "link_knowledge_to_incident"
+      ],
+      "heldout_write_sequence": [
+        "update_change",
+        "update_problem",
+        "map_change_request",
+        "send_notification"
+      ],
+      "same_seed_entities": []
+    },
+    {
+      "train_task": "itsmbench_msp_014",
+      "heldout_task": "itsmbench_msp_030",
+      "write_jaccard": 0.333,
+      "shared_write_tools": [
+        "link_knowledge_to_incident",
+        "update_change"
+      ],
+      "only_in_train_task": [
+        "update_problem",
+        "update_user_details"
+      ],
+      "only_in_heldout_task": [
+        "link_affected_ci_to_incident",
+        "update_incident"
+      ],
+      "train_write_sequence": [
+        "update_user_details",
+        "update_change",
+        "update_problem",
+        "link_knowledge_to_incident"
+      ],
+      "heldout_write_sequence": [
+        "update_change",
+        "link_affected_ci_to_incident",
+        "update_incident",
+        "link_knowledge_to_incident"
+      ],
+      "same_seed_entities": []
+    },
+    {
+      "train_task": "itsmbench_msp_014",
+      "heldout_task": "itsmbench_single_017",
+      "write_jaccard": 0.333,
+      "shared_write_tools": [
+        "update_change",
+        "update_problem"
+      ],
+      "only_in_train_task": [
+        "link_knowledge_to_incident",
+        "update_user_details"
+      ],
+      "only_in_heldout_task": [
+        "create_problem",
+        "map_change_request"
+      ],
+      "train_write_sequence": [
+        "update_user_details",
+        "update_change",
+        "update_problem",
+        "link_knowledge_to_incident"
+      ],
+      "heldout_write_sequence": [
+        "create_problem",
+        "update_problem",
+        "update_change",
+        "map_change_request"
+      ],
+      "same_seed_entities": []
+    },
+    {
+      "train_task": "itsmbench_msp_014",
+      "heldout_task": "itsmbench_single_021",
+      "write_jaccard": 0.333,
+      "shared_write_tools": [
+        "link_knowledge_to_incident",
+        "update_change"
+      ],
+      "only_in_train_task": [
+        "update_problem",
+        "update_user_details"
+      ],
+      "only_in_heldout_task": [
+        "map_change_request",
+        "send_notification"
+      ],
+      "train_write_sequence": [
+        "update_user_details",
+        "update_change",
+        "update_problem",
+        "link_knowledge_to_incident"
+      ],
+      "heldout_write_sequence": [
+        "update_change",
+        "map_change_request",
+        "link_knowledge_to_incident",
+        "send_notification"
+      ],
+      "same_seed_entities": []
+    },
+    {
+      "train_task": "itsmbench_msp_014",
+      "heldout_task": "itsmbench_single_022",
+      "write_jaccard": 0.333,
+      "shared_write_tools": [
+        "update_change",
+        "update_problem"
+      ],
+      "only_in_train_task": [
+        "link_knowledge_to_incident",
+        "update_user_details"
+      ],
+      "only_in_heldout_task": [
+        "map_change_request",
+        "send_notification"
+      ],
+      "train_write_sequence": [
+        "update_user_details",
+        "update_change",
+        "update_problem",
+        "link_knowledge_to_incident"
+      ],
+      "heldout_write_sequence": [
+        "update_change",
+        "update_problem",
+        "map_change_request",
+        "send_notification"
+      ],
+      "same_seed_entities": []
+    },
+    {
+      "train_task": "itsmbench_msp_015",
+      "heldout_task": "itsmbench_msp_030",
+      "write_jaccard": 0.333,
+      "shared_write_tools": [
+        "link_knowledge_to_incident",
+        "update_change"
+      ],
+      "only_in_train_task": [
+        "update_problem",
+        "update_user_details"
+      ],
+      "only_in_heldout_task": [
+        "link_affected_ci_to_incident",
+        "update_incident"
+      ],
+      "train_write_sequence": [
+        "update_user_details",
+        "update_change",
+        "update_problem",
+        "link_knowledge_to_incident"
+      ],
+      "heldout_write_sequence": [
+        "update_change",
+        "link_affected_ci_to_incident",
+        "update_incident",
+        "link_knowledge_to_incident"
+      ],
+      "same_seed_entities": []
+    },
+    {
+      "train_task": "itsmbench_msp_015",
+      "heldout_task": "itsmbench_single_017",
+      "write_jaccard": 0.333,
+      "shared_write_tools": [
+        "update_change",
+        "update_problem"
+      ],
+      "only_in_train_task": [
+        "link_knowledge_to_incident",
+        "update_user_details"
+      ],
+      "only_in_heldout_task": [
+        "create_problem",
+        "map_change_request"
+      ],
+      "train_write_sequence": [
+        "update_user_details",
+        "update_change",
+        "update_problem",
+        "link_knowledge_to_incident"
+      ],
+      "heldout_write_sequence": [
+        "create_problem",
+        "update_problem",
+        "update_change",
+        "map_change_request"
+      ],
+      "same_seed_entities": []
+    },
+    {
+      "train_task": "itsmbench_msp_015",
+      "heldout_task": "itsmbench_single_021",
+      "write_jaccard": 0.333,
+      "shared_write_tools": [
+        "link_knowledge_to_incident",
+        "update_change"
+      ],
+      "only_in_train_task": [
+        "update_problem",
+        "update_user_details"
+      ],
+      "only_in_heldout_task": [
+        "map_change_request",
+        "send_notification"
+      ],
+      "train_write_sequence": [
+        "update_user_details",
+        "update_change",
+        "update_problem",
+        "link_knowledge_to_incident"
+      ],
+      "heldout_write_sequence": [
+        "update_change",
+        "map_change_request",
+        "link_knowledge_to_incident",
+        "send_notification"
+      ],
+      "same_seed_entities": []
+    },
+    {
+      "train_task": "itsmbench_msp_015",
+      "heldout_task": "itsmbench_single_022",
+      "write_jaccard": 0.333,
+      "shared_write_tools": [
+        "update_change",
+        "update_problem"
+      ],
+      "only_in_train_task": [
+        "link_knowledge_to_incident",
+        "update_user_details"
+      ],
+      "only_in_heldout_task": [
+        "map_change_request",
+        "send_notification"
+      ],
+      "train_write_sequence": [
+        "update_user_details",
+        "update_change",
+        "update_problem",
+        "link_knowledge_to_incident"
+      ],
+      "heldout_write_sequence": [
+        "update_change",
+        "update_problem",
+        "map_change_request",
+        "send_notification"
+      ],
+      "same_seed_entities": []
+    },
+    {
+      "train_task": "itsmbench_msp_016",
+      "heldout_task": "itsmbench_msp_030",
+      "write_jaccard": 0.333,
+      "shared_write_tools": [
+        "link_knowledge_to_incident",
+        "update_change"
+      ],
+      "only_in_train_task": [
+        "update_problem",
+        "update_user_details"
+      ],
+      "only_in_heldout_task": [
+        "link_affected_ci_to_incident",
+        "update_incident"
+      ],
+      "train_write_sequence": [
+        "update_user_details",
+        "update_change",
+        "update_problem",
+        "link_knowledge_to_incident"
+      ],
+      "heldout_write_sequence": [
+        "update_change",
+        "link_affected_ci_to_incident",
+        "update_incident",
+        "link_knowledge_to_incident"
+      ],
+      "same_seed_entities": []
+    },
+    {
+      "train_task": "itsmbench_msp_016",
+      "heldout_task": "itsmbench_single_017",
+      "write_jaccard": 0.333,
+      "shared_write_tools": [
+        "update_change",
+        "update_problem"
+      ],
+      "only_in_train_task": [
+        "link_knowledge_to_incident",
+        "update_user_details"
+      ],
+      "only_in_heldout_task": [
+        "create_problem",
+        "map_change_request"
+      ],
+      "train_write_sequence": [
+        "update_user_details",
+        "update_change",
+        "update_problem",
+        "link_knowledge_to_incident"
+      ],
+      "heldout_write_sequence": [
+        "create_problem",
+        "update_problem",
+        "update_change",
+        "map_change_request"
+      ],
+      "same_seed_entities": []
+    },
+    {
+      "train_task": "itsmbench_msp_016",
+      "heldout_task": "itsmbench_single_021",
+      "write_jaccard": 0.333,
+      "shared_write_tools": [
+        "link_knowledge_to_incident",
+        "update_change"
+      ],
+      "only_in_train_task": [
+        "update_problem",
+        "update_user_details"
+      ],
+      "only_in_heldout_task": [
+        "map_change_request",
+        "send_notification"
+      ],
+      "train_write_sequence": [
+        "update_user_details",
+        "update_change",
+        "update_problem",
+        "link_knowledge_to_incident"
+      ],
+      "heldout_write_sequence": [
+        "update_change",
+        "map_change_request",
+        "link_knowledge_to_incident",
+        "send_notification"
+      ],
+      "same_seed_entities": []
+    },
+    {
+      "train_task": "itsmbench_msp_016",
+      "heldout_task": "itsmbench_single_022",
+      "write_jaccard": 0.333,
+      "shared_write_tools": [
+        "update_change",
+        "update_problem"
+      ],
+      "only_in_train_task": [
+        "link_knowledge_to_incident",
+        "update_user_details"
+      ],
+      "only_in_heldout_task": [
+        "map_change_request",
+        "send_notification"
+      ],
+      "train_write_sequence": [
+        "update_user_details",
+        "update_change",
+        "update_problem",
+        "link_knowledge_to_incident"
+      ],
+      "heldout_write_sequence": [
+        "update_change",
+        "update_problem",
+        "map_change_request",
+        "send_notification"
+      ],
+      "same_seed_entities": []
+    },
+    {
+      "train_task": "itsmbench_msp_017",
+      "heldout_task": "itsmbench_msp_030",
+      "write_jaccard": 0.333,
+      "shared_write_tools": [
+        "link_knowledge_to_incident",
+        "update_change"
+      ],
+      "only_in_train_task": [
+        "update_problem",
+        "update_user_details"
+      ],
+      "only_in_heldout_task": [
+        "link_affected_ci_to_incident",
+        "update_incident"
+      ],
+      "train_write_sequence": [
+        "update_user_details",
+        "update_change",
+        "update_problem",
+        "link_knowledge_to_incident"
+      ],
+      "heldout_write_sequence": [
+        "update_change",
+        "link_affected_ci_to_incident",
+        "update_incident",
+        "link_knowledge_to_incident"
+      ],
+      "same_seed_entities": []
+    },
+    {
+      "train_task": "itsmbench_msp_017",
+      "heldout_task": "itsmbench_single_017",
+      "write_jaccard": 0.333,
+      "shared_write_tools": [
+        "update_change",
+        "update_problem"
+      ],
+      "only_in_train_task": [
+        "link_knowledge_to_incident",
+        "update_user_details"
+      ],
+      "only_in_heldout_task": [
+        "create_problem",
+        "map_change_request"
+      ],
+      "train_write_sequence": [
+        "update_user_details",
+        "update_change",
+        "update_problem",
+        "link_knowledge_to_incident"
+      ],
+      "heldout_write_sequence": [
+        "create_problem",
+        "update_problem",
+        "update_change",
+        "map_change_request"
+      ],
+      "same_seed_entities": []
+    },
+    {
+      "train_task": "itsmbench_msp_017",
+      "heldout_task": "itsmbench_single_021",
+      "write_jaccard": 0.333,
+      "shared_write_tools": [
+        "link_knowledge_to_incident",
+        "update_change"
+      ],
+      "only_in_train_task": [
+        "update_problem",
+        "update_user_details"
+      ],
+      "only_in_heldout_task": [
+        "map_change_request",
+        "send_notification"
+      ],
+      "train_write_sequence": [
+        "update_user_details",
+        "update_change",
+        "update_problem",
+        "link_knowledge_to_incident"
+      ],
+      "heldout_write_sequence": [
+        "update_change",
+        "map_change_request",
+        "link_knowledge_to_incident",
+        "send_notification"
+      ],
+      "same_seed_entities": []
+    },
+    {
+      "train_task": "itsmbench_msp_017",
+      "heldout_task": "itsmbench_single_022",
+      "write_jaccard": 0.333,
+      "shared_write_tools": [
+        "update_change",
+        "update_problem"
+      ],
+      "only_in_train_task": [
+        "link_knowledge_to_incident",
+        "update_user_details"
+      ],
+      "only_in_heldout_task": [
+        "map_change_request",
+        "send_notification"
+      ],
+      "train_write_sequence": [
+        "update_user_details",
+        "update_change",
+        "update_problem",
+        "link_knowledge_to_incident"
+      ],
+      "heldout_write_sequence": [
+        "update_change",
+        "update_problem",
+        "map_change_request",
+        "send_notification"
+      ],
+      "same_seed_entities": []
+    },
+    {
+      "train_task": "itsmbench_msp_018",
+      "heldout_task": "itsmbench_msp_030",
+      "write_jaccard": 0.4,
+      "shared_write_tools": [
+        "link_knowledge_to_incident",
+        "update_change"
+      ],
+      "only_in_train_task": [
+        "update_problem"
+      ],
+      "only_in_heldout_task": [
+        "link_affected_ci_to_incident",
+        "update_incident"
+      ],
+      "train_write_sequence": [
+        "update_change",
+        "update_problem",
+        "link_knowledge_to_incident"
+      ],
+      "heldout_write_sequence": [
+        "update_change",
+        "link_affected_ci_to_incident",
+        "update_incident",
+        "link_knowledge_to_incident"
+      ],
+      "same_seed_entities": []
+    },
+    {
+      "train_task": "itsmbench_msp_018",
+      "heldout_task": "itsmbench_single_017",
+      "write_jaccard": 0.4,
+      "shared_write_tools": [
+        "update_change",
+        "update_problem"
+      ],
+      "only_in_train_task": [
+        "link_knowledge_to_incident"
+      ],
+      "only_in_heldout_task": [
+        "create_problem",
+        "map_change_request"
+      ],
+      "train_write_sequence": [
+        "update_change",
+        "update_problem",
+        "link_knowledge_to_incident"
+      ],
+      "heldout_write_sequence": [
+        "create_problem",
+        "update_problem",
+        "update_change",
+        "map_change_request"
+      ],
+      "same_seed_entities": []
+    },
+    {
+      "train_task": "itsmbench_msp_018",
+      "heldout_task": "itsmbench_single_021",
+      "write_jaccard": 0.4,
+      "shared_write_tools": [
+        "link_knowledge_to_incident",
+        "update_change"
+      ],
+      "only_in_train_task": [
+        "update_problem"
+      ],
+      "only_in_heldout_task": [
+        "map_change_request",
+        "send_notification"
+      ],
+      "train_write_sequence": [
+        "update_change",
+        "update_problem",
+        "link_knowledge_to_incident"
+      ],
+      "heldout_write_sequence": [
+        "update_change",
+        "map_change_request",
+        "link_knowledge_to_incident",
+        "send_notification"
+      ],
+      "same_seed_entities": []
+    },
+    {
+      "train_task": "itsmbench_msp_018",
+      "heldout_task": "itsmbench_single_022",
+      "write_jaccard": 0.4,
+      "shared_write_tools": [
+        "update_change",
+        "update_problem"
+      ],
+      "only_in_train_task": [
+        "link_knowledge_to_incident"
+      ],
+      "only_in_heldout_task": [
+        "map_change_request",
+        "send_notification"
+      ],
+      "train_write_sequence": [
+        "update_change",
+        "update_problem",
+        "link_knowledge_to_incident"
+      ],
+      "heldout_write_sequence": [
+        "update_change",
+        "update_problem",
+        "map_change_request",
+        "send_notification"
+      ],
+      "same_seed_entities": []
+    },
+    {
+      "train_task": "itsmbench_msp_031",
+      "heldout_task": "itsmbench_msp_030",
+      "write_jaccard": 0.4,
+      "shared_write_tools": [
+        "link_knowledge_to_incident",
+        "update_change"
+      ],
+      "only_in_train_task": [
+        "update_problem"
+      ],
+      "only_in_heldout_task": [
+        "link_affected_ci_to_incident",
+        "update_incident"
+      ],
+      "train_write_sequence": [
+        "update_problem",
+        "update_change",
+        "link_knowledge_to_incident"
+      ],
+      "heldout_write_sequence": [
+        "update_change",
+        "link_affected_ci_to_incident",
+        "update_incident",
+        "link_knowledge_to_incident"
+      ],
+      "same_seed_entities": [
+        "CHG_008"
+      ]
+    },
+    {
+      "train_task": "itsmbench_msp_031",
+      "heldout_task": "itsmbench_single_017",
+      "write_jaccard": 0.4,
+      "shared_write_tools": [
+        "update_change",
+        "update_problem"
+      ],
+      "only_in_train_task": [
+        "link_knowledge_to_incident"
+      ],
+      "only_in_heldout_task": [
+        "create_problem",
+        "map_change_request"
+      ],
+      "train_write_sequence": [
+        "update_problem",
+        "update_change",
+        "link_knowledge_to_incident"
+      ],
+      "heldout_write_sequence": [
+        "create_problem",
+        "update_problem",
+        "update_change",
+        "map_change_request"
+      ],
+      "same_seed_entities": []
+    },
+    {
+      "train_task": "itsmbench_msp_031",
+      "heldout_task": "itsmbench_single_021",
+      "write_jaccard": 0.4,
+      "shared_write_tools": [
+        "link_knowledge_to_incident",
+        "update_change"
+      ],
+      "only_in_train_task": [
+        "update_problem"
+      ],
+      "only_in_heldout_task": [
+        "map_change_request",
+        "send_notification"
+      ],
+      "train_write_sequence": [
+        "update_problem",
+        "update_change",
+        "link_knowledge_to_incident"
+      ],
+      "heldout_write_sequence": [
+        "update_change",
+        "map_change_request",
+        "link_knowledge_to_incident",
+        "send_notification"
+      ],
+      "same_seed_entities": []
+    },
+    {
+      "train_task": "itsmbench_msp_031",
+      "heldout_task": "itsmbench_single_022",
+      "write_jaccard": 0.4,
+      "shared_write_tools": [
+        "update_change",
+        "update_problem"
+      ],
+      "only_in_train_task": [
+        "link_knowledge_to_incident"
+      ],
+      "only_in_heldout_task": [
+        "map_change_request",
+        "send_notification"
+      ],
+      "train_write_sequence": [
+        "update_problem",
+        "update_change",
+        "link_knowledge_to_incident"
+      ],
+      "heldout_write_sequence": [
+        "update_change",
+        "update_problem",
+        "map_change_request",
+        "send_notification"
+      ],
+      "same_seed_entities": []
+    },
+    {
+      "train_task": "itsmbench_single_007",
+      "heldout_task": "itsmbench_msp_030",
+      "write_jaccard": 0.222,
+      "shared_write_tools": [
+        "update_change",
+        "update_incident"
+      ],
+      "only_in_train_task": [
+        "add_new_sla_definition",
+        "send_notification",
+        "update_incident_sla_details",
+        "update_incident_template",
+        "update_sla_definition"
+      ],
+      "only_in_heldout_task": [
+        "link_affected_ci_to_incident",
+        "link_knowledge_to_incident"
+      ],
+      "train_write_sequence": [
+        "update_sla_definition",
+        "add_new_sla_definition",
+        "update_incident_template",
+        "update_change",
+        "update_incident",
+        "update_incident_sla_details",
+        "send_notification"
+      ],
+      "heldout_write_sequence": [
+        "update_change",
+        "link_affected_ci_to_incident",
+        "update_incident",
+        "link_knowledge_to_incident"
+      ],
+      "same_seed_entities": []
+    },
+    {
+      "train_task": "itsmbench_single_007",
+      "heldout_task": "itsmbench_single_021",
+      "write_jaccard": 0.222,
+      "shared_write_tools": [
+        "send_notification",
+        "update_change"
+      ],
+      "only_in_train_task": [
+        "add_new_sla_definition",
+        "update_incident",
+        "update_incident_sla_details",
+        "update_incident_template",
+        "update_sla_definition"
+      ],
+      "only_in_heldout_task": [
+        "link_knowledge_to_incident",
+        "map_change_request"
+      ],
+      "train_write_sequence": [
+        "update_sla_definition",
+        "add_new_sla_definition",
+        "update_incident_template",
+        "update_change",
+        "update_incident",
+        "update_incident_sla_details",
+        "send_notification"
+      ],
+      "heldout_write_sequence": [
+        "update_change",
+        "map_change_request",
+        "link_knowledge_to_incident",
+        "send_notification"
+      ],
+      "same_seed_entities": [
+        "USER_007"
+      ]
+    },
+    {
+      "train_task": "itsmbench_single_007",
+      "heldout_task": "itsmbench_single_022",
+      "write_jaccard": 0.222,
+      "shared_write_tools": [
+        "send_notification",
+        "update_change"
+      ],
+      "only_in_train_task": [
+        "add_new_sla_definition",
+        "update_incident",
+        "update_incident_sla_details",
+        "update_incident_template",
+        "update_sla_definition"
+      ],
+      "only_in_heldout_task": [
+        "map_change_request",
+        "update_problem"
+      ],
+      "train_write_sequence": [
+        "update_sla_definition",
+        "add_new_sla_definition",
+        "update_incident_template",
+        "update_change",
+        "update_incident",
+        "update_incident_sla_details",
+        "send_notification"
+      ],
+      "heldout_write_sequence": [
+        "update_change",
+        "update_problem",
+        "map_change_request",
+        "send_notification"
+      ],
+      "same_seed_entities": []
+    },
+    {
+      "train_task": "itsmbench_single_011",
+      "heldout_task": "itsmbench_msp_030",
+      "write_jaccard": 0.286,
+      "shared_write_tools": [
+        "link_knowledge_to_incident",
+        "update_change"
+      ],
+      "only_in_train_task": [
+        "create_knowledge_article",
+        "map_change_request",
+        "update_problem"
+      ],
+      "only_in_heldout_task": [
+        "link_affected_ci_to_incident",
+        "update_incident"
+      ],
+      "train_write_sequence": [
+        "update_change",
+        "update_problem",
+        "map_change_request",
+        "create_knowledge_article",
+        "link_knowledge_to_incident"
+      ],
+      "heldout_write_sequence": [
+        "update_change",
+        "link_affected_ci_to_incident",
+        "update_incident",
+        "link_knowledge_to_incident"
+      ],
+      "same_seed_entities": []
+    },
+    {
+      "train_task": "itsmbench_single_011",
+      "heldout_task": "itsmbench_single_017",
+      "write_jaccard": 0.5,
+      "shared_write_tools": [
+        "map_change_request",
+        "update_change",
+        "update_problem"
+      ],
+      "only_in_train_task": [
+        "create_knowledge_article",
+        "link_knowledge_to_incident"
+      ],
+      "only_in_heldout_task": [
+        "create_problem"
+      ],
+      "train_write_sequence": [
+        "update_change",
+        "update_problem",
+        "map_change_request",
+        "create_knowledge_article",
+        "link_knowledge_to_incident"
+      ],
+      "heldout_write_sequence": [
+        "create_problem",
+        "update_problem",
+        "update_change",
+        "map_change_request"
+      ],
+      "same_seed_entities": []
+    },
+    {
+      "train_task": "itsmbench_single_011",
+      "heldout_task": "itsmbench_single_021",
+      "write_jaccard": 0.5,
+      "shared_write_tools": [
+        "link_knowledge_to_incident",
+        "map_change_request",
+        "update_change"
+      ],
+      "only_in_train_task": [
+        "create_knowledge_article",
+        "update_problem"
+      ],
+      "only_in_heldout_task": [
+        "send_notification"
+      ],
+      "train_write_sequence": [
+        "update_change",
+        "update_problem",
+        "map_change_request",
+        "create_knowledge_article",
+        "link_knowledge_to_incident"
+      ],
+      "heldout_write_sequence": [
+        "update_change",
+        "map_change_request",
+        "link_knowledge_to_incident",
+        "send_notification"
+      ],
+      "same_seed_entities": [
+        "KB_004"
+      ]
+    },
+    {
+      "train_task": "itsmbench_single_011",
+      "heldout_task": "itsmbench_single_022",
+      "write_jaccard": 0.5,
+      "shared_write_tools": [
+        "map_change_request",
+        "update_change",
+        "update_problem"
+      ],
+      "only_in_train_task": [
+        "create_knowledge_article",
+        "link_knowledge_to_incident"
+      ],
+      "only_in_heldout_task": [
+        "send_notification"
+      ],
+      "train_write_sequence": [
+        "update_change",
+        "update_problem",
+        "map_change_request",
+        "create_knowledge_article",
+        "link_knowledge_to_incident"
+      ],
+      "heldout_write_sequence": [
+        "update_change",
+        "update_problem",
+        "map_change_request",
+        "send_notification"
+      ],
+      "same_seed_entities": []
+    },
+    {
+      "train_task": "itsmbench_single_015",
+      "heldout_task": "itsmbench_msp_030",
+      "write_jaccard": 0.286,
+      "shared_write_tools": [
+        "link_knowledge_to_incident",
+        "update_change"
+      ],
+      "only_in_train_task": [
+        "create_knowledge_article",
+        "map_change_request",
+        "update_problem"
+      ],
+      "only_in_heldout_task": [
+        "link_affected_ci_to_incident",
+        "update_incident"
+      ],
+      "train_write_sequence": [
+        "update_change",
+        "update_problem",
+        "map_change_request",
+        "create_knowledge_article",
+        "link_knowledge_to_incident"
+      ],
+      "heldout_write_sequence": [
+        "update_change",
+        "link_affected_ci_to_incident",
+        "update_incident",
+        "link_knowledge_to_incident"
+      ],
+      "same_seed_entities": []
+    },
+    {
+      "train_task": "itsmbench_single_015",
+      "heldout_task": "itsmbench_single_017",
+      "write_jaccard": 0.5,
+      "shared_write_tools": [
+        "map_change_request",
+        "update_change",
+        "update_problem"
+      ],
+      "only_in_train_task": [
+        "create_knowledge_article",
+        "link_knowledge_to_incident"
+      ],
+      "only_in_heldout_task": [
+        "create_problem"
+      ],
+      "train_write_sequence": [
+        "update_change",
+        "update_problem",
+        "map_change_request",
+        "create_knowledge_article",
+        "link_knowledge_to_incident"
+      ],
+      "heldout_write_sequence": [
+        "create_problem",
+        "update_problem",
+        "update_change",
+        "map_change_request"
+      ],
+      "same_seed_entities": []
+    },
+    {
+      "train_task": "itsmbench_single_015",
+      "heldout_task": "itsmbench_single_021",
+      "write_jaccard": 0.5,
+      "shared_write_tools": [
+        "link_knowledge_to_incident",
+        "map_change_request",
+        "update_change"
+      ],
+      "only_in_train_task": [
+        "create_knowledge_article",
+        "update_problem"
+      ],
+      "only_in_heldout_task": [
+        "send_notification"
+      ],
+      "train_write_sequence": [
+        "update_change",
+        "update_problem",
+        "map_change_request",
+        "create_knowledge_article",
+        "link_knowledge_to_incident"
+      ],
+      "heldout_write_sequence": [
+        "update_change",
+        "map_change_request",
+        "link_knowledge_to_incident",
+        "send_notification"
+      ],
+      "same_seed_entities": [
+        "KB_004"
+      ]
+    },
+    {
+      "train_task": "itsmbench_single_015",
+      "heldout_task": "itsmbench_single_022",
+      "write_jaccard": 0.5,
+      "shared_write_tools": [
+        "map_change_request",
+        "update_change",
+        "update_problem"
+      ],
+      "only_in_train_task": [
+        "create_knowledge_article",
+        "link_knowledge_to_incident"
+      ],
+      "only_in_heldout_task": [
+        "send_notification"
+      ],
+      "train_write_sequence": [
+        "update_change",
+        "update_problem",
+        "map_change_request",
+        "create_knowledge_article",
+        "link_knowledge_to_incident"
+      ],
+      "heldout_write_sequence": [
+        "update_change",
+        "update_problem",
+        "map_change_request",
+        "send_notification"
+      ],
+      "same_seed_entities": []
+    }
+  ],
   "watched_pairs": [
     {
       "a": "itsmbench_msp_021",

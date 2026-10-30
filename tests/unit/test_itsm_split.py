@@ -85,6 +85,23 @@ def test_heldout_meets_the_diversity_constraints() -> None:
         assert min(MANIFEST["distribution"][split]["tenancy"].values()) >= 2
 
 
+def test_audit_records_single_015_and_022_as_a_kept_cross_split_overlap() -> None:
+    audit = json.loads((DEFAULT_MANIFEST_PATH.parents[2] / "docs" / "itsm_step6" / "family_audit.json").read_text(encoding="utf-8"))
+    pair = next(
+        p
+        for p in audit["cross_split_shared_subworkflows"]
+        if (p["train_task"], p["heldout_task"]) == ("itsmbench_single_015", "itsmbench_single_022")
+    )
+
+    assert pair["shared_write_tools"] == ["map_change_request", "update_change", "update_problem"]
+    assert pair["only_in_train_task"] == ["create_knowledge_article", "link_knowledge_to_incident"]
+    assert pair["only_in_heldout_task"] == ["send_notification"]
+    assert (MANIFEST["tasks"]["itsmbench_single_015"]["split"], MANIFEST["tasks"]["itsmbench_single_022"]["split"]) == (
+        "train",
+        "heldout",
+    )
+
+
 def test_manifest_records_data_checksums() -> None:
     files = MANIFEST["data"]["files_sha256"]
 

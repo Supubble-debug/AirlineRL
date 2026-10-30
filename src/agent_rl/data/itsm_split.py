@@ -272,10 +272,18 @@ def build_manifest(seed: int = SPLIT_SEED) -> dict[str, Any]:
     }
     return {
         "version": SPLIT_VERSION,
+        "positioning": (
+            "cross-family and workflow-composition generalisation: whole workflow families "
+            "are held out, but sub-workflows (e.g. authorise a change, move a problem to "
+            "root cause, map them) recur across splits in new combinations; a write-tool "
+            "Jaccard below the family threshold is not by itself evidence of no near-duplicate "
+            "(see family_audit.json cross_split_shared_subworkflows)"
+        ),
         "usage": (
-            "train: optimisation; dev: debugging, budget checks and checkpoint selection; "
-            "heldout: final frozen evaluation only, never for debugging, tuning or "
-            "checkpoint selection"
+            "train: optimisation; dev: debugging and budget/length checks only, not checkpoint "
+            "selection (12 of 13 dev tasks are one workflow); checkpoints follow a training-step "
+            "count and rule fixed in advance, at the latest in step 8; heldout: final frozen "
+            "evaluation only, never for debugging, tuning or checkpoint selection"
         ),
         "method": {
             "family_rule": (

@@ -24,6 +24,7 @@ from agent_rl.data.itsm_split import (
     task_features,
     validate_manifest,
     write_jaccard,
+    write_tool_names,
 )
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -134,6 +135,31 @@ def build_audit(manifest: dict) -> dict:
         )
 
     train = [t for t, s in split_of.items() if s == "train"]
+    heldout = [t for t, s in split_of.items() if s == "heldout"]
+    writes = write_tool_names()
+
+    def write_sequence(task_id: str) -> list[str]:
+        return [a["name"] for a in raw[task_id]["evaluation_criteria"]["actions"] if a["name"] in writes]
+
+    shared_subworkflows = []
+    for a, b in itertools.product(sorted(train), sorted(heldout)):
+        shared = features[a].write_tools & features[b].write_tools
+        if len(shared) < 2:
+            continue
+        shared_subworkflows.append(
+            {
+                "train_task": a,
+                "heldout_task": b,
+                "write_jaccard": round(write_jaccard(features[a], features[b]), 3),
+                "shared_write_tools": sorted(shared),
+                "only_in_train_task": sorted(features[a].write_tools - shared),
+                "only_in_heldout_task": sorted(features[b].write_tools - shared),
+                "train_write_sequence": write_sequence(a),
+                "heldout_write_sequence": write_sequence(b),
+                "same_seed_entities": _same_entities(raw[a], raw[b]),
+            }
+        )
+
     residual = {}
     for task_id, split in sorted(split_of.items()):
         if split == "train":
@@ -158,8 +184,13 @@ def build_audit(manifest: dict) -> dict:
             "record in both tasks; these are reported for review, not used as a rule. "
             "residual_to_train: highest write-tool "
             "overlap of each dev/heldout task with any train task (sub-workflows such as "
-            "update_incident remain shared across splits)."
+            "update_incident remain shared across splits). cross_split_shared_subworkflows: "
+            "every train/heldout pair sharing >= 2 write tools, with the shared sub-workflow "
+            "and what each task combines it with; these pairs are deliberately kept across "
+            "splits (workflow-composition generalisation), and a Jaccard below the family "
+            "threshold is not treated as proof that they are not near-duplicates."
         ),
+        "cross_split_shared_subworkflows": shared_subworkflows,
         "watched_pairs": watched,
         "links": links,
         "unlinked_similarity_signals": signals,

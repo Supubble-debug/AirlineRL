@@ -1,6 +1,7 @@
 {
   "version": "itsm_split_v1",
-  "usage": "train: optimisation; dev: debugging, budget checks and checkpoint selection; heldout: final frozen evaluation only, never for debugging, tuning or checkpoint selection",
+  "positioning": "cross-family and workflow-composition generalisation: whole workflow families are held out, but sub-workflows (e.g. authorise a change, move a problem to root cause, map them) recur across splits in new combinations; a write-tool Jaccard below the family threshold is not by itself evidence of no near-duplicate (see family_audit.json cross_split_shared_subworkflows)",
+  "usage": "train: optimisation; dev: debugging and budget/length checks only, not checkpoint selection (12 of 13 dev tasks are one workflow); checkpoints follow a training-step count and rule fixed in advance, at the latest in step 8; heldout: final frozen evaluation only, never for debugging, tuning or checkpoint selection",
   "method": {
     "family_rule": "link two tasks if the Jaccard similarity of their gold write-tool sets >= 0.6 or they share a creation tool; families are connected components; names/business types curated by first task ID",
     "creation_tools": [

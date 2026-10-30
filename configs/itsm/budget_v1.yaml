@@ -5,8 +5,8 @@
 # Basis: docs/itsm_step6/token_measurements.json (pinned Qwen3-8B tokenizer,
 # scripted gold replays of train/dev only, CPU). Those replays measure the
 # environment side and gold tool-call lengths, not real policy outputs; user
-# turns were placeholders. Items marked "pending_step7" must be checked with
-# bounded real calls before they are relied on.
+# turns were placeholders. Items marked "pending_step7"/"pending_step9" must be
+# checked with real runs before they are relied on.
 
 version: itsm_budget_v1
 tokenizer:
@@ -14,12 +14,30 @@ tokenizer:
   revision: b968826d9c46dd6066d109eabc6255188de91218
   chat_template_sha256: a55ee1b1660128b7098723e0abcd92caa0788061051c62d51cbe87d9cf1974d8
   enable_thinking: false
+  tool_schema_serialization: template_default  # compact variants measured only (schema_serialization.json)
+
+context:
+  # Qwen3-8B is trained for a 32768-token native context. config.json declares
+  # max_position_embeddings 40960 without rope scaling; 40960 is a CANDIDATE
+  # whose quality, generation and memory are unverified. No RoPE/YaRN setting
+  # is added or changed. Measured: initial prompt 28104 leaves 4664 tokens at
+  # 32768, below the largest gold-replay response (5764).
+  native_context: 32768
+  max_model_len_candidate: 40960
+  status: candidate_pending
+  verify:
+    step7: single-concurrency, bounded-generation run of real prompt lengths and inference memory
+    step9: training memory at the chosen length
+
+# Tool results enter the context in full (no per-observation cut). When the
+# next observation or action does not fit, the loop ends the episode with
+# truncate("response_length"); the env trace keeps the full observation for
+# diagnosis. token_measurements.json applies the same rule.
+observation_rule: full_tool_results_no_truncation
 
 # Applies unchanged to every training experiment (E1-E5).
 train:
-  # Total sequence = the model's max_position_embeddings (40960, no rope scaling).
-  # Measured full gold-replay sequence reaches 33868 > the 32768 native window.
-  max_model_len: 40960
+  max_model_len: 40960  # candidate, see context
   # Initial prompt is 28104 tokens (policy 7794 + 94 tool schemas 20051 +
   # instructions/template + greeting and a short first user turn); the rest of
   # 28672 (568 tokens) is headroom for a longer real first user turn.
@@ -39,14 +57,14 @@ train:
   # agent_turns <= max_steps by construction (reported, not enforced).
   max_agent_turns: null
   context_rotation: false  # decision D3
+  observation_rule: full_tool_results_no_truncation
   text_match: fuzzy  # decision D1b
   user_llm: deepseek/deepseek-v4-flash  # decision D5
   user_llm_temperature: 0.0
-  # Proposed, not yet implemented (step 7 loop): an unfiltered list/find call
-  # returns up to 10371 tokens (list_users), most of the response budget. Cap
-  # each observation at 4096 tokens (> the 2690-token largest gold observation),
-  # marking the cut in the observation. pending_step7: implementation + rate.
-  max_observation_tokens: 4096
+  # No checkpoint is chosen by dev score (dev is 12/13 one workflow) or by
+  # held-out. The number of optimisation steps and the checkpoint rule are fixed
+  # in advance, at the latest in step 8.
+  checkpoint_selection: pre_registered_steps_and_rule_frozen_by_step8
   worker:
     # Local CPU (WSL2): tool call <= 0.9 ms, env build/reset <= 112 ms, fuzzy
     # DB scoring <= 26 ms. The user-simulator HTTP call dominates and is
@@ -66,7 +84,7 @@ eval:
   max_steps: 40
   max_agent_turns: null
   context_rotation: false
-  max_observation_tokens: 4096
+  observation_rule: full_tool_results_no_truncation
   db_text_match: [fuzzy, llm]  # llm judge = deepseek/deepseek-v4-pro, decision D7
   nl_judge: deepseek/deepseek-v4-pro  # decision D7
   user_llm: deepseek/deepseek-v4-flash
