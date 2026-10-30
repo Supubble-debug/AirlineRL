@@ -333,11 +333,12 @@ class ItsmRewardInfo:
    - 相同 `task_id`；
    - 相同策略版本，记录 `policy_version` 或 `global_step`；
    - 各自用 `get_environment` 新建 DB。
-2. 某个样本遇到基础设施故障时，在**同一 rollout 步**内重试，最多 `max_episode_attempts=3` 次，任务和策略版本都不变。
-   - 只有基础设施错误（含 `text_judge_call`、`text_judge_protocol`）会触发重试，有效判定（包括负判）一律不重试。
-   - 上限固定，不能一直重试到得到通过结果。
-   - 温度 0 时，同样的裁判协议错误可能反复出现；达到上限后按第 3 条整组丢弃。
-3. 重试用尽后，**整组丢弃**。不用 reward=0 补位，不从别的任务借样本，不跨策略版本凑组。
+2. 基础设施故障的重试（2026-10-29 用户明确口径）：**首次调用之外最多额外重试 3 次，即总计最多 4 次**。注意这与 AirLineRL 的 `max_episode_attempts=3`（总计 3 次）不同，ITSM 的设置项命名为 `max_infra_retries=3`，以免混淆。
+   - **episode 级故障**（`env_build`、`user_sim`、`timeout` 等，episode 本身没有跑完）：在同一 rollout 步内用相同任务、相同策略版本、新建的 DB 重跑该样本。
+   - **评分级故障**（`text_judge_call`、`text_judge_protocol`、`nl_judge_*`，episode 已跑完）：只重做评分调用，使用**同一条已保存的轨迹和同一个最终 DB 状态**，不重跑 episode，也不重新采样策略。
+   - 只有基础设施错误会触发重试。有效判定（包括没有理由的负判）一律不重试。
+   - 上限固定，不能一直重试到得到通过结果。温度 0 时，同样的裁判协议错误可能反复出现；用尽 4 次后按第 3 条处理。
+3. 重试用尽后，**整组丢弃**。不用 reward=0 补位，不从别的任务借样本，不跨策略版本凑组。每次丢弃都要记录：`task_id`、组 ID、策略版本、触发丢弃的样本、最终的 `stage`/`kind`、已用尝试次数；并按 `stage`/`kind` 汇总每步的丢弃数量。
 4. 一个批次中被丢弃的组超过阈值（建议 25%，决策 D6）时，该训练步中止并报告，不做参数更新。
 5. 每步上报以下指标：
    - 有效组比例，即组内 reward 不全相同的组所占比例；
@@ -357,7 +358,7 @@ class ItsmRewardInfo:
 
 ## 14. 已定决策
 
-2026-10-28 用户认可 D1–D6，其中 D5 改为 deepseek flash。下表 "决定" 列即为固定规则；修改需用户重新批准。
+2026-10-28 用户认可 D1–D6，其中 D5 改为 deepseek flash；2026-10-29 用户决定 D7、D8（随第 3 步验收）。下表 "决定" 列即为固定规则；修改需用户重新批准。
 
 | # | 决策 | 决定 | 理由 |
 |---|---|---|---|
@@ -368,6 +369,8 @@ class ItsmRewardInfo:
 | D4 | 是否向模型公开 `current_time` | 不公开（与 Bench2 `LLMAgent` 一致） | 公开会改变任务难度。如果 policy 中有依赖当前时间的规则，第 6 步检查后再议 |
 | D5 | 用户模拟器的模型和温度 | `deepseek/deepseek-v4-flash`，温度 0（用户指定 flash，不沿用 airline 的 pro） | Bench2 默认是 `gpt-4o-mini`、温度 0.7；温度 0 时组内差异只来自策略本身。litellm 已登记该 ID；首次真实调用（第 7/8 步）时核实可用性 |
 | D6 | 丢弃组超过多少时中止训练步 | 25% | 防止有效样本过少时仍做更新 |
+| D7 | 评测用的 DB 文本裁判与 NL 裁判 | 两者都用 `deepseek/deepseek-v4-pro`，温度 0；调用参数见 §14.3 | 与 airline 的 `evaluator_llm` 一致，并与用户模拟器（flash）使用不同模型 |
+| D8 | gold 未改变的自由文本字段 | 保持 Bench2 规则，见 §14.4；本轮不在训练 reward 或 benchmark 分数中增加严格字段检查 | 修改评分规则会使结果与 Bench2 不可比 |
 
 ### 14.1 模型角色（第 3 步修订时明确）
 
@@ -375,15 +378,55 @@ class ItsmRewardInfo:
 |---|---|---|---|
 | 策略模型（被训练） | verl 当前策略权重，由 verl rollout 的 vLLM 采样；基座为 `configs/model/qwen3_8b_lora.yaml` 中的 `Qwen/Qwen3-8B` | 每个策略回合 | 不使用任何外部 API；logprob 必须来自该采样服务（§10） |
 | 用户模拟器 | `deepseek/deepseek-v4-flash`，温度 0（D5） | 训练、E0 和最终评测中的每个用户回合 | **API 连通性未验证**，首次真实调用在第 7 步 |
-| DB 自由文本裁判 | 训练时不使用（D1b 定为 `fuzzy`）；评测时若并行报告 `llm` 策略，模型**待定（D7）** | 只在评测阶段 | 未接入 |
-| NL 断言裁判 | 训练时不使用（D1 定为 `db_only`）；E0 和最终评测时使用，模型**待定（D7）** | 只在评测阶段 | 未接入 |
+| DB 自由文本裁判 | 训练时不使用（D1b 定为 `fuzzy`）；评测时并行报告 `llm` 策略，用 `deepseek/deepseek-v4-pro`（D7） | 只在评测阶段 | **API 连通性未验证**，第 7/8 步有界验证 |
+| NL 断言裁判 | 训练时不使用（D1 定为 `db_only`）；E0 和最终评测时使用 `deepseek/deepseek-v4-pro`（D7） | 只在评测阶段 | **API 连通性未验证**，第 7/8 步有界验证 |
 
-`deepseek/deepseek-v4-flash` 目前只用于用户模拟器。D5 没有涉及裁判模型，所以裁判不默认沿用 flash。
+`deepseek/deepseek-v4-flash` 只用于用户模拟器；两个裁判用 `deepseek/deepseek-v4-pro`。用户模拟器的思考模式和输出预算在第 7 步首次真实调用前另行固定。
 
-| # | 待定 | 建议 | 截止 |
-|---|---|---|---|
-| D7 | 评测用的 DB 文本裁判和 NL 裁判模型 | `deepseek/deepseek-v4-pro`，温度 0，与 airline 的 `evaluator_llm` 一致；并且与用户模拟器使用不同模型 | 第 8 步（E0）开始前 |
-| D8 | 自由文本可选字段（例如 problem 的 `workaround`、`fix_notes`）：gold 没有设置时，Bench2 的 DB 比对不加约束 | 保持 Bench2 规则不变，由 NL 断言和误差分析覆盖；若要在 DB 层强制为空，属于修改评分规则，需单独批准 | 第 6 步冻结协议之前 |
+### 14.2 评分适配层对应的 Bench2 版本
+
+- `Bench2/` 导入自 Enterprise-Worlds `37175af590d3b9c7d2288501b604020e547e3783`，在 AirLineRL 提交 `db9ad11` 中引入；此后到 `2e0e57a` 没有改动。`Bench2` 的 git 树哈希为 `e87531fe4fd7ed3d664b4f8e48ef9e6c848867ab`。
+- `agent_rl.envs.itsm_scoring` 和 `itsm_env` 调用了 Bench2 的若干私有函数（`evaluator_env._compare_record`、`evaluator_env._dump`、`text_match_strategy._extract_json`、`environment._stringify`），所以下列源码的 sha256 由测试 `test_bench2_sources_match_pinned_checksums` 固定；任何一个变化都会让测试失败，需重新核对适配层：
+
+| 文件（`Bench2/src/enterprise_worlds/`） | sha256 |
+|---|---|
+| `evaluator/evaluator_env.py` | `cd8b458c8f928b443a71c8dc7dbeb03c1a3461242725ce441bfda93826c2e95b` |
+| `evaluator/text_match_strategy.py` | `6bdd229561c4c38c39bd3276fa626667931343365fd66cf08736b53036bc4b20` |
+| `evaluator/evaluator_nl.py` | `a7c6f23b0a0f2ad735f6e54e7cf6c65e879fc4550fece6c587ec507c93e91b51` |
+| `evaluator/evaluator.py` | `db5f87b82a3ded5df1fbd2c90f0faf200f4ed3b0b7ada60000085dd94ac60be4` |
+| `utils/clock.py` | `2ca1286d862c9886bace4f4ecd835a23f9d166373c177a917372e0149a203088` |
+| `utils/text_match.py` | `d4790b0113c6ec06de0b24caa8949c3a97bf3d57df04ae88d47cb8b5b942a27c` |
+| `environment/environment.py` | `0f39c84f0c271d88129d773d4ae54778786fdf0c647bd3128130384d9eff67a9` |
+| `environment/toolkit.py` | `67a943876e6cd3de49c375cfcbd9db978395194f1217b2a502a96bfe50972a78` |
+| `domains/itsm/environment.py` | `4783009792689f3dc6e7064fb55d5a87c15ffdac7737eda23ad9d46518ca6da3` |
+| `domains/itsm/data_model.py` | `0ad66f253e4ea52cc213667f0a4d892e53ebf122aeb923d3e82ab83161910ab5` |
+| `data_model/message.py` | `618acdbb19dcb947b2fba5e734530523c577f483e746939dbcbbfd417662040b` |
+| `orchestrator/orchestrator.py` | `731831c31506c1a1676a8fd1db842fd0c95c5f5489cef5f3ada95d1adbf7767c` |
+
+### 14.3 评测裁判的调用参数（D7）
+
+| 项 | DB 自由文本裁判 | NL 断言裁判 |
+|---|---|---|
+| 模型 | `deepseek/deepseek-v4-pro` | `deepseek/deepseek-v4-pro` |
+| 温度 | 0 | 0 |
+| 思考模式 | **关闭**，显式传 `extra_body={"thinking": {"type": "disabled"}}` | 同左 |
+| 输出预算 | `max_tokens=4096`（即 Bench2 `DEFAULT_LLM_NL_JUDGE_ARGS`） | 同左 |
+| 提示词版本 | Bench2 `text_match_strategy.JUDGE_SYSTEM_PROMPT`，sha256 `2e2350908ca2b54271cc96dab31c414a14413427af177a2fbcbcd1df272761d4`；用户消息格式与 `judge_free_text` 相同（已有对照测试） | Bench2 `evaluator_nl.JUDGE_SYSTEM_PROMPT`，sha256 `295597be7c47347429e8adf6f236e62eae335d7ba587cdc221e866f4dac7927f`；用户消息格式与 `evaluate_nl_assertions` 相同 |
+
+- **为什么要显式关闭思考：** litellm 1.82.6 的 DeepSeek 适配只会透传 `thinking={"type": "enabled"}`，传 `{"type": "disabled"}` 会被静默丢弃（`litellm/llms/deepseek/chat/transformation.py` 的 `map_openai_params`），那样实际模式就取决于服务端默认值。所以用 `extra_body` 直接传。选择关闭思考，是为了让 4096 的输出预算只用于判定 JSON；如需开启思考，要重新批准，并重新确定输出预算。airline 的 `evaluator_llm` 没有设置思考模式，这是 ITSM 与 airline 的一处差异。
+- **第 7/8 步的有界验证**（仅几次调用）：确认服务端接受 `disabled`；响应中没有 `reasoning_content`；`finish_reason == "stop"`；模型 ID 与请求一致。
+- **失败处理：** 调用失败、参数被拒绝或 `finish_reason == "length"`，都按基础设施错误处理（`text_judge_call`/`text_judge_protocol`、`nl_judge_*`），并按 §12 重试。**不得静默换模型、去掉思考参数或退回 `fuzzy`。**
+- 实际发出的模型、参数和提示词 sha256 要写进每次评测的运行记录。
+
+### 14.4 gold 未改变的自由文本字段（D8）
+
+- **规则：** 对 `ItsmDB.freetext_fields()` 列出的字段（notification、incident、problem、change、knowledge、service、service_offering、user_group 的说明类字段），如果 gold 值等于 baseline（gold 没有改变它），Bench2 的 `_compare_record` 在选择比较策略之前就跳过该字段。因此这一规则对 `exact`、`fuzzy`、`llm` 三种策略都成立，不限于 problem 的 `workaround`、`fix_notes`；`llm` 策略下这类字段也不会送去裁判。
+- `llm` 策略的另一面：gold **改变过**的自由文本字段，即使预测值与 gold 完全相同，也会送去裁判（`_compare_record` 在 `llm` 分支不先做相等比较）。例如 Single-017 gold 回放在 `llm` 下送判 problem 的 `problem_statement`、`short_description`、`worknotes` 三项。这影响评测成本和裁判方差，不影响 exact/fuzzy。
+- **因此：DB=1 不能保证所有可选字段为空或未改动。** DB=1 只保证结构字段与 gold 一致，以及 gold 改变过的自由文本字段按所选策略匹配。
+- 第 3 步把 "可选字段为空" 拆成两项分别验证（见 `docs/itsm_migration_progress.md` 第 3 步证据）：
+  1. **gold 状态：** gold 回放后，Single-017 的 problem 中 7 个应为空的可选字段确实为空。这一项说明的是 gold 本身，不是评分能力。
+  2. **评分约束范围：** 5 个结构可选字段被设值时 DB=0；2 个自由文本可选字段被设值时 DB 仍为 1（exact、fuzzy、llm 三种策略都已测试）。
+- 本轮不在训练 reward 或 benchmark 分数中增加严格字段检查。误差分析和 NL 断言可以把这类改动单列出来，但不改变 DB 分数。
 
 ## 15. 对后续步骤的约束（本步不实现）
 

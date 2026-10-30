@@ -10,8 +10,10 @@ from __future__ import annotations
 
 import collections
 import copy
+import hashlib
 import json
 import pickle
+from pathlib import Path
 from typing import Any
 
 import pytest
@@ -19,7 +21,7 @@ import pytest
 from enterprise_worlds.data_model.message import AssistantMessage, ToolCall
 from enterprise_worlds.domains.itsm import environment as itsm_environment
 from enterprise_worlds.domains.itsm.data_model import Problem
-from enterprise_worlds.evaluator import text_match_strategy
+from enterprise_worlds.evaluator import evaluator_nl, text_match_strategy
 from enterprise_worlds.evaluator.evaluator_env import calculate_db_reward, compare_dbs
 from enterprise_worlds.evaluator.text_match_strategy import TextMatchConfig, judge_free_text
 from enterprise_worlds.utils.clock import DEFAULT_NOW, get_now, reset_now, set_now
@@ -482,7 +484,9 @@ def test_single_017_gold_leaves_source_incident_unchanged() -> None:
     assert db.incident[SINGLE_017_SOURCE_INCIDENT].problem is None
 
 
-def test_single_017_optional_problem_fields_left_empty_by_gold() -> None:
+def test_single_017_gold_state_leaves_optional_problem_fields_empty() -> None:
+    """Gold-state check only. It says nothing about what DB scoring constrains;
+    see the two scoring-scope tests below and protocol §14.4 (D8)."""
     optional = {
         name
         for name, field in Problem.model_fields.items()
@@ -533,7 +537,7 @@ def test_single_017_negative_cases(case: str) -> None:
 
 
 @pytest.mark.parametrize("field", sorted(SINGLE_017_EMPTY_STRUCTURED_FIELDS))
-def test_single_017_setting_structured_optional_field_fails_db(field: str) -> None:
+def test_single_017_scoring_scope_constrains_structured_optional_field(field: str) -> None:
     value = SINGLE_017_EMPTY_STRUCTURED_FIELDS[field]
     actions = _edit_actions(SINGLE_017, set={3: {field: value}})
 
@@ -543,18 +547,85 @@ def test_single_017_setting_structured_optional_field_fails_db(field: str) -> No
     assert any(m.startswith(f"problem/PRB_003 {field}: None != ") for m in score.mismatches)
 
 
+MOCK_LLM_TEXT_MATCH = TextMatchConfig(strategy="llm", llm="mock/judge", llm_args={"temperature": 0.0})
+
+
 @pytest.mark.parametrize("field", sorted(SINGLE_017_EMPTY_FREETEXT_FIELDS))
-@pytest.mark.parametrize("text_match", [EXACT, FUZZY], ids=["exact", "fuzzy"])
-def test_single_017_freetext_optional_field_is_not_db_constrained(
-    field: str, text_match: TextMatchConfig
+@pytest.mark.parametrize(
+    "text_match", [EXACT, FUZZY, MOCK_LLM_TEXT_MATCH], ids=["exact", "fuzzy", "llm"]
+)
+def test_single_017_scoring_scope_excludes_unchanged_freetext_field(
+    monkeypatch, field: str, text_match: TextMatchConfig
 ) -> None:
-    """Records a Bench2 scoring rule, not a desired property: a prose field the gold
-    never set is unconstrained, so DB match cannot enforce that it stays empty."""
+    """D8: records a Bench2 scoring rule, not a desired property. A free-text field
+    the gold left unchanged is skipped before the strategy is chosen, so DB=1 does
+    not guarantee it stays empty under any strategy, and llm never judges it.
+
+    Under llm the mock judge accepts every pair it is sent (the fields the gold did
+    change); the assertion is that the unchanged field is not among them."""
+
+    def accept_every_pair(**kwargs):
+        pairs = json.loads(kwargs["messages"][1].content.removeprefix("pairs:\n"))
+        return AssistantMessage(
+            content=_verdicts(*({"index": p["index"], "equivalent": True} for p in pairs))
+        )
+
+    monkeypatch.setattr(text_match_strategy, "generate", accept_every_pair)
     actions = _edit_actions(SINGLE_017, set={3: {field: SINGLE_017_EMPTY_FREETEXT_FIELDS[field]}})
 
     score = _score(SINGLE_017, actions, text_match=text_match)
 
     assert score.db_match
+    assert all(not v.key.endswith(f" {field}") for v in score.text_judgments)
+    if text_match.strategy == "llm":
+        assert {v.key for v in score.text_judgments} == {
+            f"problem/PRB_003 {name}"
+            for name in ("problem_statement", "short_description", "worknotes")
+        }
+
+
+# -- pinned Bench2 sources and judge prompts (protocol §14.2, §14.3) -----------------------------
+
+
+BENCH2_SOURCE_ROOT = Path(itsm_environment.__file__).resolve().parents[2]
+PINNED_BENCH2_SOURCES = {
+    "evaluator/evaluator_env.py": "cd8b458c8f928b443a71c8dc7dbeb03c1a3461242725ce441bfda93826c2e95b",
+    "evaluator/text_match_strategy.py": "6bdd229561c4c38c39bd3276fa626667931343365fd66cf08736b53036bc4b20",
+    "evaluator/evaluator_nl.py": "a7c6f23b0a0f2ad735f6e54e7cf6c65e879fc4550fece6c587ec507c93e91b51",
+    "evaluator/evaluator.py": "db5f87b82a3ded5df1fbd2c90f0faf200f4ed3b0b7ada60000085dd94ac60be4",
+    "utils/clock.py": "2ca1286d862c9886bace4f4ecd835a23f9d166373c177a917372e0149a203088",
+    "utils/text_match.py": "d4790b0113c6ec06de0b24caa8949c3a97bf3d57df04ae88d47cb8b5b942a27c",
+    "environment/environment.py": "0f39c84f0c271d88129d773d4ae54778786fdf0c647bd3128130384d9eff67a9",
+    "environment/toolkit.py": "67a943876e6cd3de49c375cfcbd9db978395194f1217b2a502a96bfe50972a78",
+    "domains/itsm/environment.py": "4783009792689f3dc6e7064fb55d5a87c15ffdac7737eda23ad9d46518ca6da3",
+    "domains/itsm/data_model.py": "0ad66f253e4ea52cc213667f0a4d892e53ebf122aeb923d3e82ab83161910ab5",
+    "data_model/message.py": "618acdbb19dcb947b2fba5e734530523c577f483e746939dbcbbfd417662040b",
+    "orchestrator/orchestrator.py": "731831c31506c1a1676a8fd1db842fd0c95c5f5489cef5f3ada95d1adbf7767c",
+}
+PINNED_JUDGE_PROMPTS = {
+    "text_match": "2e2350908ca2b54271cc96dab31c414a14413427af177a2fbcbcd1df272761d4",
+    "nl": "295597be7c47347429e8adf6f236e62eae335d7ba587cdc221e866f4dac7927f",
+}
+
+
+def test_bench2_sources_match_pinned_checksums() -> None:
+    actual = {
+        path: hashlib.sha256((BENCH2_SOURCE_ROOT / path).read_bytes()).hexdigest()
+        for path in PINNED_BENCH2_SOURCES
+    }
+
+    assert actual == PINNED_BENCH2_SOURCES
+
+
+def test_judge_prompts_match_pinned_versions() -> None:
+    prompts = {
+        "text_match": text_match_strategy.JUDGE_SYSTEM_PROMPT,
+        "nl": evaluator_nl.JUDGE_SYSTEM_PROMPT,
+    }
+
+    assert {
+        name: hashlib.sha256(prompt.encode("utf-8")).hexdigest() for name, prompt in prompts.items()
+    } == PINNED_JUDGE_PROMPTS
 
 
 # -- the DB walk used for the llm path equals Bench2's compare_dbs ------------------------------
