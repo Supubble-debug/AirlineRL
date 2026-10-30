@@ -13,6 +13,7 @@
 | 4：最小单 episode adapter | 用户认可（含第 1、2 次补修，提交 `223a3ac`） | 2026-10-30 用户原话：“第 4 步及相关补修验收通过，包含提交 223a3ac。记录本条批准，现在仅执行第 5 步：生命周期与隔离。” |
 | 5：生命周期与隔离 | 用户认可（含第 1 次补修，提交 `b067d90`） | 2026-10-30 用户原话：“第 5 步及补修 b067d90 验收通过。记录本条批准，现在仅执行第 6 步：数据划分与预算冻结。” |
 | 6：数据划分与预算冻结 | **收尾待验收**（划分已选 v1） | 未批准。2026-10-30 用户原话：“第 6 步划分选择 v1：train 29 / dev 13 / held-out 11。暂不最终验收，不进入第 7 步。仅完成以下收尾”（实验定位、checkpoint 规则、无损紧凑序列化对照、40,960 待验证、不裁剪观察）。 |
+| 6A：EnterpriseOps-Gym ITSM 扩展可行性审计 | **待验收** | 未批准。2026-10-30 用户原话：“暂不进入第 7 步，也不修改现有 v1 划分。现在仅执行新增的第 6A 步：EnterpriseOps-Gym ITSM 扩展可行性审计。……只提交审计报告和试点清单，等待我验收后再执行第 6B 步。” 第 6 步仍为收尾待验收。 |
 | 7 及以后 | 未开始 | — |
 
 ## 运行环境
@@ -259,4 +260,22 @@
 - 观察规则：删除 `max_observation_tokens: 4096`，改为 `observation_rule: full_tool_results_no_truncation`；放不下时以 `response_length` 结束并保留完整诊断轨迹。`token_measurements.json` 重跑后写明同一规则，token 数字与上次完全一致，仅计时变化。
 - 测试：`test_itsm_split.py` 17 项、`test_itsm_budget.py` 8 项、新增 `test_itsm_tool_serialization.py` 5 项。
 - 产物：`/home/sar/work/EnterGym/output/itsm-step6-r1/`（`measure_schema_serialization.log`、`measure_tokens.log`、`pytest_itsm_step6.log`、`pytest_airlinerl_full.log`）。
+
+## 第 6A 步证据
+
+- 全部结论与试点清单：`docs/itsm_step6a/README.md`；原始结果：`docs/itsm_step6a/eopsgym_itsm_audit.json`。
+- 参考数据：`/home/sar/work/EnterGym/reference/enterpriseops-gym/`（不入 git，`SOURCE.json` 记录来源）。仓库 commit `271f2c3`，HF revision `c8e538ea`，均为 Apache-2.0。下载 4 个 ITSM parquet，从 `gym_dbs.zip` 只解出 9 个 ITSM SQL 种子。没有覆盖 Bench2，没有并入项目任务集。
+- 改动：新增 `scripts/data/audit_eopsgym_itsm.py`、`tests/unit/test_itsm_eopsgym_audit.py`（6 项）、`docs/itsm_step6a/`。业务工具、评分、v1 划分均未修改。
+- 主要结论：
+  - 4 种工具集模式是同一套 103 题；
+  - 64 个 oracle 工具全部存在于 Bench2；
+  - 9 个种子都对应 Bench2 现有种子（单租户 100%，MSP ≥ 99.6%），62 题需要小 delta；
+  - 464 个验证器中有 2 题冲突不可满足、1 题不可执行、15 题有重复、40 题写死新建 ID；
+  - 分类：可直接适配 10、需小幅适配 44、暂不适合 49（其中 46 题仅因 v1 划分关系）；
+  - 推荐 8 题训练侧试点。
+- 运行（`code/main`，日志 `/home/sar/work/EnterGym/output/itsm-step6a/`）：
+  - `python scripts/data/audit_eopsgym_itsm.py --ref-dir …/reference/enterpriseops-gym`：退出码 0；
+  - `pytest tests/unit/test_itsm_eopsgym_audit.py`：见 `pytest_eopsgym_audit.log`；
+  - 全量回归：见 `pytest_airlinerl_full.log`。
+- 没有 gold 回放，没有启动 GPU，没有加载权重，没有调用 LLM。
 
