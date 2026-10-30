@@ -172,6 +172,11 @@ class ItsmToolCallRecord:
     error_field: str | None
     duration_ms: float
 
+    def __post_init__(self) -> None:
+        # Same invariant as the public ToolCallRecord: an error is a received result.
+        if self.error is not None and not self.result_received:
+            raise ValueError("a tool error requires result_received=True")
+
     def to_tool_call_record(self) -> ToolCallRecord:
         return ToolCallRecord(
             call_id=self.call_id,
@@ -342,6 +347,11 @@ class ItsmEnv:
     def tool_records(self) -> tuple[ItsmToolCallRecord, ...]:
         return tuple(self._tool_records)
 
+    @property
+    def failure(self) -> dict[str, str] | None:
+        """Infrastructure failure detail (``stage``, ``detail``, ``call_id`` if any)."""
+        return dict(self._failure) if self._failure is not None else None
+
     def current_db_hash(self) -> str:
         if self._environment is None:
             raise RuntimeError("reset() must be called first")
@@ -377,7 +387,8 @@ class ItsmEnv:
                     action.name, arguments
                 )
             except Exception as error:
-                # Arguments already passed validation, so the tool itself is broken.
+                # Arguments already passed validation, so the tool itself is broken. No
+                # result reached the model; the fault detail lives in ``failure``.
                 self._tool_records.append(
                     ItsmToolCallRecord(
                         call_id=call_id,
@@ -386,14 +397,14 @@ class ItsmEnv:
                         model_call_id=action.model_call_id,
                         result_received=False,
                         result=None,
-                        error=f"{type(error).__name__}: {error}",
+                        error=None,
                         error_class=None,
                         error_code=None,
                         error_field=None,
                         duration_ms=(time.perf_counter() - started) * 1000.0,
                     )
                 )
-                raise self._infrastructure("tool_internal", error) from error
+                raise self._infrastructure("tool_internal", error, call_id=call_id) from error
         duration_ms = (time.perf_counter() - started) * 1000.0
 
         self._messages.append(
@@ -514,10 +525,14 @@ class ItsmEnv:
             "tools": self._environment.get_tool_schemas() + [copy.deepcopy(DONE_TOOL_SCHEMA)],
         }
 
-    def _infrastructure(self, stage: str, cause: Exception | str) -> ItsmInfrastructureError:
+    def _infrastructure(
+        self, stage: str, cause: Exception | str, *, call_id: str | None = None
+    ) -> ItsmInfrastructureError:
         self._failed = True
         detail = cause if isinstance(cause, str) else f"{type(cause).__name__}: {cause}"
         self._failure = {"stage": stage, "detail": detail}
+        if call_id is not None:
+            self._failure["call_id"] = call_id
         return ItsmInfrastructureError(stage, self.task.id, f"episode {self.episode_id}: {detail}")
 
     def _require_active(self) -> None:

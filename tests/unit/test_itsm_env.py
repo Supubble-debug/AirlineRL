@@ -37,6 +37,7 @@ from agent_rl.envs.itsm_env import (
     ItsmAction,
     ItsmEnv,
     ItsmEnvConfig,
+    ItsmToolCallRecord,
     _parameter_validators,
     argument_type_error,
     to_itsm_action,
@@ -319,17 +320,88 @@ def test_internal_tool_exception_is_infrastructure_and_yields_no_reward(monkeypa
 
     assert raised.value.stage == "tool_internal"
     assert isinstance(raised.value.__cause__, KeyError)
+    assert raised.value.__cause__.args == ("index corrupted",)
     record = env.tool_records[-1]
-    assert (record.call_id, record.result_received, record.error_class) == ("call_003", False, None)
-    assert record.error == "KeyError: 'index corrupted'"
+    assert (record.call_id, record.result_received, record.result, record.error, record.error_class) == (
+        "call_003",
+        False,
+        None,
+        None,
+        None,
+    )
+    # Public-schema semantics: "no result received", nothing fabricated.
+    converted = record.to_tool_call_record()
+    assert (converted.result_received, converted.result, converted.error, converted.succeeded) == (
+        False,
+        None,
+        None,
+        False,
+    )
+    assert env.failure == {
+        "stage": "tool_internal",
+        "detail": "KeyError: 'index corrupted'",
+        "call_id": "call_003",
+    }
     # The model never received a result for the failed call.
     assert [m.id for m in env.trajectory if isinstance(m, ToolMessage)] == ["call_001", "call_002"]
     for action in [*gold[3:], ItsmAction.message("Done."), ItsmAction.done()]:
         with pytest.raises(RuntimeError, match="infrastructure"):
             env.step(action)
-    trace = env.export_trace()
+    trace = json.loads(json.dumps(env.export_trace()))
     assert trace["reward_info"] is None
-    assert trace["failure"]["stage"] == "tool_internal"
+    assert trace["failure"] == env.failure
+    assert trace["tool_calls"][-1]["error"] is None
+    assert [r.to_tool_call_record().call_id for r in env.tool_records] == ["call_001", "call_002", "call_003"]
+
+
+def test_tool_record_rejects_error_without_received_result() -> None:
+    with pytest.raises(ValueError, match="result_received=True"):
+        ItsmToolCallRecord(
+            call_id="call_001",
+            name="find_incident_by_number",
+            arguments={},
+            model_call_id=None,
+            result_received=False,
+            result=None,
+            error="KeyError: 'x'",
+            error_class=None,
+            error_code=None,
+            error_field=None,
+            duration_ms=0.0,
+        )
+
+
+def test_normal_and_business_error_records_convert_unchanged() -> None:
+    env, _ = _env(SINGLE_017, [OPENING])
+    env.reset()
+    ok = env.step(ItsmAction.tool_call("find_incident_by_number", {"number": "INC0000007"})).tool_record
+    failed = env.step(ItsmAction.tool_call("find_incident_by_number", {"number": "INC9999999"})).tool_record
+
+    for record in (ok, failed):
+        converted = record.to_tool_call_record()
+        assert (
+            converted.call_id,
+            converted.name,
+            converted.arguments,
+            converted.result,
+            converted.error,
+            converted.result_received,
+            converted.duration_ms,
+            converted.is_control,
+        ) == (
+            record.call_id,
+            record.name,
+            record.arguments,
+            record.result,
+            record.error,
+            True,
+            record.duration_ms,
+            False,
+        )
+    assert ok.to_tool_call_record().succeeded and ok.result is not None
+    assert failed.to_tool_call_record().error == "Incident with number 'INC9999999' not found"
+    assert not failed.to_tool_call_record().succeeded
+    assert env.failure is None
 
 
 # -- recovery and done --------------------------------------------------------------------------

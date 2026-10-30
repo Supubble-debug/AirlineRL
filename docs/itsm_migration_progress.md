@@ -10,7 +10,7 @@
 | 1：独立环境与现有测试基线 | 用户认可；GPU 训练环境于 2026-10-29 补建完成（见“第 1 步补充：GPU 训练环境”），补充部分待验收 | 2026-10-28 用户原话：“未提交文件是什么，你认为是否需要接受？没问题就接受，开始第二步。实例等gpu充足的时候再创建”。 |
 | 2：接口与奖励契约 | 用户认可；D1–D6 已定，D5 改为 `deepseek/deepseek-v4-flash` | 2026-10-28 用户原话：“认可，除了D5我认为可以用deepseek-flash。至于风险，到了那一步再说。没问题就第三步”。 |
 | 3：离线环境与评分回归 | 用户认可（第 1 次修订后）；D7、D8 已定 | 2026-10-28 用户要求修订（该消息不是验收通过）。2026-10-29 用户原话：“根据本次修订报告，第 3 步验收通过。请记录以下决定：D8：保持 Bench2 现有自由文本比较规则……D7：评测时 DB 文本裁判与 NL 裁判均采用 deepseek/deepseek-v4-pro，温度 0……完成上述文档收尾后，仅执行第 4 步”。决定全文写入协议 §12、§14.2–§14.4。 |
-| 4：最小单 episode adapter | **补修待验收**（第 1 次补修，同时修订第 2、3 步文档与评分） | 未批准。2026-10-30 用户提出 GitHub 源码审查的补修要求：公开调用 ID 不含任务信息；内部工具异常不能得到有效 reward；补修范围增加第 2、3 步（协议同步、无效组排除表述、按来源判定泄漏、温度 0 表述、评分环境构造错误分类），先不进入第 5 步。 |
+| 4：最小单 episode adapter | **第 2 次补修待验收**（第 1 次补修同时修订了第 2、3 步文档与评分，已经用户核对） | 未批准。2026-10-30 用户提出 GitHub 源码审查的补修要求：公开调用 ID 不含任务信息；内部工具异常不能得到有效 reward；补修范围增加第 2、3 步（协议同步、无效组排除表述、按来源判定泄漏、温度 0 表述、评分环境构造错误分类），先不进入第 5 步。2026-10-30 用户核对第 1 次补修后，用户原话：“最新补修已核对，原有问题均已修正。第 4 步再补一处兼容性问题”，要求 `tool_internal` 记录可转换为公共 `ToolCallRecord`。该消息不是第 4 步验收通过。 |
 | 5 及以后 | 未开始 | — |
 
 ## 运行环境
@@ -170,4 +170,20 @@
   - `pytest_itsm.log`：两套 ITSM 测试 395 passed，退出码 0。
   - `pytest_airlinerl_full.log`：`tests/unit tests/remote` 共 508 passed（113 + 352 + 43），退出码 0。
 - 未做：评分失败后的 env 状态与重新评分接口（第 5 步）；无效组排除的实现与梯度验证（第 9 步）。没有重建环境，没有启动 GPU，没有调用 LLM。
+
+### 第 4 步第 2 次补修（2026-10-30）
+
+- 问题：`tool_internal` 记录同时有 `result_received=False` 和非空 `error`，`to_tool_call_record()` 会触发公共 `ToolCallRecord` 的校验异常（`a tool error requires result_received=True`）。
+- 改动（`src/agent_rl/envs/itsm_env.py`）：
+  - `tool_internal` 记录改为 `result_received=False`、`result=None`、`error=None`，不伪造工具返回；公共 schema 未改。
+  - 故障详情只放在 episode 的 `failure`：`{"stage": "tool_internal", "detail": "<异常类型>: <信息>", "call_id": "call_NNN"}`，新增只读属性 `ItsmEnv.failure`，`export_trace()["failure"]` 与之相同。原始异常仍是 `ItsmInfrastructureError.__cause__`。
+  - `ItsmToolCallRecord` 增加与公共记录相同的约束（有 `error` 必须 `result_received=True`），防止再出现不可转换的记录。
+- 测试（`tests/unit/test_itsm_env.py`，45 项，+2）：
+  - `test_internal_tool_exception_is_infrastructure_and_yields_no_reward`：故障记录可转换，转换后 `result_received=False`、`error=None`、`succeeded=False`；`failure` 含 stage、detail、call_id；异常链保留；`reward_info` 为空；之后的 step 和 `done` 都被拒绝。
+  - `test_tool_record_rejects_error_without_received_result`：新约束。
+  - `test_normal_and_business_error_records_convert_unchanged`：正常结果与已返回的业务错误，转换后各字段与原记录一致。
+- 产物：`/home/sar/work/EnterGym/output/itsm-step4-r2/`
+  - `pytest_itsm_env.log`：45 passed，退出码 0。
+  - `pytest_airlinerl_full.log`：`tests/unit tests/remote` 共 510 passed（113 + 352 + 45），退出码 0。
+- 仍未做：评分失败状态与重新评分接口（第 5 步）；无效组排除与梯度检查（第 9 步）。
 
