@@ -20,7 +20,7 @@
 | 项目 | 值 |
 |---|---|
 | 代码版本 | `main` @ `db9ad11`；`tau2-bench` @ `1901a30`；`verl` @ `0a30f52`（均为固定提交） |
-| 工作区改动 | `.gitignore`（projtool 脚手架段，非业务改动）；本文件 |
+| 工作区改动 | 第 1 步时为 `.gitignore`（projtool 脚手架段，非业务改动）和本文件；之后各步改动均已提交，见各步证据 |
 | Bench2 来源 | 仓库内目录，导入自 Enterprise-Worlds `37175af` |
 | Bench2 数据 sha256 前 16 位 | tasks.json `e82c54a25edf334e`；msp_db.json `96f1c9ae06c0fbbf`；single_tenant_db.json `660e23dc68305af2`；policy.md `6d029256b224722e`；fk_spec.json `54fa139096687e1a` |
 | 任务构成 | 53 题，ID 不重复；31 个 `provider_client`（msp）+ 22 个 `single_tenant`；含 `itsmbench_msp_021`、`itsmbench_single_017` |
@@ -86,7 +86,7 @@
 
 1. **系统盘只有 30 GB，没有独立数据盘。** 安装完后已用 12 GB，剩余 19 GB。Qwen3-8B 权重约 16 GB，加上 checkpoint，在第 7 步之前需要扩盘或另找存储位置。`instance_up` 不提供扩盘参数。
 2. **共享 `/root/autodl-fs` 只剩约 4.5 GB**（已用 98%，其中 `runs/` 占 156 GB，属于其他项目）。`[paths].outputs_remote` 就在这里，后续保存 checkpoint 时空间不够。其他项目的文件不由本项目处理。
-3. **GitHub 推送凭据未配置**（2026-10-28 两次推送均失败）。本地 `main` 领先 `origin/main` 3 个提交。
+3. ~~GitHub 推送凭据未配置~~（2026-10-28 两次推送失败；已解决，`origin/main` 已包含至 `3a63136` 的提交）。
 
 ## 第 2 步证据
 
@@ -97,7 +97,7 @@
 
 ## 第 3 步证据（第 1 次修订后）
 
-- 改动（全部未提交，等待验收）：
+- 改动（已提交于 `2e0e57a`，第 3 步已验收）：
   - `src/agent_rl/envs/itsm_scoring.py`：任务时钟、严格 gold 回放、DB 评分，以及 `llm` 裁判原始响应的协议校验。
   - `tests/unit/test_itsm_scoring.py`：345 项测试。
   - `docs/itsm_protocol.md`：§8 裁判判定边界、§12 重试上限、§14.1 模型角色，以及待定项 D7、D8。
