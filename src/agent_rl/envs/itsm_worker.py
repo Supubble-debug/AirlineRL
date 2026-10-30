@@ -199,7 +199,14 @@ class ItsmEnvWorker:
             deadline = time.monotonic() + self.call_timeout_s
             if self._episode_deadline is not None:
                 deadline = min(deadline, self._episode_deadline)
-            self._conn.send((method, args))
+            try:
+                self._conn.send((method, args))
+            except (OSError, EOFError) as error:
+                # The child exited while idle (BrokenPipeError and friends). Checking
+                # is_alive() first would still race with its exit, so the failed send
+                # itself is the signal; a send that slips in before the exit is caught
+                # by _receive instead.
+                self._terminate("worker_crashed", f"{method}: could not send to child", cause=error)
             kind, payload, status = self._receive(method, deadline)
             self._child_status = status
         if kind == "error":
@@ -232,7 +239,14 @@ class ItsmEnvWorker:
                 "worker_crashed", f"{method}: child exited with code {self._process.exitcode}"
             )
 
-    def _terminate(self, stage: str, detail: str, *, raise_error: bool = True) -> None:
+    def _terminate(
+        self,
+        stage: str,
+        detail: str,
+        *,
+        raise_error: bool = True,
+        cause: BaseException | None = None,
+    ) -> None:
         stopped = self._stop_process()
         with self._state_lock:
             if self._failure is None:
@@ -242,6 +256,8 @@ class ItsmEnvWorker:
                     "execution_stopped": stopped,
                     "exitcode": self._process.exitcode,
                 }
+                if cause is not None:
+                    self._failure["cause"] = f"{type(cause).__name__}: {cause}"
             failure = dict(self._failure)
         if raise_error:
             raise ItsmInfrastructureError(
@@ -249,7 +265,7 @@ class ItsmEnvWorker:
                 self.config.task_id,
                 f"episode {self.episode_id}: {failure['detail']}",
                 kind="killed" if failure["execution_stopped"] else "not_reclaimed",
-            )
+            ) from cause
 
     def _stop_process(self) -> bool:
         """Kill and join the child; ``True`` only if it is confirmed to have exited."""

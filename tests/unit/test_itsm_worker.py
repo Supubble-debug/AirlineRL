@@ -9,6 +9,7 @@ from __future__ import annotations
 import copy
 import functools
 import os
+import signal
 import threading
 import time
 
@@ -211,6 +212,46 @@ def test_child_crash_is_infrastructure_and_reclaimed() -> None:
         assert (worker.failure["exitcode"], worker.failure["execution_stopped"]) == (17, True)
     finally:
         worker.close()
+
+
+@pytest.mark.parametrize("wait_for_exit", [True, False], ids=["exited_before_send", "racing_exit"])
+def test_child_exit_while_idle_is_a_crash_on_the_next_call(wait_for_exit: bool) -> None:
+    """The child dies between calls. ``exited_before_send`` makes the next send hit a
+    closed pipe; ``racing_exit`` calls immediately, so the exit is noticed either at the
+    send or while waiting for the reply. Both must end the same way."""
+    worker = _worker(MSP_021)
+    try:
+        worker.reset()
+        assert worker.status == "active" and worker.failure is None
+        os.kill(worker.pid, signal.SIGKILL)
+        if wait_for_exit:
+            deadline = time.monotonic() + 10
+            while worker.is_alive and time.monotonic() < deadline:
+                time.sleep(0.02)
+            assert not worker.is_alive
+
+        with pytest.raises(ItsmInfrastructureError) as raised:
+            worker.step(_gold(MSP_021)[0])
+
+        assert (raised.value.stage, raised.value.kind) == ("worker_crashed", "killed")
+        failure = worker.failure
+        assert failure["stage"] == "worker_crashed"
+        assert (failure["execution_stopped"], failure["exitcode"]) == (True, -signal.SIGKILL)
+        if wait_for_exit:
+            # The original send error is kept for diagnosis.
+            assert isinstance(raised.value.__cause__, OSError)
+            assert failure["cause"].startswith(type(raised.value.__cause__).__name__)
+            assert "could not send" in failure["detail"]
+        assert worker.status == "failed" and not worker.is_alive
+        for call in (lambda: worker.step(ItsmAction.done()), worker.score, lambda: worker.truncate("response_length")):
+            with pytest.raises(RuntimeError, match="worker failed"):
+                call()
+        with pytest.raises(RuntimeError, match="trace was lost"):
+            worker.export_trace()
+    finally:
+        worker.close()
+    worker.close()
+    assert not worker.is_alive and worker.status == "failed"
 
 
 def test_parallel_workers_are_isolated_processes() -> None:

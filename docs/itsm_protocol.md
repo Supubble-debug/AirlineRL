@@ -252,7 +252,8 @@ class ItsmTransition:
   - `cancel()`：任意线程可调用；有进行中的调用时该调用以 `cancelled` 报错，空闲时立即回收子进程。
   - 超时、取消或子进程崩溃时，父进程 `kill` 并 `join` 子进程，**确认进程已退出后**才在 `failure` 中记 `execution_stopped=True`，异常的 `kind` 为 `killed`；若在 `kill_grace_s` 内未能确认退出，记 `execution_stopped=False`、`kind="not_reclaimed"`，不得当作已停止。
   - 子进程的 DB 只在其内存中，被杀后随进程消失，旧执行不可能修改后续 episode。该 episode 作废，没有 reward，也不能重新评分（最终 DB 已不存在），按 §12 作为 episode 级故障重跑。
-  - 对应的基础设施 `stage`：`timeout`、`cancelled`、`worker_crashed`。子进程内的业务异常和基础设施异常（如 `user_sim`）原样传回父进程，子进程保持存活，轨迹仍可导出。
+  - 对应的基础设施 `stage`：`timeout`、`cancelled`、`worker_crashed`。
+  - 子进程在两次调用之间退出：下一次调用的发送失败（如 `BrokenPipeError`）本身即判为 `worker_crashed`，同样 kill/join 并记录 `exitcode`，原始错误保存在 `failure.cause` 和异常的 `__cause__`。不依赖发送前的 `is_alive()` 检查（它与子进程退出存在竞态）；若发送先于退出完成，则在等待回复时由 EOF 或进程退出判定，结果相同。子进程内的业务异常和基础设施异常（如 `user_sim`）原样传回父进程，子进程保持存活，轨迹仍可导出。
 - **用户模拟器 HTTP 调用**：默认 `UserSimulator` 的 litellm 调用带 `timeout=user_llm_timeout_s`（默认 60 秒），失败归 `user_sim`。它只约束单次 HTTP 请求；整步和整个 episode 的上限由 worker 保证。
 - 代价：每个 worker 启动需要导入 `agent_rl.envs`（本机约 3 秒）。worker 的复用、进程池和并发数属于第 7/9 步的 rollout 设计，本步未定。
 

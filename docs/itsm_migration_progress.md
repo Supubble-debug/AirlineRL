@@ -11,7 +11,7 @@
 | 2：接口与奖励契约 | 用户认可；D1–D6 已定，D5 改为 `deepseek/deepseek-v4-flash` | 2026-10-28 用户原话：“认可，除了D5我认为可以用deepseek-flash。至于风险，到了那一步再说。没问题就第三步”。 |
 | 3：离线环境与评分回归 | 用户认可（第 1 次修订后）；D7、D8 已定 | 2026-10-28 用户要求修订（该消息不是验收通过）。2026-10-29 用户原话：“根据本次修订报告，第 3 步验收通过。请记录以下决定：D8：保持 Bench2 现有自由文本比较规则……D7：评测时 DB 文本裁判与 NL 裁判均采用 deepseek/deepseek-v4-pro，温度 0……完成上述文档收尾后，仅执行第 4 步”。决定全文写入协议 §12、§14.2–§14.4。 |
 | 4：最小单 episode adapter | 用户认可（含第 1、2 次补修，提交 `223a3ac`） | 2026-10-30 用户原话：“第 4 步及相关补修验收通过，包含提交 223a3ac。记录本条批准，现在仅执行第 5 步：生命周期与隔离。” |
-| 5：生命周期与隔离 | **待验收** | 未批准 |
+| 5：生命周期与隔离 | **补修待验收**（第 1 次补修） | 未批准。2026-10-30 用户原话：“第 5 步暂不验收，仅补修一处：子进程在空闲期间退出后，下一次 _call() 的 conn.send() 会直接抛 BrokenPipeError”。 |
 | 6 及以后 | 未开始 | — |
 
 ## 运行环境
@@ -217,4 +217,14 @@
   - 用户模拟器的 60 秒 HTTP 超时只在代码路径上接入，没有调用真实 API 验证。
   - `kill_grace_s` 内未能回收子进程的情况（`not_reclaimed`）只有代码路径，没有构造出该故障。
   - 正式 `max_steps` 和 token 预算留到第 6 步；无效组排除与梯度检查留到第 9 步。
+
+### 第 5 步第 1 次补修（2026-10-30）
+
+- 问题（已复现）：子进程空闲时退出，下一次调用的 `conn.send()` 抛出未分类的 `BrokenPipeError`，worker 仍为 `active`、`failure=None`。用修补前的代码运行新测试：`exited_before_send` 失败于 `BrokenPipeError`（`output/itsm-step5-r1/pytest_before_fix.log`）。
+- 改动（`src/agent_rl/envs/itsm_worker.py`）：发送阶段的 `OSError`/`EOFError` 直接判为 `ItsmInfrastructureError(stage="worker_crashed")`，走与超时、崩溃相同的回收路径（kill、join、记录 `exitcode`，确认退出后才记 `execution_stopped=True`）；原始错误保存在 `failure["cause"]` 和异常的 `__cause__`。没有用发送前的 `is_alive()` 检查替代：发送先于退出完成的情况由原有的接收路径判定为同一 stage。
+- 测试（`tests/unit/test_itsm_worker.py`，9 项，+2）：`test_child_exit_while_idle_is_a_crash_on_the_next_call[exited_before_send | racing_exit]`。reset 后 SIGKILL 子进程，前者等子进程确认退出后再 step，后者立即 step；均验证 stage 与 kind、`failed` 状态、`exitcode=-9`、`execution_stopped=True`、子进程已回收、后续 step/score/truncate 被拒绝、轨迹不可导出（无 reward）、`close` 幂等；前者另验证原始 `OSError` 保留。
+- 产物：`/home/sar/work/EnterGym/output/itsm-step5-r1/`
+  - `pytest_itsm_worker.log`：9 passed，退出码 0；
+  - `pytest_idle_exit_repeats.log`：新测试重复 3 次，均 2 passed；
+  - `pytest_airlinerl_full.log`：`tests/unit tests/remote` 共 551 passed，退出码 0；无残留子进程。
 
