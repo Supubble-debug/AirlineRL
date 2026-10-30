@@ -10,7 +10,7 @@
 | 1：独立环境与现有测试基线 | 用户认可；GPU 训练环境于 2026-10-29 补建完成（见“第 1 步补充：GPU 训练环境”），补充部分待验收 | 2026-10-28 用户原话：“未提交文件是什么，你认为是否需要接受？没问题就接受，开始第二步。实例等gpu充足的时候再创建”。 |
 | 2：接口与奖励契约 | 用户认可；D1–D6 已定，D5 改为 `deepseek/deepseek-v4-flash` | 2026-10-28 用户原话：“认可，除了D5我认为可以用deepseek-flash。至于风险，到了那一步再说。没问题就第三步”。 |
 | 3：离线环境与评分回归 | 用户认可（第 1 次修订后）；D7、D8 已定 | 2026-10-28 用户要求修订（该消息不是验收通过）。2026-10-29 用户原话：“根据本次修订报告，第 3 步验收通过。请记录以下决定：D8：保持 Bench2 现有自由文本比较规则……D7：评测时 DB 文本裁判与 NL 裁判均采用 deepseek/deepseek-v4-pro，温度 0……完成上述文档收尾后，仅执行第 4 步”。决定全文写入协议 §12、§14.2–§14.4。 |
-| 4：最小单 episode adapter | 进行中 | 未批准 |
+| 4：最小单 episode adapter | **待验收** | 未批准 |
 | 5 及以后 | 未开始 | — |
 
 ## 运行环境
@@ -127,3 +127,31 @@
 - 协议 §14.3：D7 裁判参数（模型、温度 0、思考模式关闭、`max_tokens=4096`、两段提示词 sha256）；测试 `test_judge_prompts_match_pinned_versions` 固定提示词。API 连通性未验证。
 - 协议 §14.4：D8 规则说明。
 - 回归：`output/itsm-step3/pytest_itsm_scoring_r2.log`，349 passed，退出码 0。
+
+## 第 4 步证据
+
+- 改动：
+  - 新增 `src/agent_rl/envs/itsm_env.py`：`ItsmEnv`（一个实例只跑一个 episode，单线程同步驱动，不起后台线程）、`ItsmAction` 与 `to_itsm_action`（模型输出到动作的转换）、`ItsmEnvConfig`、`ItsmToolCallRecord`、`ItsmRewardInfo`、`export_trace()`。
+  - 新增 `tests/unit/test_itsm_env.py`：38 项。
+  - Bench2、airline 代码和评分模块均未修改；没有接入训练器。
+- 产物目录：`/home/sar/work/EnterGym/output/itsm-step4/`（不入 git）。
+  - `pytest_itsm_env.log`：38 passed，退出码 0。
+  - `pytest_airlinerl_full.log`：`tests/unit tests/remote` 共 500 passed（113 + 349 + 38），退出码 0。
+- 测试性质：
+  - 真实 Bench2 工具、种子、任务和 DB 评分。
+  - 策略为脚本代理，用户为确定性替身 `ScriptedUser`（固定回复列表）。
+  - 一项测试用 monkeypatch 让工具抛出非 `ItsmError` 异常。
+  - 未调用任何 LLM；默认的 Bench2 `UserSimulator` 只检查了构造参数，没有发出调用。
+- 覆盖的协议条目：
+  - 动作与 schema（§2、§3）：文本 / 单个工具调用 / `done` 三种动作；拒绝"文本加工具调用"、并行调用、带参数的 `done`、含 `###STOP###` 的文本和空输出。公开工具为 Bench2 工具加 `done`。
+  - 公开信息（§3）：只有 `policy` 和 `tools`，并且在 53 题之间完全相同（sha256 只有一种取值），因此不携带任何任务专属信息。任务描述、模拟器指引、NL 断言和 task_id 都没有出现。
+    - 注意：`known_info` 中的通用值（例如枚举值 `agent`、组名、示例单号）会在 policy 或工具 schema 中以子串形式出现，这是碰撞，不是泄漏；任务不变性才是判据。
+  - 增量观察（§4）：reset 返回问候语和用户首句；工具调用只返回 `tool[<call_id>] ok|error(<class>): …` 一行；消息动作只返回 `user: …`；结束时返回空串。各段内容不重复出现。
+  - 调用 ID（§5）：`{episode_id}/c{seq:03d}`；每个调用恰好对应一条 ToolMessage；ID 唯一，且与记录一致；模型自带的 ID 存为 `model_call_id`。
+  - 错误分类（§8）：`domain_error`（保留 `code` 和 `field`）、`unknown_tool`、`bad_arguments`（在调用前用签名绑定检查，观察中不含 Python 类名，且该调用不会执行）、`tool_exception_other`。出错后 episode 继续，可以恢复。
+  - 用户模拟器异常、空回复、首句就 STOP，按基础设施错误处理，不产生 reward。
+  - 时钟（§6）：每一步都在独立线程中执行，msp_021（对时钟敏感）仍得到 DB=1，且执行线程的时钟在结束后恢复。
+  - 奖励（§9）：`done` 或用户 STOP 时只评一次 DB；`nl_status=not_evaluated`，`joint_reward=None`，`training_reward_source=db_only`。走错路径时得到有效的 DB=0。
+  - 与 Bench2 `Orchestrator.run` 对照：MSP-021 和 Single-017 各一条脚本（含业务错误和未知工具调用），消息序列、用户收到的消息、最终 DB 哈希完全相同。`bad_arguments` 的文本有意与 Bench2 不同，因此不在对照范围内。
+- 不在本步范围（第 5 步）：`max_steps` 与 token 截断、超时、取消、重试调度、进程隔离、并行隔离，以及评分失败后的重新评分接口。
+
