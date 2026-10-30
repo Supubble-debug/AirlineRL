@@ -1,0 +1,5445 @@
+{
+  "caveat": "Scripted gold replays of train/dev tasks. Generated-token figures are the lengths of the gold tool calls rendered by the chat template, not a policy output distribution; user turns are fixed placeholders; held-out is not read.",
+  "tokenizer": {
+    "repo": "Qwen/Qwen3-8B",
+    "revision": "b968826d9c46dd6066d109eabc6255188de91218",
+    "files_sha256": {
+      "tokenizer.json": "aeb13307a71acd8fe81861d94ad54ab689df773318809eed3cbe794b4492dae4",
+      "tokenizer_config.json": "d5d09f07b48c3086c508b30d1c9114bd1189145b74e982a265350c923acd8101",
+      "vocab.json": "ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910",
+      "merges.txt": "8831e4f1a044471340f7c0a83d7bd71306a5b867e95fd870f74d0c5308a904d5",
+      "config.json": "f7c4eadfbbf522470667b797a3c89be2524832d2d599797248dc304fff447c30",
+      "generation_config.json": "2325da0f15bb848e018c5ae071b7943332e9f871d6b60e2ed22ca97d4cb993d2"
+    },
+    "chat_template_sha256": "a55ee1b1660128b7098723e0abcd92caa0788061051c62d51cbe87d9cf1974d8",
+    "transformers_version": "5.21.0",
+    "enable_thinking": false,
+    "max_position_embeddings": 40960
+  },
+  "prompt_construction": "initial prompt = chat template of build_action_messages(policy, reset observation) with tools=<93 ITSM schemas + done> and the generation prompt; then, as TauAgentLoop concatenates ids, each action adds its generated tokens and each observation adds a newline separator plus one user turn (OBSERVATION_PROMPT) rendered alone with the generation prompt. Re-rendering the whole conversation differs because Qwen3's template drops earlier empty <think> blocks.",
+  "data": {
+    "split_version": "itsm_split_v1",
+    "tasks_measured": [
+      "itsmbench_msp_001",
+      "itsmbench_msp_002",
+      "itsmbench_msp_003",
+      "itsmbench_msp_004",
+      "itsmbench_msp_005",
+      "itsmbench_msp_006",
+      "itsmbench_msp_007",
+      "itsmbench_msp_008",
+      "itsmbench_msp_009",
+      "itsmbench_msp_010",
+      "itsmbench_msp_011",
+      "itsmbench_msp_012",
+      "itsmbench_msp_013",
+      "itsmbench_msp_014",
+      "itsmbench_msp_015",
+      "itsmbench_msp_016",
+      "itsmbench_msp_017",
+      "itsmbench_msp_018",
+      "itsmbench_msp_031",
+      "itsmbench_single_001",
+      "itsmbench_single_002",
+      "itsmbench_single_003",
+      "itsmbench_single_004",
+      "itsmbench_single_005",
+      "itsmbench_single_006",
+      "itsmbench_single_007",
+      "itsmbench_single_011",
+      "itsmbench_single_015",
+      "itsmbench_single_018",
+      "itsmbench_msp_019",
+      "itsmbench_msp_021",
+      "itsmbench_msp_022",
+      "itsmbench_msp_024",
+      "itsmbench_msp_025",
+      "itsmbench_msp_026",
+      "itsmbench_msp_029",
+      "itsmbench_single_008",
+      "itsmbench_single_009",
+      "itsmbench_single_010",
+      "itsmbench_single_014",
+      "itsmbench_single_019",
+      "itsmbench_single_020"
+    ],
+    "splits_measured": [
+      "train",
+      "dev"
+    ]
+  },
+  "machine": {
+    "platform": "Linux-6.18.33.2-microsoft-standard-WSL2-x86_64-with-glibc2.43",
+    "python": "3.12.14",
+    "cpu_count": 24
+  },
+  "static": {
+    "policy_text_tokens": 7794,
+    "policy_chars": 32016,
+    "system_message_without_tools": 7986,
+    "system_message_with_tools": 28037,
+    "tool_schema_block_tokens": 20051,
+    "tool_count_including_done": 94,
+    "largest_tool_schemas": [
+      {
+        "tool": "list_incidents",
+        "json_tokens": 652
+      },
+      {
+        "tool": "create_incident",
+        "json_tokens": 624
+      },
+      {
+        "tool": "update_incident",
+        "json_tokens": 621
+      },
+      {
+        "tool": "list_problems",
+        "json_tokens": 577
+      },
+      {
+        "tool": "list_changes",
+        "json_tokens": 566
+      },
+      {
+        "tool": "update_change",
+        "json_tokens": 549
+      },
+      {
+        "tool": "create_change",
+        "json_tokens": 535
+      },
+      {
+        "tool": "update_problem",
+        "json_tokens": 513
+      },
+      {
+        "tool": "create_problem",
+        "json_tokens": 459
+      },
+      {
+        "tool": "find_service_offerings",
+        "json_tokens": 391
+      }
+    ],
+    "tool_schema_json_tokens_total": 19881
+  },
+  "summary": {
+    "initial_prompt_tokens": {
+      "n": 42,
+      "min": 28104,
+      "median": 28104.0,
+      "p90": 28104,
+      "max": 28104,
+      "mean": 28104.0
+    },
+    "response_tokens_gold_replay": {
+      "n": 42,
+      "min": 485,
+      "median": 2512.5,
+      "p90": 3241,
+      "max": 5764,
+      "mean": 2430.86
+    },
+    "full_sequence_tokens": {
+      "n": 42,
+      "min": 28589,
+      "median": 30616.5,
+      "p90": 31345,
+      "max": 33868,
+      "mean": 30534.86
+    },
+    "generated_tokens_per_tool_call": {
+      "n": 346,
+      "min": 18,
+      "median": 32.0,
+      "p90": 63,
+      "max": 127,
+      "mean": 38.99
+    },
+    "tool_observation_turn_tokens": {
+      "n": 346,
+      "min": 57,
+      "median": 224.0,
+      "p90": 360,
+      "max": 2736,
+      "mean": 246.49
+    },
+    "tool_observation_raw_tokens": {
+      "n": 346,
+      "min": 11,
+      "median": 178.0,
+      "p90": 314,
+      "max": 2690,
+      "mean": 200.49
+    },
+    "gold_tool_calls_per_task": {
+      "n": 42,
+      "min": 2,
+      "median": 8.0,
+      "p90": 11,
+      "max": 16,
+      "mean": 8.24
+    },
+    "step_count_gold_replay": {
+      "n": 42,
+      "min": 4,
+      "median": 10.0,
+      "p90": 13,
+      "max": 18,
+      "mean": 10.24
+    },
+    "agent_turns_gold_replay": {
+      "n": 42,
+      "min": 4,
+      "median": 10.0,
+      "p90": 13,
+      "max": 18,
+      "mean": 10.24
+    },
+    "seconds_tool_call_max": {
+      "n": 42,
+      "min": 0.0002,
+      "median": 0.0002,
+      "p90": 0.0004,
+      "max": 0.0009,
+      "mean": 0.0
+    },
+    "seconds_env_build_and_reset": {
+      "n": 42,
+      "min": 0.0082,
+      "median": 0.01265,
+      "p90": 0.0168,
+      "max": 0.1124,
+      "mean": 0.01
+    },
+    "seconds_db_scoring_fuzzy": {
+      "n": 42,
+      "min": 0.0043,
+      "median": 0.01675,
+      "p90": 0.0245,
+      "max": 0.0255,
+      "mean": 0.01
+    }
+  },
+  "longest_tool_calls": [
+    {
+      "kind": "tool_call",
+      "tool": "send_notification",
+      "generated_tokens": 127,
+      "task_id": "itsmbench_msp_021"
+    },
+    {
+      "kind": "tool_call",
+      "tool": "send_notification",
+      "generated_tokens": 127,
+      "task_id": "itsmbench_msp_022"
+    },
+    {
+      "kind": "tool_call",
+      "tool": "send_notification",
+      "generated_tokens": 118,
+      "task_id": "itsmbench_msp_019"
+    },
+    {
+      "kind": "tool_call",
+      "tool": "send_notification",
+      "generated_tokens": 103,
+      "task_id": "itsmbench_single_007"
+    },
+    {
+      "kind": "tool_call",
+      "tool": "send_notification",
+      "generated_tokens": 96,
+      "task_id": "itsmbench_single_006"
+    },
+    {
+      "kind": "tool_call",
+      "tool": "send_notification",
+      "generated_tokens": 96,
+      "task_id": "itsmbench_msp_024"
+    },
+    {
+      "kind": "tool_call",
+      "tool": "send_notification",
+      "generated_tokens": 95,
+      "task_id": "itsmbench_msp_025"
+    },
+    {
+      "kind": "tool_call",
+      "tool": "send_notification",
+      "generated_tokens": 95,
+      "task_id": "itsmbench_msp_026"
+    },
+    {
+      "kind": "tool_call",
+      "tool": "register_new_service_offering",
+      "generated_tokens": 91,
+      "task_id": "itsmbench_single_003"
+    },
+    {
+      "kind": "tool_call",
+      "tool": "send_notification",
+      "generated_tokens": 91,
+      "task_id": "itsmbench_single_008"
+    }
+  ],
+  "unfiltered_read_observations": [
+    {
+      "tool": "list_users",
+      "max_raw_observation_tokens": 10371,
+      "task_id": "itsmbench_msp_012"
+    },
+    {
+      "tool": "list_incidents",
+      "max_raw_observation_tokens": 9656,
+      "task_id": "itsmbench_msp_005"
+    },
+    {
+      "tool": "get_incidents_assigned_to",
+      "max_raw_observation_tokens": 9656,
+      "task_id": "itsmbench_msp_005"
+    },
+    {
+      "tool": "find_service_offerings",
+      "max_raw_observation_tokens": 8014,
+      "task_id": "itsmbench_msp_001"
+    },
+    {
+      "tool": "find_configuration_items",
+      "max_raw_observation_tokens": 6876,
+      "task_id": "itsmbench_msp_008"
+    },
+    {
+      "tool": "list_changes",
+      "max_raw_observation_tokens": 5364,
+      "task_id": "itsmbench_msp_018"
+    },
+    {
+      "tool": "find_services",
+      "max_raw_observation_tokens": 5364,
+      "task_id": "itsmbench_msp_001"
+    },
+    {
+      "tool": "retrieve_knowledge_articles",
+      "max_raw_observation_tokens": 3352,
+      "task_id": "itsmbench_msp_009"
+    },
+    {
+      "tool": "list_group_members",
+      "max_raw_observation_tokens": 2645,
+      "task_id": "itsmbench_msp_001"
+    },
+    {
+      "tool": "find_incident_slas",
+      "max_raw_observation_tokens": 2265,
+      "task_id": "itsmbench_msp_002"
+    },
+    {
+      "tool": "list_problems",
+      "max_raw_observation_tokens": 1750,
+      "task_id": "itsmbench_msp_018"
+    },
+    {
+      "tool": "get_problems_assigned_to",
+      "max_raw_observation_tokens": 1750,
+      "task_id": "itsmbench_msp_018"
+    },
+    {
+      "tool": "list_change_request_mappings",
+      "max_raw_observation_tokens": 1567,
+      "task_id": "itsmbench_msp_002"
+    },
+    {
+      "tool": "get_incident_templates",
+      "max_raw_observation_tokens": 1464,
+      "task_id": "itsmbench_msp_001"
+    },
+    {
+      "tool": "find_notifications",
+      "max_raw_observation_tokens": 1394,
+      "task_id": "itsmbench_msp_008"
+    },
+    {
+      "tool": "list_incident_affected_cis",
+      "max_raw_observation_tokens": 1110,
+      "task_id": "itsmbench_msp_008"
+    },
+    {
+      "tool": "find_incident_knowledge_links",
+      "max_raw_observation_tokens": 1090,
+      "task_id": "itsmbench_msp_011"
+    },
+    {
+      "tool": "list_user_groups",
+      "max_raw_observation_tokens": 1044,
+      "task_id": "itsmbench_msp_001"
+    },
+    {
+      "tool": "find_sla_definitions",
+      "max_raw_observation_tokens": 918,
+      "task_id": "itsmbench_msp_001"
+    },
+    {
+      "tool": "find_locations",
+      "max_raw_observation_tokens": 911,
+      "task_id": "itsmbench_msp_002"
+    },
+    {
+      "tool": "count_notifications_by_incident",
+      "max_raw_observation_tokens": 93,
+      "task_id": "itsmbench_msp_011"
+    },
+    {
+      "tool": "find_stage_wise_breached_incident_sla_counts",
+      "max_raw_observation_tokens": 45,
+      "task_id": "itsmbench_single_002"
+    },
+    {
+      "tool": "get_count_of_incident_priority_wise",
+      "max_raw_observation_tokens": 33,
+      "task_id": "itsmbench_msp_005"
+    },
+    {
+      "tool": "average_notifications_by_incident",
+      "max_raw_observation_tokens": 9,
+      "task_id": "itsmbench_msp_001"
+    },
+    {
+      "tool": "count_notifications_by_status",
+      "max_raw_observation_tokens": 5,
+      "task_id": "itsmbench_msp_001"
+    },
+    {
+      "tool": "count_notifications_by_type",
+      "max_raw_observation_tokens": 5,
+      "task_id": "itsmbench_msp_001"
+    },
+    {
+      "tool": "total_sum_of_target_mins_per_priority",
+      "max_raw_observation_tokens": 5,
+      "task_id": "itsmbench_msp_001"
+    },
+    {
+      "tool": "average_target_mins_per_priority",
+      "max_raw_observation_tokens": 5,
+      "task_id": "itsmbench_msp_001"
+    }
+  ],
+  "episodes": [
+    {
+      "task_id": "itsmbench_msp_001",
+      "gold_tool_calls": 6,
+      "agent_turns": 8,
+      "step_count": 8,
+      "db_match": true,
+      "initial_prompt_tokens": 28104,
+      "response_tokens": 1522,
+      "full_sequence_tokens": 29626,
+      "generated_tokens": 308,
+      "environment_tokens": 1214,
+      "actions": [
+        {
+          "kind": "tool_call",
+          "tool": "get_user_using_name",
+          "generated_tokens": 31
+        },
+        {
+          "kind": "tool_call",
+          "tool": "find_location_by_given_name",
+          "generated_tokens": 25
+        },
+        {
+          "kind": "tool_call",
+          "tool": "add_new_user",
+          "generated_tokens": 85
+        },
+        {
+          "kind": "tool_call",
+          "tool": "find_group_by_name",
+          "generated_tokens": 25
+        },
+        {
+          "kind": "tool_call",
+          "tool": "add_new_group_member",
+          "generated_tokens": 38
+        },
+        {
+          "kind": "tool_call",
+          "tool": "register_configuration_item",
+          "generated_tokens": 79
+        },
+        {
+          "kind": "message",
+          "tool": null,
+          "generated_tokens": 10
+        },
+        {
+          "kind": "done",
+          "tool": null,
+          "generated_tokens": 15
+        }
+      ],
+      "observations": [
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 228,
+          "turn_tokens_incl_template_and_generation_prompt": 274
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 110,
+          "turn_tokens_incl_template_and_generation_prompt": 156
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 199,
+          "turn_tokens_incl_template_and_generation_prompt": 245
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 123,
+          "turn_tokens_incl_template_and_generation_prompt": 169
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 94,
+          "turn_tokens_incl_template_and_generation_prompt": 140
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 130,
+          "turn_tokens_incl_template_and_generation_prompt": 176
+        },
+        {
+          "kind": "user",
+          "raw_observation_tokens": 8,
+          "turn_tokens_incl_template_and_generation_prompt": 54
+        }
+      ],
+      "seconds": {
+        "env_build_and_reset": 0.0183,
+        "tool_calls_total": 0.0015,
+        "tool_call_max": 0.0004,
+        "db_scoring_fuzzy": 0.0236
+      }
+    },
+    {
+      "task_id": "itsmbench_msp_002",
+      "gold_tool_calls": 6,
+      "agent_turns": 8,
+      "step_count": 8,
+      "db_match": true,
+      "initial_prompt_tokens": 28104,
+      "response_tokens": 1526,
+      "full_sequence_tokens": 29630,
+      "generated_tokens": 314,
+      "environment_tokens": 1212,
+      "actions": [
+        {
+          "kind": "tool_call",
+          "tool": "get_user_using_name",
+          "generated_tokens": 31
+        },
+        {
+          "kind": "tool_call",
+          "tool": "find_location_by_given_name",
+          "generated_tokens": 26
+        },
+        {
+          "kind": "tool_call",
+          "tool": "find_group_by_name",
+          "generated_tokens": 25
+        },
+        {
+          "kind": "tool_call",
+          "tool": "add_new_user",
+          "generated_tokens": 82
+        },
+        {
+          "kind": "tool_call",
+          "tool": "add_new_group_member",
+          "generated_tokens": 38
+        },
+        {
+          "kind": "tool_call",
+          "tool": "register_configuration_item",
+          "generated_tokens": 87
+        },
+        {
+          "kind": "message",
+          "tool": null,
+          "generated_tokens": 10
+        },
+        {
+          "kind": "done",
+          "tool": null,
+          "generated_tokens": 15
+        }
+      ],
+      "observations": [
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 228,
+          "turn_tokens_incl_template_and_generation_prompt": 274
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 111,
+          "turn_tokens_incl_template_and_generation_prompt": 157
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 119,
+          "turn_tokens_incl_template_and_generation_prompt": 165
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 194,
+          "turn_tokens_incl_template_and_generation_prompt": 240
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 94,
+          "turn_tokens_incl_template_and_generation_prompt": 140
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 136,
+          "turn_tokens_incl_template_and_generation_prompt": 182
+        },
+        {
+          "kind": "user",
+          "raw_observation_tokens": 8,
+          "turn_tokens_incl_template_and_generation_prompt": 54
+        }
+      ],
+      "seconds": {
+        "env_build_and_reset": 0.016,
+        "tool_calls_total": 0.0007,
+        "tool_call_max": 0.0002,
+        "db_scoring_fuzzy": 0.0241
+      }
+    },
+    {
+      "task_id": "itsmbench_msp_003",
+      "gold_tool_calls": 6,
+      "agent_turns": 8,
+      "step_count": 8,
+      "db_match": true,
+      "initial_prompt_tokens": 28104,
+      "response_tokens": 1526,
+      "full_sequence_tokens": 29630,
+      "generated_tokens": 322,
+      "environment_tokens": 1204,
+      "actions": [
+        {
+          "kind": "tool_call",
+          "tool": "get_user_using_name",
+          "generated_tokens": 31
+        },
+        {
+          "kind": "tool_call",
+          "tool": "add_location",
+          "generated_tokens": 39
+        },
+        {
+          "kind": "tool_call",
+          "tool": "find_group_by_name",
+          "generated_tokens": 25
+        },
+        {
+          "kind": "tool_call",
+          "tool": "add_new_user",
+          "generated_tokens": 85
+        },
+        {
+          "kind": "tool_call",
+          "tool": "add_new_group_member",
+          "generated_tokens": 38
+        },
+        {
+          "kind": "tool_call",
+          "tool": "register_configuration_item",
+          "generated_tokens": 79
+        },
+        {
+          "kind": "message",
+          "tool": null,
+          "generated_tokens": 10
+        },
+        {
+          "kind": "done",
+          "tool": null,
+          "generated_tokens": 15
+        }
+      ],
+      "observations": [
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 228,
+          "turn_tokens_incl_template_and_generation_prompt": 274
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 106,
+          "turn_tokens_incl_template_and_generation_prompt": 152
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 119,
+          "turn_tokens_incl_template_and_generation_prompt": 165
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 197,
+          "turn_tokens_incl_template_and_generation_prompt": 243
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 94,
+          "turn_tokens_incl_template_and_generation_prompt": 140
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 130,
+          "turn_tokens_incl_template_and_generation_prompt": 176
+        },
+        {
+          "kind": "user",
+          "raw_observation_tokens": 8,
+          "turn_tokens_incl_template_and_generation_prompt": 54
+        }
+      ],
+      "seconds": {
+        "env_build_and_reset": 0.0158,
+        "tool_calls_total": 0.001,
+        "tool_call_max": 0.0004,
+        "db_scoring_fuzzy": 0.0241
+      }
+    },
+    {
+      "task_id": "itsmbench_msp_004",
+      "gold_tool_calls": 8,
+      "agent_turns": 10,
+      "step_count": 10,
+      "db_match": true,
+      "initial_prompt_tokens": 28104,
+      "response_tokens": 1942,
+      "full_sequence_tokens": 30046,
+      "generated_tokens": 383,
+      "environment_tokens": 1559,
+      "actions": [
+        {
+          "kind": "tool_call",
+          "tool": "get_user",
+          "generated_tokens": 25
+        },
+        {
+          "kind": "tool_call",
+          "tool": "find_location_by_given_name",
+          "generated_tokens": 25
+        },
+        {
+          "kind": "tool_call",
+          "tool": "find_group_by_name",
+          "generated_tokens": 25
+        },
+        {
+          "kind": "tool_call",
+          "tool": "add_new_user",
+          "generated_tokens": 86
+        },
+        {
+          "kind": "tool_call",
+          "tool": "add_new_group_member",
+          "generated_tokens": 38
+        },
+        {
+          "kind": "tool_call",
+          "tool": "register_configuration_item",
+          "generated_tokens": 79
+        },
+        {
+          "kind": "tool_call",
+          "tool": "find_configuration_item_by_serial_number",
+          "generated_tokens": 31
+        },
+        {
+          "kind": "tool_call",
+          "tool": "update_configuration_item",
+          "generated_tokens": 49
+        },
+        {
+          "kind": "message",
+          "tool": null,
+          "generated_tokens": 10
+        },
+        {
+          "kind": "done",
+          "tool": null,
+          "generated_tokens": 15
+        }
+      ],
+      "observations": [
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 228,
+          "turn_tokens_incl_template_and_generation_prompt": 274
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 111,
+          "turn_tokens_incl_template_and_generation_prompt": 157
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 119,
+          "turn_tokens_incl_template_and_generation_prompt": 165
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 199,
+          "turn_tokens_incl_template_and_generation_prompt": 245
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 94,
+          "turn_tokens_incl_template_and_generation_prompt": 140
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 130,
+          "turn_tokens_incl_template_and_generation_prompt": 176
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 128,
+          "turn_tokens_incl_template_and_generation_prompt": 174
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 128,
+          "turn_tokens_incl_template_and_generation_prompt": 174
+        },
+        {
+          "kind": "user",
+          "raw_observation_tokens": 8,
+          "turn_tokens_incl_template_and_generation_prompt": 54
+        }
+      ],
+      "seconds": {
+        "env_build_and_reset": 0.0161,
+        "tool_calls_total": 0.0013,
+        "tool_call_max": 0.0003,
+        "db_scoring_fuzzy": 0.0237
+      }
+    },
+    {
+      "task_id": "itsmbench_msp_005",
+      "gold_tool_calls": 11,
+      "agent_turns": 13,
+      "step_count": 13,
+      "db_match": true,
+      "initial_prompt_tokens": 28104,
+      "response_tokens": 2892,
+      "full_sequence_tokens": 30996,
+      "generated_tokens": 399,
+      "environment_tokens": 2493,
+      "actions": [
+        {
+          "kind": "tool_call",
+          "tool": "get_user_using_name",
+          "generated_tokens": 31
+        },
+        {
+          "kind": "tool_call",
+          "tool": "get_user_using_name",
+          "generated_tokens": 31
+        },
+        {
+          "kind": "tool_call",
+          "tool": "find_location_by_given_name",
+          "generated_tokens": 26
+        },
+        {
+          "kind": "tool_call",
+          "tool": "update_user_details",
+          "generated_tokens": 37
+        },
+        {
+          "kind": "tool_call",
+          "tool": "find_incident_by_number",
+          "generated_tokens": 30
+        },
+        {
+          "kind": "tool_call",
+          "tool": "find_incident_knowledge_links",
+          "generated_tokens": 39
+        },
+        {
+          "kind": "tool_call",
+          "tool": "update_incident",
+          "generated_tokens": 33
+        },
+        {
+          "kind": "tool_call",
+          "tool": "find_incident_slas",
+          "generated_tokens": 28
+        },
+        {
+          "kind": "tool_call",
+          "tool": "update_incident_sla_details",
+          "generated_tokens": 40
+        },
+        {
+          "kind": "tool_call",
+          "tool": "retrieve_knowledge_articles",
+          "generated_tokens": 31
+        },
+        {
+          "kind": "tool_call",
+          "tool": "link_knowledge_to_incident",
+          "generated_tokens": 48
+        },
+        {
+          "kind": "message",
+          "tool": null,
+          "generated_tokens": 10
+        },
+        {
+          "kind": "done",
+          "tool": null,
+          "generated_tokens": 15
+        }
+      ],
+      "observations": [
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 228,
+          "turn_tokens_incl_template_and_generation_prompt": 274
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 225,
+          "turn_tokens_incl_template_and_generation_prompt": 271
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 113,
+          "turn_tokens_incl_template_and_generation_prompt": 159
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 229,
+          "turn_tokens_incl_template_and_generation_prompt": 275
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 317,
+          "turn_tokens_incl_template_and_generation_prompt": 363
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 11,
+          "turn_tokens_incl_template_and_generation_prompt": 57
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 317,
+          "turn_tokens_incl_template_and_generation_prompt": 363
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 119,
+          "turn_tokens_incl_template_and_generation_prompt": 165
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 127,
+          "turn_tokens_incl_template_and_generation_prompt": 173
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 146,
+          "turn_tokens_incl_template_and_generation_prompt": 192
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 101,
+          "turn_tokens_incl_template_and_generation_prompt": 147
+        },
+        {
+          "kind": "user",
+          "raw_observation_tokens": 8,
+          "turn_tokens_incl_template_and_generation_prompt": 54
+        }
+      ],
+      "seconds": {
+        "env_build_and_reset": 0.013,
+        "tool_calls_total": 0.0033,
+        "tool_call_max": 0.0009,
+        "db_scoring_fuzzy": 0.0173
+      }
+    },
+    {
+      "task_id": "itsmbench_msp_006",
+      "gold_tool_calls": 10,
+      "agent_turns": 12,
+      "step_count": 12,
+      "db_match": true,
+      "initial_prompt_tokens": 28104,
+      "response_tokens": 2706,
+      "full_sequence_tokens": 30810,
+      "generated_tokens": 371,
+      "environment_tokens": 2335,
+      "actions": [
+        {
+          "kind": "tool_call",
+          "tool": "get_user_using_name",
+          "generated_tokens": 33
+        },
+        {
+          "kind": "tool_call",
+          "tool": "find_problem_by_number",
+          "generated_tokens": 30
+        },
+        {
+          "kind": "tool_call",
+          "tool": "update_problem",
+          "generated_tokens": 34
+        },
+        {
+          "kind": "tool_call",
+          "tool": "find_incident_by_id",
+          "generated_tokens": 28
+        },
+        {
+          "kind": "tool_call",
+          "tool": "update_incident",
+          "generated_tokens": 33
+        },
+        {
+          "kind": "tool_call",
+          "tool": "find_incident_slas",
+          "generated_tokens": 28
+        },
+        {
+          "kind": "tool_call",
+          "tool": "update_incident_sla_details",
+          "generated_tokens": 40
+        },
+        {
+          "kind": "tool_call",
+          "tool": "find_incident_knowledge_links",
+          "generated_tokens": 39
+        },
+        {
+          "kind": "tool_call",
+          "tool": "retrieve_knowledge_articles",
+          "generated_tokens": 33
+        },
+        {
+          "kind": "tool_call",
+          "tool": "link_knowledge_to_incident",
+          "generated_tokens": 48
+        },
+        {
+          "kind": "message",
+          "tool": null,
+          "generated_tokens": 10
+        },
+        {
+          "kind": "done",
+          "tool": null,
+          "generated_tokens": 15
+        }
+      ],
+      "observations": [
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 232,
+          "turn_tokens_incl_template_and_generation_prompt": 278
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 182,
+          "turn_tokens_incl_template_and_generation_prompt": 228
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 201,
+          "turn_tokens_incl_template_and_generation_prompt": 247
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 300,
+          "turn_tokens_incl_template_and_generation_prompt": 346
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 300,
+          "turn_tokens_incl_template_and_generation_prompt": 346
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 177,
+          "turn_tokens_incl_template_and_generation_prompt": 223
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 163,
+          "turn_tokens_incl_template_and_generation_prompt": 209
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 11,
+          "turn_tokens_incl_template_and_generation_prompt": 57
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 154,
+          "turn_tokens_incl_template_and_generation_prompt": 200
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 101,
+          "turn_tokens_incl_template_and_generation_prompt": 147
+        },
+        {
+          "kind": "user",
+          "raw_observation_tokens": 8,
+          "turn_tokens_incl_template_and_generation_prompt": 54
+        }
+      ],
+      "seconds": {
+        "env_build_and_reset": 0.0132,
+        "tool_calls_total": 0.0018,
+        "tool_call_max": 0.0005,
+        "db_scoring_fuzzy": 0.0175
+      }
+    },
+    {
+      "task_id": "itsmbench_msp_007",
+      "gold_tool_calls": 10,
+      "agent_turns": 12,
+      "step_count": 12,
+      "db_match": true,
+      "initial_prompt_tokens": 28104,
+      "response_tokens": 2582,
+      "full_sequence_tokens": 30686,
+      "generated_tokens": 359,
+      "environment_tokens": 2223,
+      "actions": [
+        {
+          "kind": "tool_call",
+          "tool": "get_user_using_name",
+          "generated_tokens": 31
+        },
+        {
+          "kind": "tool_call",
+          "tool": "find_change_by_number",
+          "generated_tokens": 30
+        },
+        {
+          "kind": "tool_call",
+          "tool": "update_change",
+          "generated_tokens": 32
+        },
+        {
+          "kind": "tool_call",
+          "tool": "find_change_request_mappings_for_problem",
+          "generated_tokens": 30
+        },
+        {
+          "kind": "tool_call",
+          "tool": "find_problem_by_number",
+          "generated_tokens": 30
+        },
+        {
+          "kind": "tool_call",
+          "tool": "update_problem",
+          "generated_tokens": 34
+        },
+        {
+          "kind": "tool_call",
+          "tool": "find_incident_by_number",
+          "generated_tokens": 30
+        },
+        {
+          "kind": "tool_call",
+          "tool": "find_incident_knowledge_links",
+          "generated_tokens": 39
+        },
+        {
+          "kind": "tool_call",
+          "tool": "retrieve_knowledge_articles",
+          "generated_tokens": 30
+        },
+        {
+          "kind": "tool_call",
+          "tool": "link_knowledge_to_incident",
+          "generated_tokens": 48
+        },
+        {
+          "kind": "message",
+          "tool": null,
+          "generated_tokens": 10
+        },
+        {
+          "kind": "done",
+          "tool": null,
+          "generated_tokens": 15
+        }
+      ],
+      "observations": [
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 231,
+          "turn_tokens_incl_template_and_generation_prompt": 277
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 217,
+          "turn_tokens_incl_template_and_generation_prompt": 263
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 216,
+          "turn_tokens_incl_template_and_generation_prompt": 262
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 77,
+          "turn_tokens_incl_template_and_generation_prompt": 123
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 198,
+          "turn_tokens_incl_template_and_generation_prompt": 244
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 217,
+          "turn_tokens_incl_template_and_generation_prompt": 263
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 290,
+          "turn_tokens_incl_template_and_generation_prompt": 336
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 11,
+          "turn_tokens_incl_template_and_generation_prompt": 57
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 151,
+          "turn_tokens_incl_template_and_generation_prompt": 197
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 101,
+          "turn_tokens_incl_template_and_generation_prompt": 147
+        },
+        {
+          "kind": "user",
+          "raw_observation_tokens": 8,
+          "turn_tokens_incl_template_and_generation_prompt": 54
+        }
+      ],
+      "seconds": {
+        "env_build_and_reset": 0.0131,
+        "tool_calls_total": 0.0018,
+        "tool_call_max": 0.0006,
+        "db_scoring_fuzzy": 0.0175
+      }
+    },
+    {
+      "task_id": "itsmbench_msp_008",
+      "gold_tool_calls": 8,
+      "agent_turns": 10,
+      "step_count": 10,
+      "db_match": true,
+      "initial_prompt_tokens": 28104,
+      "response_tokens": 2424,
+      "full_sequence_tokens": 30528,
+      "generated_tokens": 292,
+      "environment_tokens": 2132,
+      "actions": [
+        {
+          "kind": "tool_call",
+          "tool": "get_user_using_name",
+          "generated_tokens": 33
+        },
+        {
+          "kind": "tool_call",
+          "tool": "find_change_by_number",
+          "generated_tokens": 30
+        },
+        {
+          "kind": "tool_call",
+          "tool": "find_problem_by_number",
+          "generated_tokens": 30
+        },
+        {
+          "kind": "tool_call",
+          "tool": "update_change",
+          "generated_tokens": 32
+        },
+        {
+          "kind": "tool_call",
+          "tool": "update_problem",
+          "generated_tokens": 34
+        },
+        {
+          "kind": "tool_call",
+          "tool": "find_incident_by_id",
+          "generated_tokens": 28
+        },
+        {
+          "kind": "tool_call",
+          "tool": "retrieve_knowledge_articles",
+          "generated_tokens": 32
+        },
+        {
+          "kind": "tool_call",
+          "tool": "link_knowledge_to_incident",
+          "generated_tokens": 48
+        },
+        {
+          "kind": "message",
+          "tool": null,
+          "generated_tokens": 10
+        },
+        {
+          "kind": "done",
+          "tool": null,
+          "generated_tokens": 15
+        }
+      ],
+      "observations": [
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 230,
+          "turn_tokens_incl_template_and_generation_prompt": 276
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 247,
+          "turn_tokens_incl_template_and_generation_prompt": 293
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 201,
+          "turn_tokens_incl_template_and_generation_prompt": 247
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 246,
+          "turn_tokens_incl_template_and_generation_prompt": 292
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 220,
+          "turn_tokens_incl_template_and_generation_prompt": 266
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 314,
+          "turn_tokens_incl_template_and_generation_prompt": 360
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 151,
+          "turn_tokens_incl_template_and_generation_prompt": 197
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 101,
+          "turn_tokens_incl_template_and_generation_prompt": 147
+        },
+        {
+          "kind": "user",
+          "raw_observation_tokens": 8,
+          "turn_tokens_incl_template_and_generation_prompt": 54
+        }
+      ],
+      "seconds": {
+        "env_build_and_reset": 0.0132,
+        "tool_calls_total": 0.0009,
+        "tool_call_max": 0.0002,
+        "db_scoring_fuzzy": 0.0175
+      }
+    },
+    {
+      "task_id": "itsmbench_msp_009",
+      "gold_tool_calls": 8,
+      "agent_turns": 10,
+      "step_count": 10,
+      "db_match": true,
+      "initial_prompt_tokens": 28104,
+      "response_tokens": 2599,
+      "full_sequence_tokens": 30703,
+      "generated_tokens": 290,
+      "environment_tokens": 2309,
+      "actions": [
+        {
+          "kind": "tool_call",
+          "tool": "get_user_using_name",
+          "generated_tokens": 32
+        },
+        {
+          "kind": "tool_call",
+          "tool": "find_change_by_number",
+          "generated_tokens": 30
+        },
+        {
+          "kind": "tool_call",
+          "tool": "find_problem_by_number",
+          "generated_tokens": 30
+        },
+        {
+          "kind": "tool_call",
+          "tool": "update_change",
+          "generated_tokens": 32
+        },
+        {
+          "kind": "tool_call",
+          "tool": "update_problem",
+          "generated_tokens": 32
+        },
+        {
+          "kind": "tool_call",
+          "tool": "find_incident_by_number",
+          "generated_tokens": 30
+        },
+        {
+          "kind": "tool_call",
+          "tool": "retrieve_knowledge_articles",
+          "generated_tokens": 31
+        },
+        {
+          "kind": "tool_call",
+          "tool": "link_knowledge_to_incident",
+          "generated_tokens": 48
+        },
+        {
+          "kind": "message",
+          "tool": null,
+          "generated_tokens": 10
+        },
+        {
+          "kind": "done",
+          "tool": null,
+          "generated_tokens": 15
+        }
+      ],
+      "observations": [
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 230,
+          "turn_tokens_incl_template_and_generation_prompt": 276
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 258,
+          "turn_tokens_incl_template_and_generation_prompt": 304
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 255,
+          "turn_tokens_incl_template_and_generation_prompt": 301
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 258,
+          "turn_tokens_incl_template_and_generation_prompt": 304
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 253,
+          "turn_tokens_incl_template_and_generation_prompt": 299
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 314,
+          "turn_tokens_incl_template_and_generation_prompt": 360
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 218,
+          "turn_tokens_incl_template_and_generation_prompt": 264
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 101,
+          "turn_tokens_incl_template_and_generation_prompt": 147
+        },
+        {
+          "kind": "user",
+          "raw_observation_tokens": 8,
+          "turn_tokens_incl_template_and_generation_prompt": 54
+        }
+      ],
+      "seconds": {
+        "env_build_and_reset": 0.0132,
+        "tool_calls_total": 0.0009,
+        "tool_call_max": 0.0002,
+        "db_scoring_fuzzy": 0.0177
+      }
+    },
+    {
+      "task_id": "itsmbench_msp_010",
+      "gold_tool_calls": 8,
+      "agent_turns": 10,
+      "step_count": 10,
+      "db_match": true,
+      "initial_prompt_tokens": 28104,
+      "response_tokens": 2528,
+      "full_sequence_tokens": 30632,
+      "generated_tokens": 290,
+      "environment_tokens": 2238,
+      "actions": [
+        {
+          "kind": "tool_call",
+          "tool": "get_user_using_name",
+          "generated_tokens": 31
+        },
+        {
+          "kind": "tool_call",
+          "tool": "find_problem_by_number",
+          "generated_tokens": 30
+        },
+        {
+          "kind": "tool_call",
+          "tool": "find_change_by_number",
+          "generated_tokens": 30
+        },
+        {
+          "kind": "tool_call",
+          "tool": "update_problem",
+          "generated_tokens": 34
+        },
+        {
+          "kind": "tool_call",
+          "tool": "update_change",
+          "generated_tokens": 33
+        },
+        {
+          "kind": "tool_call",
+          "tool": "find_incident_by_number",
+          "generated_tokens": 30
+        },
+        {
+          "kind": "tool_call",
+          "tool": "retrieve_knowledge_articles",
+          "generated_tokens": 29
+        },
+        {
+          "kind": "tool_call",
+          "tool": "link_knowledge_to_incident",
+          "generated_tokens": 48
+        },
+        {
+          "kind": "message",
+          "tool": null,
+          "generated_tokens": 10
+        },
+        {
+          "kind": "done",
+          "tool": null,
+          "generated_tokens": 15
+        }
+      ],
+      "observations": [
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 229,
+          "turn_tokens_incl_template_and_generation_prompt": 275
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 291,
+          "turn_tokens_incl_template_and_generation_prompt": 337
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 218,
+          "turn_tokens_incl_template_and_generation_prompt": 264
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 310,
+          "turn_tokens_incl_template_and_generation_prompt": 356
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 219,
+          "turn_tokens_incl_template_and_generation_prompt": 265
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 296,
+          "turn_tokens_incl_template_and_generation_prompt": 342
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 152,
+          "turn_tokens_incl_template_and_generation_prompt": 198
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 101,
+          "turn_tokens_incl_template_and_generation_prompt": 147
+        },
+        {
+          "kind": "user",
+          "raw_observation_tokens": 8,
+          "turn_tokens_incl_template_and_generation_prompt": 54
+        }
+      ],
+      "seconds": {
+        "env_build_and_reset": 0.0127,
+        "tool_calls_total": 0.0009,
+        "tool_call_max": 0.0002,
+        "db_scoring_fuzzy": 0.0168
+      }
+    },
+    {
+      "task_id": "itsmbench_msp_011",
+      "gold_tool_calls": 10,
+      "agent_turns": 12,
+      "step_count": 12,
+      "db_match": true,
+      "initial_prompt_tokens": 28104,
+      "response_tokens": 2890,
+      "full_sequence_tokens": 30994,
+      "generated_tokens": 357,
+      "environment_tokens": 2533,
+      "actions": [
+        {
+          "kind": "tool_call",
+          "tool": "get_user_using_name",
+          "generated_tokens": 31
+        },
+        {
+          "kind": "tool_call",
+          "tool": "get_user_using_name",
+          "generated_tokens": 33
+        },
+        {
+          "kind": "tool_call",
+          "tool": "update_user_details",
+          "generated_tokens": 37
+        },
+        {
+          "kind": "tool_call",
+          "tool": "find_change_by_number",
+          "generated_tokens": 30
+        },
+        {
+          "kind": "tool_call",
+          "tool": "find_problem_by_number",
+          "generated_tokens": 30
+        },
+        {
+          "kind": "tool_call",
+          "tool": "update_change",
+          "generated_tokens": 33
+        },
+        {
+          "kind": "tool_call",
+          "tool": "update_problem",
+          "generated_tokens": 34
+        },
+        {
+          "kind": "tool_call",
+          "tool": "find_incident_by_number",
+          "generated_tokens": 30
+        },
+        {
+          "kind": "tool_call",
+          "tool": "retrieve_knowledge_articles",
+          "generated_tokens": 26
+        },
+        {
+          "kind": "tool_call",
+          "tool": "link_knowledge_to_incident",
+          "generated_tokens": 48
+        },
+        {
+          "kind": "message",
+          "tool": null,
+          "generated_tokens": 10
+        },
+        {
+          "kind": "done",
+          "tool": null,
+          "generated_tokens": 15
+        }
+      ],
+      "observations": [
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 228,
+          "turn_tokens_incl_template_and_generation_prompt": 274
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 229,
+          "turn_tokens_incl_template_and_generation_prompt": 275
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 233,
+          "turn_tokens_incl_template_and_generation_prompt": 279
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 190,
+          "turn_tokens_incl_template_and_generation_prompt": 236
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 172,
+          "turn_tokens_incl_template_and_generation_prompt": 218
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 209,
+          "turn_tokens_incl_template_and_generation_prompt": 255
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 191,
+          "turn_tokens_incl_template_and_generation_prompt": 237
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 314,
+          "turn_tokens_incl_template_and_generation_prompt": 360
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 152,
+          "turn_tokens_incl_template_and_generation_prompt": 198
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 101,
+          "turn_tokens_incl_template_and_generation_prompt": 147
+        },
+        {
+          "kind": "user",
+          "raw_observation_tokens": 8,
+          "turn_tokens_incl_template_and_generation_prompt": 54
+        }
+      ],
+      "seconds": {
+        "env_build_and_reset": 0.0126,
+        "tool_calls_total": 0.001,
+        "tool_call_max": 0.0002,
+        "db_scoring_fuzzy": 0.0167
+      }
+    },
+    {
+      "task_id": "itsmbench_msp_012",
+      "gold_tool_calls": 11,
+      "agent_turns": 13,
+      "step_count": 13,
+      "db_match": true,
+      "initial_prompt_tokens": 28104,
+      "response_tokens": 3381,
+      "full_sequence_tokens": 31485,
+      "generated_tokens": 379,
+      "environment_tokens": 3002,
+      "actions": [
+        {
+          "kind": "tool_call",
+          "tool": "get_user_using_name",
+          "generated_tokens": 31
+        },
+        {
+          "kind": "tool_call",
+          "tool": "get_user_using_name",
+          "generated_tokens": 30
+        },
+        {
+          "kind": "tool_call",
+          "tool": "find_location_by_given_name",
+          "generated_tokens": 24
+        },
+        {
+          "kind": "tool_call",
+          "tool": "update_user_details",
+          "generated_tokens": 37
+        },
+        {
+          "kind": "tool_call",
+          "tool": "find_change_by_number",
+          "generated_tokens": 30
+        },
+        {
+          "kind": "tool_call",
+          "tool": "find_problem_by_number",
+          "generated_tokens": 30
+        },
+        {
+          "kind": "tool_call",
+          "tool": "update_change",
+          "generated_tokens": 33
+        },
+        {
+          "kind": "tool_call",
+          "tool": "update_problem",
+          "generated_tokens": 32
+        },
+        {
+          "kind": "tool_call",
+          "tool": "find_incident_by_number",
+          "generated_tokens": 30
+        },
+        {
+          "kind": "tool_call",
+          "tool": "retrieve_knowledge_articles",
+          "generated_tokens": 29
+        },
+        {
+          "kind": "tool_call",
+          "tool": "link_knowledge_to_incident",
+          "generated_tokens": 48
+        },
+        {
+          "kind": "message",
+          "tool": null,
+          "generated_tokens": 10
+        },
+        {
+          "kind": "done",
+          "tool": null,
+          "generated_tokens": 15
+        }
+      ],
+      "observations": [
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 228,
+          "turn_tokens_incl_template_and_generation_prompt": 274
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 230,
+          "turn_tokens_incl_template_and_generation_prompt": 276
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 108,
+          "turn_tokens_incl_template_and_generation_prompt": 154
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 230,
+          "turn_tokens_incl_template_and_generation_prompt": 276
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 282,
+          "turn_tokens_incl_template_and_generation_prompt": 328
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 255,
+          "turn_tokens_incl_template_and_generation_prompt": 301
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 283,
+          "turn_tokens_incl_template_and_generation_prompt": 329
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 253,
+          "turn_tokens_incl_template_and_generation_prompt": 299
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 314,
+          "turn_tokens_incl_template_and_generation_prompt": 360
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 158,
+          "turn_tokens_incl_template_and_generation_prompt": 204
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 101,
+          "turn_tokens_incl_template_and_generation_prompt": 147
+        },
+        {
+          "kind": "user",
+          "raw_observation_tokens": 8,
+          "turn_tokens_incl_template_and_generation_prompt": 54
+        }
+      ],
+      "seconds": {
+        "env_build_and_reset": 0.0125,
+        "tool_calls_total": 0.0011,
+        "tool_call_max": 0.0002,
+        "db_scoring_fuzzy": 0.0164
+      }
+    },
+    {
+      "task_id": "itsmbench_msp_013",
+      "gold_tool_calls": 11,
+      "agent_turns": 13,
+      "step_count": 13,
+      "db_match": true,
+      "initial_prompt_tokens": 28104,
+      "response_tokens": 5764,
+      "full_sequence_tokens": 33868,
+      "generated_tokens": 385,
+      "environment_tokens": 5379,
+      "actions": [
+        {
+          "kind": "tool_call",
+          "tool": "get_user_using_name",
+          "generated_tokens": 33
+        },
+        {
+          "kind": "tool_call",
+          "tool": "find_change_by_number",
+          "generated_tokens": 30
+        },
+        {
+          "kind": "tool_call",
+          "tool": "find_problem_by_number",
+          "generated_tokens": 30
+        },
+        {
+          "kind": "tool_call",
+          "tool": "update_change",
+          "generated_tokens": 32
+        },
+        {
+          "kind": "tool_call",
+          "tool": "update_problem",
+          "generated_tokens": 34
+        },
+        {
+          "kind": "tool_call",
+          "tool": "find_incident_by_number",
+          "generated_tokens": 30
+        },
+        {
+          "kind": "tool_call",
+          "tool": "update_incident",
+          "generated_tokens": 33
+        },
+        {
+          "kind": "tool_call",
+          "tool": "find_incident_slas",
+          "generated_tokens": 28
+        },
+        {
+          "kind": "tool_call",
+          "tool": "update_incident_sla_details",
+          "generated_tokens": 40
+        },
+        {
+          "kind": "tool_call",
+          "tool": "retrieve_knowledge_articles",
+          "generated_tokens": 22
+        },
+        {
+          "kind": "tool_call",
+          "tool": "link_knowledge_to_incident",
+          "generated_tokens": 48
+        },
+        {
+          "kind": "message",
+          "tool": null,
+          "generated_tokens": 10
+        },
+        {
+          "kind": "done",
+          "tool": null,
+          "generated_tokens": 15
+        }
+      ],
+      "observations": [
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 232,
+          "turn_tokens_incl_template_and_generation_prompt": 278
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 217,
+          "turn_tokens_incl_template_and_generation_prompt": 263
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 193,
+          "turn_tokens_incl_template_and_generation_prompt": 239
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 234,
+          "turn_tokens_incl_template_and_generation_prompt": 280
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 212,
+          "turn_tokens_incl_template_and_generation_prompt": 258
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 300,
+          "turn_tokens_incl_template_and_generation_prompt": 346
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 300,
+          "turn_tokens_incl_template_and_generation_prompt": 346
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 177,
+          "turn_tokens_incl_template_and_generation_prompt": 223
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 163,
+          "turn_tokens_incl_template_and_generation_prompt": 209
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 2690,
+          "turn_tokens_incl_template_and_generation_prompt": 2736
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 101,
+          "turn_tokens_incl_template_and_generation_prompt": 147
+        },
+        {
+          "kind": "user",
+          "raw_observation_tokens": 8,
+          "turn_tokens_incl_template_and_generation_prompt": 54
+        }
+      ],
+      "seconds": {
+        "env_build_and_reset": 0.0125,
+        "tool_calls_total": 0.0012,
+        "tool_call_max": 0.0002,
+        "db_scoring_fuzzy": 0.0166
+      }
+    },
+    {
+      "task_id": "itsmbench_msp_014",
+      "gold_tool_calls": 11,
+      "agent_turns": 13,
+      "step_count": 13,
+      "db_match": true,
+      "initial_prompt_tokens": 28104,
+      "response_tokens": 3241,
+      "full_sequence_tokens": 31345,
+      "generated_tokens": 381,
+      "environment_tokens": 2860,
+      "actions": [
+        {
+          "kind": "tool_call",
+          "tool": "get_user_using_name",
+          "generated_tokens": 31
+        },
+        {
+          "kind": "tool_call",
+          "tool": "get_user_using_name",
+          "generated_tokens": 32
+        },
+        {
+          "kind": "tool_call",
+          "tool": "find_location_by_given_name",
+          "generated_tokens": 25
+        },
+        {
+          "kind": "tool_call",
+          "tool": "update_user_details",
+          "generated_tokens": 37
+        },
+        {
+          "kind": "tool_call",
+          "tool": "find_change_by_number",
+          "generated_tokens": 30
+        },
+        {
+          "kind": "tool_call",
+          "tool": "find_problem_by_number",
+          "generated_tokens": 30
+        },
+        {
+          "kind": "tool_call",
+          "tool": "update_change",
+          "generated_tokens": 33
+        },
+        {
+          "kind": "tool_call",
+          "tool": "update_problem",
+          "generated_tokens": 34
+        },
+        {
+          "kind": "tool_call",
+          "tool": "find_incident_by_number",
+          "generated_tokens": 30
+        },
+        {
+          "kind": "tool_call",
+          "tool": "retrieve_knowledge_articles",
+          "generated_tokens": 26
+        },
+        {
+          "kind": "tool_call",
+          "tool": "link_knowledge_to_incident",
+          "generated_tokens": 48
+        },
+        {
+          "kind": "message",
+          "tool": null,
+          "generated_tokens": 10
+        },
+        {
+          "kind": "done",
+          "tool": null,
+          "generated_tokens": 15
+        }
+      ],
+      "observations": [
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 228,
+          "turn_tokens_incl_template_and_generation_prompt": 274
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 233,
+          "turn_tokens_incl_template_and_generation_prompt": 279
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 110,
+          "turn_tokens_incl_template_and_generation_prompt": 156
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 233,
+          "turn_tokens_incl_template_and_generation_prompt": 279
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 231,
+          "turn_tokens_incl_template_and_generation_prompt": 277
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 233,
+          "turn_tokens_incl_template_and_generation_prompt": 279
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 232,
+          "turn_tokens_incl_template_and_generation_prompt": 278
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 234,
+          "turn_tokens_incl_template_and_generation_prompt": 280
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 314,
+          "turn_tokens_incl_template_and_generation_prompt": 360
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 151,
+          "turn_tokens_incl_template_and_generation_prompt": 197
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 101,
+          "turn_tokens_incl_template_and_generation_prompt": 147
+        },
+        {
+          "kind": "user",
+          "raw_observation_tokens": 8,
+          "turn_tokens_incl_template_and_generation_prompt": 54
+        }
+      ],
+      "seconds": {
+        "env_build_and_reset": 0.0128,
+        "tool_calls_total": 0.0011,
+        "tool_call_max": 0.0002,
+        "db_scoring_fuzzy": 0.0163
+      }
+    },
+    {
+      "task_id": "itsmbench_msp_015",
+      "gold_tool_calls": 10,
+      "agent_turns": 12,
+      "step_count": 12,
+      "db_match": true,
+      "initial_prompt_tokens": 28104,
+      "response_tokens": 3042,
+      "full_sequence_tokens": 31146,
+      "generated_tokens": 351,
+      "environment_tokens": 2691,
+      "actions": [
+        {
+          "kind": "tool_call",
+          "tool": "get_user_using_name",
+          "generated_tokens": 32
+        },
+        {
+          "kind": "tool_call",
+          "tool": "get_user_using_name",
+          "generated_tokens": 31
+        },
+        {
+          "kind": "tool_call",
+          "tool": "update_user_details",
+          "generated_tokens": 31
+        },
+        {
+          "kind": "tool_call",
+          "tool": "find_change_by_number",
+          "generated_tokens": 30
+        },
+        {
+          "kind": "tool_call",
+          "tool": "find_problem_by_number",
+          "generated_tokens": 30
+        },
+        {
+          "kind": "tool_call",
+          "tool": "update_change",
+          "generated_tokens": 32
+        },
+        {
+          "kind": "tool_call",
+          "tool": "update_problem",
+          "generated_tokens": 34
+        },
+        {
+          "kind": "tool_call",
+          "tool": "find_incident_by_number",
+          "generated_tokens": 30
+        },
+        {
+          "kind": "tool_call",
+          "tool": "retrieve_knowledge_articles",
+          "generated_tokens": 28
+        },
+        {
+          "kind": "tool_call",
+          "tool": "link_knowledge_to_incident",
+          "generated_tokens": 48
+        },
+        {
+          "kind": "message",
+          "tool": null,
+          "generated_tokens": 10
+        },
+        {
+          "kind": "done",
+          "tool": null,
+          "generated_tokens": 15
+        }
+      ],
+      "observations": [
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 228,
+          "turn_tokens_incl_template_and_generation_prompt": 274
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 234,
+          "turn_tokens_incl_template_and_generation_prompt": 280
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 228,
+          "turn_tokens_incl_template_and_generation_prompt": 274
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 253,
+          "turn_tokens_incl_template_and_generation_prompt": 299
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 214,
+          "turn_tokens_incl_template_and_generation_prompt": 260
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 252,
+          "turn_tokens_incl_template_and_generation_prompt": 298
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 215,
+          "turn_tokens_incl_template_and_generation_prompt": 261
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 301,
+          "turn_tokens_incl_template_and_generation_prompt": 347
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 151,
+          "turn_tokens_incl_template_and_generation_prompt": 197
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 101,
+          "turn_tokens_incl_template_and_generation_prompt": 147
+        },
+        {
+          "kind": "user",
+          "raw_observation_tokens": 8,
+          "turn_tokens_incl_template_and_generation_prompt": 54
+        }
+      ],
+      "seconds": {
+        "env_build_and_reset": 0.0125,
+        "tool_calls_total": 0.0011,
+        "tool_call_max": 0.0002,
+        "db_scoring_fuzzy": 0.0163
+      }
+    },
+    {
+      "task_id": "itsmbench_msp_016",
+      "gold_tool_calls": 10,
+      "agent_turns": 12,
+      "step_count": 12,
+      "db_match": true,
+      "initial_prompt_tokens": 28104,
+      "response_tokens": 2966,
+      "full_sequence_tokens": 31070,
+      "generated_tokens": 354,
+      "environment_tokens": 2612,
+      "actions": [
+        {
+          "kind": "tool_call",
+          "tool": "get_user_using_name",
+          "generated_tokens": 31
+        },
+        {
+          "kind": "tool_call",
+          "tool": "get_user_using_name",
+          "generated_tokens": 31
+        },
+        {
+          "kind": "tool_call",
+          "tool": "update_user_details",
+          "generated_tokens": 37
+        },
+        {
+          "kind": "tool_call",
+          "tool": "find_change_by_number",
+          "generated_tokens": 30
+        },
+        {
+          "kind": "tool_call",
+          "tool": "find_problem_by_number",
+          "generated_tokens": 30
+        },
+        {
+          "kind": "tool_call",
+          "tool": "update_change",
+          "generated_tokens": 33
+        },
+        {
+          "kind": "tool_call",
+          "tool": "update_problem",
+          "generated_tokens": 34
+        },
+        {
+          "kind": "tool_call",
+          "tool": "find_incident_by_number",
+          "generated_tokens": 30
+        },
+        {
+          "kind": "tool_call",
+          "tool": "retrieve_knowledge_articles",
+          "generated_tokens": 25
+        },
+        {
+          "kind": "tool_call",
+          "tool": "link_knowledge_to_incident",
+          "generated_tokens": 48
+        },
+        {
+          "kind": "message",
+          "tool": null,
+          "generated_tokens": 10
+        },
+        {
+          "kind": "done",
+          "tool": null,
+          "generated_tokens": 15
+        }
+      ],
+      "observations": [
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 228,
+          "turn_tokens_incl_template_and_generation_prompt": 274
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 228,
+          "turn_tokens_incl_template_and_generation_prompt": 274
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 228,
+          "turn_tokens_incl_template_and_generation_prompt": 274
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 204,
+          "turn_tokens_incl_template_and_generation_prompt": 250
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 202,
+          "turn_tokens_incl_template_and_generation_prompt": 248
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 223,
+          "turn_tokens_incl_template_and_generation_prompt": 269
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 221,
+          "turn_tokens_incl_template_and_generation_prompt": 267
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 314,
+          "turn_tokens_incl_template_and_generation_prompt": 360
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 149,
+          "turn_tokens_incl_template_and_generation_prompt": 195
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 101,
+          "turn_tokens_incl_template_and_generation_prompt": 147
+        },
+        {
+          "kind": "user",
+          "raw_observation_tokens": 8,
+          "turn_tokens_incl_template_and_generation_prompt": 54
+        }
+      ],
+      "seconds": {
+        "env_build_and_reset": 0.0125,
+        "tool_calls_total": 0.001,
+        "tool_call_max": 0.0002,
+        "db_scoring_fuzzy": 0.0172
+      }
+    },
+    {
+      "task_id": "itsmbench_msp_017",
+      "gold_tool_calls": 10,
+      "agent_turns": 12,
+      "step_count": 12,
+      "db_match": true,
+      "initial_prompt_tokens": 28104,
+      "response_tokens": 2959,
+      "full_sequence_tokens": 31063,
+      "generated_tokens": 367,
+      "environment_tokens": 2592,
+      "actions": [
+        {
+          "kind": "tool_call",
+          "tool": "get_user_using_name",
+          "generated_tokens": 31
+        },
+        {
+          "kind": "tool_call",
+          "tool": "get_user_using_name",
+          "generated_tokens": 31
+        },
+        {
+          "kind": "tool_call",
+          "tool": "update_user_details",
+          "generated_tokens": 45
+        },
+        {
+          "kind": "tool_call",
+          "tool": "find_change_by_number",
+          "generated_tokens": 30
+        },
+        {
+          "kind": "tool_call",
+          "tool": "find_problem_by_number",
+          "generated_tokens": 30
+        },
+        {
+          "kind": "tool_call",
+          "tool": "find_incident_by_number",
+          "generated_tokens": 30
+        },
+        {
+          "kind": "tool_call",
+          "tool": "update_change",
+          "generated_tokens": 32
+        },
+        {
+          "kind": "tool_call",
+          "tool": "update_problem",
+          "generated_tokens": 34
+        },
+        {
+          "kind": "tool_call",
+          "tool": "retrieve_knowledge_articles",
+          "generated_tokens": 31
+        },
+        {
+          "kind": "tool_call",
+          "tool": "link_knowledge_to_incident",
+          "generated_tokens": 48
+        },
+        {
+          "kind": "message",
+          "tool": null,
+          "generated_tokens": 10
+        },
+        {
+          "kind": "done",
+          "tool": null,
+          "generated_tokens": 15
+        }
+      ],
+      "observations": [
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 228,
+          "turn_tokens_incl_template_and_generation_prompt": 274
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 230,
+          "turn_tokens_incl_template_and_generation_prompt": 276
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 232,
+          "turn_tokens_incl_template_and_generation_prompt": 278
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 237,
+          "turn_tokens_incl_template_and_generation_prompt": 283
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 165,
+          "turn_tokens_incl_template_and_generation_prompt": 211
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 314,
+          "turn_tokens_incl_template_and_generation_prompt": 360
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 236,
+          "turn_tokens_incl_template_and_generation_prompt": 282
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 184,
+          "turn_tokens_incl_template_and_generation_prompt": 230
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 151,
+          "turn_tokens_incl_template_and_generation_prompt": 197
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 101,
+          "turn_tokens_incl_template_and_generation_prompt": 147
+        },
+        {
+          "kind": "user",
+          "raw_observation_tokens": 8,
+          "turn_tokens_incl_template_and_generation_prompt": 54
+        }
+      ],
+      "seconds": {
+        "env_build_and_reset": 0.013,
+        "tool_calls_total": 0.001,
+        "tool_call_max": 0.0002,
+        "db_scoring_fuzzy": 0.0171
+      }
+    },
+    {
+      "task_id": "itsmbench_msp_018",
+      "gold_tool_calls": 8,
+      "agent_turns": 10,
+      "step_count": 10,
+      "db_match": true,
+      "initial_prompt_tokens": 28104,
+      "response_tokens": 2555,
+      "full_sequence_tokens": 30659,
+      "generated_tokens": 294,
+      "environment_tokens": 2261,
+      "actions": [
+        {
+          "kind": "tool_call",
+          "tool": "get_user_using_name",
+          "generated_tokens": 34
+        },
+        {
+          "kind": "tool_call",
+          "tool": "find_change_by_number",
+          "generated_tokens": 30
+        },
+        {
+          "kind": "tool_call",
+          "tool": "find_problem_by_number",
+          "generated_tokens": 30
+        },
+        {
+          "kind": "tool_call",
+          "tool": "update_change",
+          "generated_tokens": 33
+        },
+        {
+          "kind": "tool_call",
+          "tool": "update_problem",
+          "generated_tokens": 34
+        },
+        {
+          "kind": "tool_call",
+          "tool": "find_incident_by_number",
+          "generated_tokens": 30
+        },
+        {
+          "kind": "tool_call",
+          "tool": "retrieve_knowledge_articles",
+          "generated_tokens": 30
+        },
+        {
+          "kind": "tool_call",
+          "tool": "link_knowledge_to_incident",
+          "generated_tokens": 48
+        },
+        {
+          "kind": "message",
+          "tool": null,
+          "generated_tokens": 10
+        },
+        {
+          "kind": "done",
+          "tool": null,
+          "generated_tokens": 15
+        }
+      ],
+      "observations": [
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 234,
+          "turn_tokens_incl_template_and_generation_prompt": 280
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 265,
+          "turn_tokens_incl_template_and_generation_prompt": 311
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 250,
+          "turn_tokens_incl_template_and_generation_prompt": 296
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 266,
+          "turn_tokens_incl_template_and_generation_prompt": 312
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 251,
+          "turn_tokens_incl_template_and_generation_prompt": 297
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 314,
+          "turn_tokens_incl_template_and_generation_prompt": 360
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 158,
+          "turn_tokens_incl_template_and_generation_prompt": 204
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 101,
+          "turn_tokens_incl_template_and_generation_prompt": 147
+        },
+        {
+          "kind": "user",
+          "raw_observation_tokens": 8,
+          "turn_tokens_incl_template_and_generation_prompt": 54
+        }
+      ],
+      "seconds": {
+        "env_build_and_reset": 0.1124,
+        "tool_calls_total": 0.0009,
+        "tool_call_max": 0.0002,
+        "db_scoring_fuzzy": 0.0168
+      }
+    },
+    {
+      "task_id": "itsmbench_msp_031",
+      "gold_tool_calls": 10,
+      "agent_turns": 12,
+      "step_count": 12,
+      "db_match": true,
+      "initial_prompt_tokens": 28104,
+      "response_tokens": 2596,
+      "full_sequence_tokens": 30700,
+      "generated_tokens": 353,
+      "environment_tokens": 2243,
+      "actions": [
+        {
+          "kind": "tool_call",
+          "tool": "get_user_using_name",
+          "generated_tokens": 31
+        },
+        {
+          "kind": "tool_call",
+          "tool": "find_problem_by_number",
+          "generated_tokens": 30
+        },
+        {
+          "kind": "tool_call",
+          "tool": "update_problem",
+          "generated_tokens": 34
+        },
+        {
+          "kind": "tool_call",
+          "tool": "find_change_request_mappings_for_problem",
+          "generated_tokens": 30
+        },
+        {
+          "kind": "tool_call",
+          "tool": "find_change_by_number",
+          "generated_tokens": 30
+        },
+        {
+          "kind": "tool_call",
+          "tool": "update_change",
+          "generated_tokens": 33
+        },
+        {
+          "kind": "tool_call",
+          "tool": "find_incident_by_number",
+          "generated_tokens": 30
+        },
+        {
+          "kind": "tool_call",
+          "tool": "find_incident_knowledge_links",
+          "generated_tokens": 29
+        },
+        {
+          "kind": "tool_call",
+          "tool": "retrieve_knowledge_articles",
+          "generated_tokens": 33
+        },
+        {
+          "kind": "tool_call",
+          "tool": "link_knowledge_to_incident",
+          "generated_tokens": 48
+        },
+        {
+          "kind": "message",
+          "tool": null,
+          "generated_tokens": 10
+        },
+        {
+          "kind": "done",
+          "tool": null,
+          "generated_tokens": 15
+        }
+      ],
+      "observations": [
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 231,
+          "turn_tokens_incl_template_and_generation_prompt": 277
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 201,
+          "turn_tokens_incl_template_and_generation_prompt": 247
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 220,
+          "turn_tokens_incl_template_and_generation_prompt": 266
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 77,
+          "turn_tokens_incl_template_and_generation_prompt": 123
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 218,
+          "turn_tokens_incl_template_and_generation_prompt": 264
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 219,
+          "turn_tokens_incl_template_and_generation_prompt": 265
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 297,
+          "turn_tokens_incl_template_and_generation_prompt": 343
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 11,
+          "turn_tokens_incl_template_and_generation_prompt": 57
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 154,
+          "turn_tokens_incl_template_and_generation_prompt": 200
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 101,
+          "turn_tokens_incl_template_and_generation_prompt": 147
+        },
+        {
+          "kind": "user",
+          "raw_observation_tokens": 8,
+          "turn_tokens_incl_template_and_generation_prompt": 54
+        }
+      ],
+      "seconds": {
+        "env_build_and_reset": 0.0129,
+        "tool_calls_total": 0.001,
+        "tool_call_max": 0.0002,
+        "db_scoring_fuzzy": 0.017
+      }
+    },
+    {
+      "task_id": "itsmbench_single_001",
+      "gold_tool_calls": 7,
+      "agent_turns": 9,
+      "step_count": 9,
+      "db_match": true,
+      "initial_prompt_tokens": 28104,
+      "response_tokens": 1621,
+      "full_sequence_tokens": 29725,
+      "generated_tokens": 325,
+      "environment_tokens": 1296,
+      "actions": [
+        {
+          "kind": "tool_call",
+          "tool": "get_user_using_name",
+          "generated_tokens": 32
+        },
+        {
+          "kind": "tool_call",
+          "tool": "find_sla_definitions",
+          "generated_tokens": 31
+        },
+        {
+          "kind": "tool_call",
+          "tool": "update_sla_definition",
+          "generated_tokens": 45
+        },
+        {
+          "kind": "tool_call",
+          "tool": "add_location",
+          "generated_tokens": 46
+        },
+        {
+          "kind": "tool_call",
+          "tool": "find_group_by_name",
+          "generated_tokens": 24
+        },
+        {
+          "kind": "tool_call",
+          "tool": "add_new_user",
+          "generated_tokens": 84
+        },
+        {
+          "kind": "tool_call",
+          "tool": "add_new_group_member",
+          "generated_tokens": 38
+        },
+        {
+          "kind": "message",
+          "tool": null,
+          "generated_tokens": 10
+        },
+        {
+          "kind": "done",
+          "tool": null,
+          "generated_tokens": 15
+        }
+      ],
+      "observations": [
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 152,
+          "turn_tokens_incl_template_and_generation_prompt": 198
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 130,
+          "turn_tokens_incl_template_and_generation_prompt": 176
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 117,
+          "turn_tokens_incl_template_and_generation_prompt": 163
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 107,
+          "turn_tokens_incl_template_and_generation_prompt": 153
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 118,
+          "turn_tokens_incl_template_and_generation_prompt": 164
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 202,
+          "turn_tokens_incl_template_and_generation_prompt": 248
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 94,
+          "turn_tokens_incl_template_and_generation_prompt": 140
+        },
+        {
+          "kind": "user",
+          "raw_observation_tokens": 8,
+          "turn_tokens_incl_template_and_generation_prompt": 54
+        }
+      ],
+      "seconds": {
+        "env_build_and_reset": 0.0095,
+        "tool_calls_total": 0.0013,
+        "tool_call_max": 0.0004,
+        "db_scoring_fuzzy": 0.0056
+      }
+    },
+    {
+      "task_id": "itsmbench_single_002",
+      "gold_tool_calls": 11,
+      "agent_turns": 13,
+      "step_count": 13,
+      "db_match": true,
+      "initial_prompt_tokens": 28104,
+      "response_tokens": 2520,
+      "full_sequence_tokens": 30624,
+      "generated_tokens": 471,
+      "environment_tokens": 2049,
+      "actions": [
+        {
+          "kind": "tool_call",
+          "tool": "get_user_using_name",
+          "generated_tokens": 31
+        },
+        {
+          "kind": "tool_call",
+          "tool": "find_incident_by_number",
+          "generated_tokens": 30
+        },
+        {
+          "kind": "tool_call",
+          "tool": "find_incident_slas",
+          "generated_tokens": 28
+        },
+        {
+          "kind": "tool_call",
+          "tool": "find_sla_definitions",
+          "generated_tokens": 31
+        },
+        {
+          "kind": "tool_call",
+          "tool": "link_new_incident_sla",
+          "generated_tokens": 42
+        },
+        {
+          "kind": "tool_call",
+          "tool": "find_location_by_given_name",
+          "generated_tokens": 25
+        },
+        {
+          "kind": "tool_call",
+          "tool": "update_location",
+          "generated_tokens": 30
+        },
+        {
+          "kind": "tool_call",
+          "tool": "add_new_user",
+          "generated_tokens": 86
+        },
+        {
+          "kind": "tool_call",
+          "tool": "register_configuration_item",
+          "generated_tokens": 81
+        },
+        {
+          "kind": "tool_call",
+          "tool": "find_group_by_name",
+          "generated_tokens": 24
+        },
+        {
+          "kind": "tool_call",
+          "tool": "add_new_group_member",
+          "generated_tokens": 38
+        },
+        {
+          "kind": "message",
+          "tool": null,
+          "generated_tokens": 10
+        },
+        {
+          "kind": "done",
+          "tool": null,
+          "generated_tokens": 15
+        }
+      ],
+      "observations": [
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 154,
+          "turn_tokens_incl_template_and_generation_prompt": 200
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 323,
+          "turn_tokens_incl_template_and_generation_prompt": 369
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 23,
+          "turn_tokens_incl_template_and_generation_prompt": 69
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 131,
+          "turn_tokens_incl_template_and_generation_prompt": 177
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 145,
+          "turn_tokens_incl_template_and_generation_prompt": 191
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 73,
+          "turn_tokens_incl_template_and_generation_prompt": 119
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 91,
+          "turn_tokens_incl_template_and_generation_prompt": 137
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 204,
+          "turn_tokens_incl_template_and_generation_prompt": 250
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 132,
+          "turn_tokens_incl_template_and_generation_prompt": 178
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 119,
+          "turn_tokens_incl_template_and_generation_prompt": 165
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 94,
+          "turn_tokens_incl_template_and_generation_prompt": 140
+        },
+        {
+          "kind": "user",
+          "raw_observation_tokens": 8,
+          "turn_tokens_incl_template_and_generation_prompt": 54
+        }
+      ],
+      "seconds": {
+        "env_build_and_reset": 0.0082,
+        "tool_calls_total": 0.0017,
+        "tool_call_max": 0.0004,
+        "db_scoring_fuzzy": 0.0044
+      }
+    },
+    {
+      "task_id": "itsmbench_single_003",
+      "gold_tool_calls": 8,
+      "agent_turns": 10,
+      "step_count": 10,
+      "db_match": true,
+      "initial_prompt_tokens": 28104,
+      "response_tokens": 1907,
+      "full_sequence_tokens": 30011,
+      "generated_tokens": 394,
+      "environment_tokens": 1513,
+      "actions": [
+        {
+          "kind": "tool_call",
+          "tool": "get_user_using_name",
+          "generated_tokens": 31
+        },
+        {
+          "kind": "tool_call",
+          "tool": "find_service_by_name",
+          "generated_tokens": 23
+        },
+        {
+          "kind": "tool_call",
+          "tool": "get_user_using_name",
+          "generated_tokens": 32
+        },
+        {
+          "kind": "tool_call",
+          "tool": "register_new_service_offering",
+          "generated_tokens": 91
+        },
+        {
+          "kind": "tool_call",
+          "tool": "add_location",
+          "generated_tokens": 45
+        },
+        {
+          "kind": "tool_call",
+          "tool": "add_new_user",
+          "generated_tokens": 85
+        },
+        {
+          "kind": "tool_call",
+          "tool": "find_group_by_name",
+          "generated_tokens": 24
+        },
+        {
+          "kind": "tool_call",
+          "tool": "add_new_group_member",
+          "generated_tokens": 38
+        },
+        {
+          "kind": "message",
+          "tool": null,
+          "generated_tokens": 10
+        },
+        {
+          "kind": "done",
+          "tool": null,
+          "generated_tokens": 15
+        }
+      ],
+      "observations": [
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 154,
+          "turn_tokens_incl_template_and_generation_prompt": 200
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 119,
+          "turn_tokens_incl_template_and_generation_prompt": 165
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 154,
+          "turn_tokens_incl_template_and_generation_prompt": 200
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 142,
+          "turn_tokens_incl_template_and_generation_prompt": 188
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 106,
+          "turn_tokens_incl_template_and_generation_prompt": 152
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 203,
+          "turn_tokens_incl_template_and_generation_prompt": 249
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 119,
+          "turn_tokens_incl_template_and_generation_prompt": 165
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 94,
+          "turn_tokens_incl_template_and_generation_prompt": 140
+        },
+        {
+          "kind": "user",
+          "raw_observation_tokens": 8,
+          "turn_tokens_incl_template_and_generation_prompt": 54
+        }
+      ],
+      "seconds": {
+        "env_build_and_reset": 0.009,
+        "tool_calls_total": 0.0012,
+        "tool_call_max": 0.0003,
+        "db_scoring_fuzzy": 0.0059
+      }
+    },
+    {
+      "task_id": "itsmbench_single_004",
+      "gold_tool_calls": 9,
+      "agent_turns": 11,
+      "step_count": 11,
+      "db_match": true,
+      "initial_prompt_tokens": 28104,
+      "response_tokens": 2532,
+      "full_sequence_tokens": 30636,
+      "generated_tokens": 455,
+      "environment_tokens": 2077,
+      "actions": [
+        {
+          "kind": "tool_call",
+          "tool": "get_user_using_name",
+          "generated_tokens": 31
+        },
+        {
+          "kind": "tool_call",
+          "tool": "find_sla_definitions",
+          "generated_tokens": 18
+        },
+        {
+          "kind": "tool_call",
+          "tool": "update_sla_definition",
+          "generated_tokens": 39
+        },
+        {
+          "kind": "tool_call",
+          "tool": "add_new_sla_definition",
+          "generated_tokens": 62
+        },
+        {
+          "kind": "tool_call",
+          "tool": "add_location",
+          "generated_tokens": 45
+        },
+        {
+          "kind": "tool_call",
+          "tool": "add_new_user",
+          "generated_tokens": 83
+        },
+        {
+          "kind": "tool_call",
+          "tool": "register_configuration_item",
+          "generated_tokens": 90
+        },
+        {
+          "kind": "tool_call",
+          "tool": "find_group_by_name",
+          "generated_tokens": 24
+        },
+        {
+          "kind": "tool_call",
+          "tool": "add_new_group_member",
+          "generated_tokens": 38
+        },
+        {
+          "kind": "message",
+          "tool": null,
+          "generated_tokens": 10
+        },
+        {
+          "kind": "done",
+          "tool": null,
+          "generated_tokens": 15
+        }
+      ],
+      "observations": [
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 154,
+          "turn_tokens_incl_template_and_generation_prompt": 200
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 563,
+          "turn_tokens_incl_template_and_generation_prompt": 609
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 118,
+          "turn_tokens_incl_template_and_generation_prompt": 164
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 116,
+          "turn_tokens_incl_template_and_generation_prompt": 162
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 106,
+          "turn_tokens_incl_template_and_generation_prompt": 152
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 200,
+          "turn_tokens_incl_template_and_generation_prompt": 246
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 139,
+          "turn_tokens_incl_template_and_generation_prompt": 185
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 119,
+          "turn_tokens_incl_template_and_generation_prompt": 165
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 94,
+          "turn_tokens_incl_template_and_generation_prompt": 140
+        },
+        {
+          "kind": "user",
+          "raw_observation_tokens": 8,
+          "turn_tokens_incl_template_and_generation_prompt": 54
+        }
+      ],
+      "seconds": {
+        "env_build_and_reset": 0.0092,
+        "tool_calls_total": 0.0012,
+        "tool_call_max": 0.0004,
+        "db_scoring_fuzzy": 0.006
+      }
+    },
+    {
+      "task_id": "itsmbench_single_005",
+      "gold_tool_calls": 10,
+      "agent_turns": 12,
+      "step_count": 12,
+      "db_match": true,
+      "initial_prompt_tokens": 28104,
+      "response_tokens": 2762,
+      "full_sequence_tokens": 30866,
+      "generated_tokens": 494,
+      "environment_tokens": 2268,
+      "actions": [
+        {
+          "kind": "tool_call",
+          "tool": "get_user_using_name",
+          "generated_tokens": 31
+        },
+        {
+          "kind": "tool_call",
+          "tool": "find_sla_definitions",
+          "generated_tokens": 18
+        },
+        {
+          "kind": "tool_call",
+          "tool": "update_sla_definition",
+          "generated_tokens": 38
+        },
+        {
+          "kind": "tool_call",
+          "tool": "add_new_sla_definition",
+          "generated_tokens": 63
+        },
+        {
+          "kind": "tool_call",
+          "tool": "find_location_by_given_name",
+          "generated_tokens": 26
+        },
+        {
+          "kind": "tool_call",
+          "tool": "get_user_using_name",
+          "generated_tokens": 32
+        },
+        {
+          "kind": "tool_call",
+          "tool": "add_new_user_group",
+          "generated_tokens": 61
+        },
+        {
+          "kind": "tool_call",
+          "tool": "add_new_user",
+          "generated_tokens": 83
+        },
+        {
+          "kind": "tool_call",
+          "tool": "add_new_group_member",
+          "generated_tokens": 38
+        },
+        {
+          "kind": "tool_call",
+          "tool": "register_configuration_item",
+          "generated_tokens": 79
+        },
+        {
+          "kind": "message",
+          "tool": null,
+          "generated_tokens": 10
+        },
+        {
+          "kind": "done",
+          "tool": null,
+          "generated_tokens": 15
+        }
+      ],
+      "observations": [
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 154,
+          "turn_tokens_incl_template_and_generation_prompt": 200
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 563,
+          "turn_tokens_incl_template_and_generation_prompt": 609
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 116,
+          "turn_tokens_incl_template_and_generation_prompt": 162
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 117,
+          "turn_tokens_incl_template_and_generation_prompt": 163
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 111,
+          "turn_tokens_incl_template_and_generation_prompt": 157
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 154,
+          "turn_tokens_incl_template_and_generation_prompt": 200
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 115,
+          "turn_tokens_incl_template_and_generation_prompt": 161
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 200,
+          "turn_tokens_incl_template_and_generation_prompt": 246
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 94,
+          "turn_tokens_incl_template_and_generation_prompt": 140
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 130,
+          "turn_tokens_incl_template_and_generation_prompt": 176
+        },
+        {
+          "kind": "user",
+          "raw_observation_tokens": 8,
+          "turn_tokens_incl_template_and_generation_prompt": 54
+        }
+      ],
+      "seconds": {
+        "env_build_and_reset": 0.0093,
+        "tool_calls_total": 0.0013,
+        "tool_call_max": 0.0004,
+        "db_scoring_fuzzy": 0.0058
+      }
+    },
+    {
+      "task_id": "itsmbench_single_006",
+      "gold_tool_calls": 11,
+      "agent_turns": 13,
+      "step_count": 13,
+      "db_match": true,
+      "initial_prompt_tokens": 28104,
+      "response_tokens": 3381,
+      "full_sequence_tokens": 31485,
+      "generated_tokens": 464,
+      "environment_tokens": 2917,
+      "actions": [
+        {
+          "kind": "tool_call",
+          "tool": "get_user_using_name",
+          "generated_tokens": 32
+        },
+        {
+          "kind": "tool_call",
+          "tool": "get_user_using_name",
+          "generated_tokens": 32
+        },
+        {
+          "kind": "tool_call",
+          "tool": "find_sla_definitions",
+          "generated_tokens": 18
+        },
+        {
+          "kind": "tool_call",
+          "tool": "update_sla_definition",
+          "generated_tokens": 38
+        },
+        {
+          "kind": "tool_call",
+          "tool": "add_new_sla_definition",
+          "generated_tokens": 63
+        },
+        {
+          "kind": "tool_call",
+          "tool": "get_incident_template_by_name",
+          "generated_tokens": 26
+        },
+        {
+          "kind": "tool_call",
+          "tool": "update_incident_template",
+          "generated_tokens": 46
+        },
+        {
+          "kind": "tool_call",
+          "tool": "find_incident_by_number",
+          "generated_tokens": 30
+        },
+        {
+          "kind": "tool_call",
+          "tool": "update_incident",
+          "generated_tokens": 33
+        },
+        {
+          "kind": "tool_call",
+          "tool": "get_user",
+          "generated_tokens": 25
+        },
+        {
+          "kind": "tool_call",
+          "tool": "send_notification",
+          "generated_tokens": 96
+        },
+        {
+          "kind": "message",
+          "tool": null,
+          "generated_tokens": 10
+        },
+        {
+          "kind": "done",
+          "tool": null,
+          "generated_tokens": 15
+        }
+      ],
+      "observations": [
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 154,
+          "turn_tokens_incl_template_and_generation_prompt": 200
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 158,
+          "turn_tokens_incl_template_and_generation_prompt": 204
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 563,
+          "turn_tokens_incl_template_and_generation_prompt": 609
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 116,
+          "turn_tokens_incl_template_and_generation_prompt": 162
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 117,
+          "turn_tokens_incl_template_and_generation_prompt": 163
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 144,
+          "turn_tokens_incl_template_and_generation_prompt": 190
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 144,
+          "turn_tokens_incl_template_and_generation_prompt": 190
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 326,
+          "turn_tokens_incl_template_and_generation_prompt": 372
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 327,
+          "turn_tokens_incl_template_and_generation_prompt": 373
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 157,
+          "turn_tokens_incl_template_and_generation_prompt": 203
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 151,
+          "turn_tokens_incl_template_and_generation_prompt": 197
+        },
+        {
+          "kind": "user",
+          "raw_observation_tokens": 8,
+          "turn_tokens_incl_template_and_generation_prompt": 54
+        }
+      ],
+      "seconds": {
+        "env_build_and_reset": 0.0089,
+        "tool_calls_total": 0.0018,
+        "tool_call_max": 0.0003,
+        "db_scoring_fuzzy": 0.006
+      }
+    },
+    {
+      "task_id": "itsmbench_single_007",
+      "gold_tool_calls": 16,
+      "agent_turns": 18,
+      "step_count": 18,
+      "db_match": true,
+      "initial_prompt_tokens": 28104,
+      "response_tokens": 4970,
+      "full_sequence_tokens": 33074,
+      "generated_tokens": 664,
+      "environment_tokens": 4306,
+      "actions": [
+        {
+          "kind": "tool_call",
+          "tool": "get_user_using_name",
+          "generated_tokens": 32
+        },
+        {
+          "kind": "tool_call",
+          "tool": "find_sla_definitions",
+          "generated_tokens": 21
+        },
+        {
+          "kind": "tool_call",
+          "tool": "update_sla_definition",
+          "generated_tokens": 39
+        },
+        {
+          "kind": "tool_call",
+          "tool": "add_new_sla_definition",
+          "generated_tokens": 63
+        },
+        {
+          "kind": "tool_call",
+          "tool": "get_incident_template_by_name",
+          "generated_tokens": 26
+        },
+        {
+          "kind": "tool_call",
+          "tool": "get_user_using_name",
+          "generated_tokens": 32
+        },
+        {
+          "kind": "tool_call",
+          "tool": "update_incident_template",
+          "generated_tokens": 46
+        },
+        {
+          "kind": "tool_call",
+          "tool": "find_change_by_number",
+          "generated_tokens": 30
+        },
+        {
+          "kind": "tool_call",
+          "tool": "update_change",
+          "generated_tokens": 32
+        },
+        {
+          "kind": "tool_call",
+          "tool": "list_incidents",
+          "generated_tokens": 32
+        },
+        {
+          "kind": "tool_call",
+          "tool": "find_incident_by_number",
+          "generated_tokens": 30
+        },
+        {
+          "kind": "tool_call",
+          "tool": "update_incident",
+          "generated_tokens": 60
+        },
+        {
+          "kind": "tool_call",
+          "tool": "find_incident_slas",
+          "generated_tokens": 28
+        },
+        {
+          "kind": "tool_call",
+          "tool": "update_incident_sla_details",
+          "generated_tokens": 40
+        },
+        {
+          "kind": "tool_call",
+          "tool": "get_user",
+          "generated_tokens": 25
+        },
+        {
+          "kind": "tool_call",
+          "tool": "send_notification",
+          "generated_tokens": 103
+        },
+        {
+          "kind": "message",
+          "tool": null,
+          "generated_tokens": 10
+        },
+        {
+          "kind": "done",
+          "tool": null,
+          "generated_tokens": 15
+        }
+      ],
+      "observations": [
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 157,
+          "turn_tokens_incl_template_and_generation_prompt": 203
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 562,
+          "turn_tokens_incl_template_and_generation_prompt": 608
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 118,
+          "turn_tokens_incl_template_and_generation_prompt": 164
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 117,
+          "turn_tokens_incl_template_and_generation_prompt": 163
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 141,
+          "turn_tokens_incl_template_and_generation_prompt": 187
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 157,
+          "turn_tokens_incl_template_and_generation_prompt": 203
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 141,
+          "turn_tokens_incl_template_and_generation_prompt": 187
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 184,
+          "turn_tokens_incl_template_and_generation_prompt": 230
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 201,
+          "turn_tokens_incl_template_and_generation_prompt": 247
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 593,
+          "turn_tokens_incl_template_and_generation_prompt": 639
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 276,
+          "turn_tokens_incl_template_and_generation_prompt": 322
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 313,
+          "turn_tokens_incl_template_and_generation_prompt": 359
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 119,
+          "turn_tokens_incl_template_and_generation_prompt": 165
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 127,
+          "turn_tokens_incl_template_and_generation_prompt": 173
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 152,
+          "turn_tokens_incl_template_and_generation_prompt": 198
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 158,
+          "turn_tokens_incl_template_and_generation_prompt": 204
+        },
+        {
+          "kind": "user",
+          "raw_observation_tokens": 8,
+          "turn_tokens_incl_template_and_generation_prompt": 54
+        }
+      ],
+      "seconds": {
+        "env_build_and_reset": 0.0084,
+        "tool_calls_total": 0.0024,
+        "tool_call_max": 0.0008,
+        "db_scoring_fuzzy": 0.0044
+      }
+    },
+    {
+      "task_id": "itsmbench_single_011",
+      "gold_tool_calls": 11,
+      "agent_turns": 13,
+      "step_count": 13,
+      "db_match": true,
+      "initial_prompt_tokens": 28104,
+      "response_tokens": 3016,
+      "full_sequence_tokens": 31120,
+      "generated_tokens": 465,
+      "environment_tokens": 2551,
+      "actions": [
+        {
+          "kind": "tool_call",
+          "tool": "get_user_using_name",
+          "generated_tokens": 32
+        },
+        {
+          "kind": "tool_call",
+          "tool": "find_problem_by_number",
+          "generated_tokens": 30
+        },
+        {
+          "kind": "tool_call",
+          "tool": "find_change_request_mappings_for_problem",
+          "generated_tokens": 30
+        },
+        {
+          "kind": "tool_call",
+          "tool": "find_change_by_number",
+          "generated_tokens": 30
+        },
+        {
+          "kind": "tool_call",
+          "tool": "update_change",
+          "generated_tokens": 32
+        },
+        {
+          "kind": "tool_call",
+          "tool": "update_problem",
+          "generated_tokens": 53
+        },
+        {
+          "kind": "tool_call",
+          "tool": "map_change_request",
+          "generated_tokens": 38
+        },
+        {
+          "kind": "tool_call",
+          "tool": "find_incident_by_number",
+          "generated_tokens": 30
+        },
+        {
+          "kind": "tool_call",
+          "tool": "create_knowledge_article",
+          "generated_tokens": 78
+        },
+        {
+          "kind": "tool_call",
+          "tool": "link_knowledge_to_incident",
+          "generated_tokens": 47
+        },
+        {
+          "kind": "tool_call",
+          "tool": "find_incident_knowledge_links",
+          "generated_tokens": 40
+        },
+        {
+          "kind": "message",
+          "tool": null,
+          "generated_tokens": 10
+        },
+        {
+          "kind": "done",
+          "tool": null,
+          "generated_tokens": 15
+        }
+      ],
+      "observations": [
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 154,
+          "turn_tokens_incl_template_and_generation_prompt": 200
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 234,
+          "turn_tokens_incl_template_and_generation_prompt": 280
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 116,
+          "turn_tokens_incl_template_and_generation_prompt": 162
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 218,
+          "turn_tokens_incl_template_and_generation_prompt": 264
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 217,
+          "turn_tokens_incl_template_and_generation_prompt": 263
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 240,
+          "turn_tokens_incl_template_and_generation_prompt": 286
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 101,
+          "turn_tokens_incl_template_and_generation_prompt": 147
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 366,
+          "turn_tokens_incl_template_and_generation_prompt": 412
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 144,
+          "turn_tokens_incl_template_and_generation_prompt": 190
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 100,
+          "turn_tokens_incl_template_and_generation_prompt": 146
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 101,
+          "turn_tokens_incl_template_and_generation_prompt": 147
+        },
+        {
+          "kind": "user",
+          "raw_observation_tokens": 8,
+          "turn_tokens_incl_template_and_generation_prompt": 54
+        }
+      ],
+      "seconds": {
+        "env_build_and_reset": 0.0082,
+        "tool_calls_total": 0.0015,
+        "tool_call_max": 0.0003,
+        "db_scoring_fuzzy": 0.0045
+      }
+    },
+    {
+      "task_id": "itsmbench_single_015",
+      "gold_tool_calls": 11,
+      "agent_turns": 13,
+      "step_count": 13,
+      "db_match": true,
+      "initial_prompt_tokens": 28104,
+      "response_tokens": 2789,
+      "full_sequence_tokens": 30893,
+      "generated_tokens": 440,
+      "environment_tokens": 2349,
+      "actions": [
+        {
+          "kind": "tool_call",
+          "tool": "get_user_using_name",
+          "generated_tokens": 32
+        },
+        {
+          "kind": "tool_call",
+          "tool": "find_problem_by_number",
+          "generated_tokens": 30
+        },
+        {
+          "kind": "tool_call",
+          "tool": "find_change_request_mappings_for_problem",
+          "generated_tokens": 30
+        },
+        {
+          "kind": "tool_call",
+          "tool": "find_change_by_number",
+          "generated_tokens": 30
+        },
+        {
+          "kind": "tool_call",
+          "tool": "find_incident_by_number",
+          "generated_tokens": 30
+        },
+        {
+          "kind": "tool_call",
+          "tool": "update_change",
+          "generated_tokens": 32
+        },
+        {
+          "kind": "tool_call",
+          "tool": "update_problem",
+          "generated_tokens": 56
+        },
+        {
+          "kind": "tool_call",
+          "tool": "map_change_request",
+          "generated_tokens": 38
+        },
+        {
+          "kind": "tool_call",
+          "tool": "create_knowledge_article",
+          "generated_tokens": 50
+        },
+        {
+          "kind": "tool_call",
+          "tool": "link_knowledge_to_incident",
+          "generated_tokens": 47
+        },
+        {
+          "kind": "tool_call",
+          "tool": "find_incident_knowledge_links",
+          "generated_tokens": 40
+        },
+        {
+          "kind": "message",
+          "tool": null,
+          "generated_tokens": 10
+        },
+        {
+          "kind": "done",
+          "tool": null,
+          "generated_tokens": 15
+        }
+      ],
+      "observations": [
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 154,
+          "turn_tokens_incl_template_and_generation_prompt": 200
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 189,
+          "turn_tokens_incl_template_and_generation_prompt": 235
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 77,
+          "turn_tokens_incl_template_and_generation_prompt": 123
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 191,
+          "turn_tokens_incl_template_and_generation_prompt": 237
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 331,
+          "turn_tokens_incl_template_and_generation_prompt": 377
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 208,
+          "turn_tokens_incl_template_and_generation_prompt": 254
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 215,
+          "turn_tokens_incl_template_and_generation_prompt": 261
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 101,
+          "turn_tokens_incl_template_and_generation_prompt": 147
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 122,
+          "turn_tokens_incl_template_and_generation_prompt": 168
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 100,
+          "turn_tokens_incl_template_and_generation_prompt": 146
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 101,
+          "turn_tokens_incl_template_and_generation_prompt": 147
+        },
+        {
+          "kind": "user",
+          "raw_observation_tokens": 8,
+          "turn_tokens_incl_template_and_generation_prompt": 54
+        }
+      ],
+      "seconds": {
+        "env_build_and_reset": 0.0085,
+        "tool_calls_total": 0.0011,
+        "tool_call_max": 0.0002,
+        "db_scoring_fuzzy": 0.0047
+      }
+    },
+    {
+      "task_id": "itsmbench_single_018",
+      "gold_tool_calls": 2,
+      "agent_turns": 4,
+      "step_count": 4,
+      "db_match": true,
+      "initial_prompt_tokens": 28104,
+      "response_tokens": 485,
+      "full_sequence_tokens": 28589,
+      "generated_tokens": 90,
+      "environment_tokens": 395,
+      "actions": [
+        {
+          "kind": "tool_call",
+          "tool": "find_configuration_item_by_serial_number",
+          "generated_tokens": 32
+        },
+        {
+          "kind": "tool_call",
+          "tool": "update_configuration_item",
+          "generated_tokens": 33
+        },
+        {
+          "kind": "message",
+          "tool": null,
+          "generated_tokens": 10
+        },
+        {
+          "kind": "done",
+          "tool": null,
+          "generated_tokens": 15
+        }
+      ],
+      "observations": [
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 125,
+          "turn_tokens_incl_template_and_generation_prompt": 171
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 124,
+          "turn_tokens_incl_template_and_generation_prompt": 170
+        },
+        {
+          "kind": "user",
+          "raw_observation_tokens": 8,
+          "turn_tokens_incl_template_and_generation_prompt": 54
+        }
+      ],
+      "seconds": {
+        "env_build_and_reset": 0.0091,
+        "tool_calls_total": 0.0003,
+        "tool_call_max": 0.0002,
+        "db_scoring_fuzzy": 0.0061
+      }
+    },
+    {
+      "task_id": "itsmbench_msp_019",
+      "gold_tool_calls": 8,
+      "agent_turns": 10,
+      "step_count": 10,
+      "db_match": true,
+      "initial_prompt_tokens": 28104,
+      "response_tokens": 2505,
+      "full_sequence_tokens": 30609,
+      "generated_tokens": 388,
+      "environment_tokens": 2117,
+      "actions": [
+        {
+          "kind": "tool_call",
+          "tool": "get_user_using_name",
+          "generated_tokens": 33
+        },
+        {
+          "kind": "tool_call",
+          "tool": "find_incident_by_number",
+          "generated_tokens": 30
+        },
+        {
+          "kind": "tool_call",
+          "tool": "find_group_by_name",
+          "generated_tokens": 26
+        },
+        {
+          "kind": "tool_call",
+          "tool": "get_user",
+          "generated_tokens": 25
+        },
+        {
+          "kind": "tool_call",
+          "tool": "add_new_group_member",
+          "generated_tokens": 38
+        },
+        {
+          "kind": "tool_call",
+          "tool": "update_incident",
+          "generated_tokens": 68
+        },
+        {
+          "kind": "tool_call",
+          "tool": "get_user",
+          "generated_tokens": 25
+        },
+        {
+          "kind": "tool_call",
+          "tool": "send_notification",
+          "generated_tokens": 118
+        },
+        {
+          "kind": "message",
+          "tool": null,
+          "generated_tokens": 10
+        },
+        {
+          "kind": "done",
+          "tool": null,
+          "generated_tokens": 15
+        }
+      ],
+      "observations": [
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 232,
+          "turn_tokens_incl_template_and_generation_prompt": 278
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 305,
+          "turn_tokens_incl_template_and_generation_prompt": 351
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 119,
+          "turn_tokens_incl_template_and_generation_prompt": 165
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 230,
+          "turn_tokens_incl_template_and_generation_prompt": 276
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 94,
+          "turn_tokens_incl_template_and_generation_prompt": 140
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 317,
+          "turn_tokens_incl_template_and_generation_prompt": 363
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 225,
+          "turn_tokens_incl_template_and_generation_prompt": 271
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 173,
+          "turn_tokens_incl_template_and_generation_prompt": 219
+        },
+        {
+          "kind": "user",
+          "raw_observation_tokens": 8,
+          "turn_tokens_incl_template_and_generation_prompt": 54
+        }
+      ],
+      "seconds": {
+        "env_build_and_reset": 0.0168,
+        "tool_calls_total": 0.0009,
+        "tool_call_max": 0.0002,
+        "db_scoring_fuzzy": 0.0249
+      }
+    },
+    {
+      "task_id": "itsmbench_msp_021",
+      "gold_tool_calls": 6,
+      "agent_turns": 8,
+      "step_count": 8,
+      "db_match": true,
+      "initial_prompt_tokens": 28104,
+      "response_tokens": 1993,
+      "full_sequence_tokens": 30097,
+      "generated_tokens": 317,
+      "environment_tokens": 1676,
+      "actions": [
+        {
+          "kind": "tool_call",
+          "tool": "find_incident_by_number",
+          "generated_tokens": 30
+        },
+        {
+          "kind": "tool_call",
+          "tool": "update_incident",
+          "generated_tokens": 43
+        },
+        {
+          "kind": "tool_call",
+          "tool": "find_incident_slas",
+          "generated_tokens": 28
+        },
+        {
+          "kind": "tool_call",
+          "tool": "update_incident_sla_details",
+          "generated_tokens": 39
+        },
+        {
+          "kind": "tool_call",
+          "tool": "get_user",
+          "generated_tokens": 25
+        },
+        {
+          "kind": "tool_call",
+          "tool": "send_notification",
+          "generated_tokens": 127
+        },
+        {
+          "kind": "message",
+          "tool": null,
+          "generated_tokens": 10
+        },
+        {
+          "kind": "done",
+          "tool": null,
+          "generated_tokens": 15
+        }
+      ],
+      "observations": [
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 297,
+          "turn_tokens_incl_template_and_generation_prompt": 343
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 299,
+          "turn_tokens_incl_template_and_generation_prompt": 345
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 178,
+          "turn_tokens_incl_template_and_generation_prompt": 224
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 162,
+          "turn_tokens_incl_template_and_generation_prompt": 208
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 228,
+          "turn_tokens_incl_template_and_generation_prompt": 274
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 182,
+          "turn_tokens_incl_template_and_generation_prompt": 228
+        },
+        {
+          "kind": "user",
+          "raw_observation_tokens": 8,
+          "turn_tokens_incl_template_and_generation_prompt": 54
+        }
+      ],
+      "seconds": {
+        "env_build_and_reset": 0.0168,
+        "tool_calls_total": 0.0007,
+        "tool_call_max": 0.0002,
+        "db_scoring_fuzzy": 0.0245
+      }
+    },
+    {
+      "task_id": "itsmbench_msp_022",
+      "gold_tool_calls": 6,
+      "agent_turns": 8,
+      "step_count": 8,
+      "db_match": true,
+      "initial_prompt_tokens": 28104,
+      "response_tokens": 1993,
+      "full_sequence_tokens": 30097,
+      "generated_tokens": 317,
+      "environment_tokens": 1676,
+      "actions": [
+        {
+          "kind": "tool_call",
+          "tool": "find_incident_by_number",
+          "generated_tokens": 30
+        },
+        {
+          "kind": "tool_call",
+          "tool": "update_incident",
+          "generated_tokens": 43
+        },
+        {
+          "kind": "tool_call",
+          "tool": "find_incident_slas",
+          "generated_tokens": 28
+        },
+        {
+          "kind": "tool_call",
+          "tool": "update_incident_sla_details",
+          "generated_tokens": 39
+        },
+        {
+          "kind": "tool_call",
+          "tool": "get_user",
+          "generated_tokens": 25
+        },
+        {
+          "kind": "tool_call",
+          "tool": "send_notification",
+          "generated_tokens": 127
+        },
+        {
+          "kind": "message",
+          "tool": null,
+          "generated_tokens": 10
+        },
+        {
+          "kind": "done",
+          "tool": null,
+          "generated_tokens": 15
+        }
+      ],
+      "observations": [
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 297,
+          "turn_tokens_incl_template_and_generation_prompt": 343
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 299,
+          "turn_tokens_incl_template_and_generation_prompt": 345
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 178,
+          "turn_tokens_incl_template_and_generation_prompt": 224
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 162,
+          "turn_tokens_incl_template_and_generation_prompt": 208
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 228,
+          "turn_tokens_incl_template_and_generation_prompt": 274
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 182,
+          "turn_tokens_incl_template_and_generation_prompt": 228
+        },
+        {
+          "kind": "user",
+          "raw_observation_tokens": 8,
+          "turn_tokens_incl_template_and_generation_prompt": 54
+        }
+      ],
+      "seconds": {
+        "env_build_and_reset": 0.0169,
+        "tool_calls_total": 0.0007,
+        "tool_call_max": 0.0002,
+        "db_scoring_fuzzy": 0.0245
+      }
+    },
+    {
+      "task_id": "itsmbench_msp_024",
+      "gold_tool_calls": 5,
+      "agent_turns": 7,
+      "step_count": 7,
+      "db_match": true,
+      "initial_prompt_tokens": 28104,
+      "response_tokens": 1729,
+      "full_sequence_tokens": 29833,
+      "generated_tokens": 278,
+      "environment_tokens": 1451,
+      "actions": [
+        {
+          "kind": "tool_call",
+          "tool": "find_incident_by_number",
+          "generated_tokens": 30
+        },
+        {
+          "kind": "tool_call",
+          "tool": "get_user",
+          "generated_tokens": 25
+        },
+        {
+          "kind": "tool_call",
+          "tool": "update_incident",
+          "generated_tokens": 63
+        },
+        {
+          "kind": "tool_call",
+          "tool": "update_incident_sla_details",
+          "generated_tokens": 39
+        },
+        {
+          "kind": "tool_call",
+          "tool": "send_notification",
+          "generated_tokens": 96
+        },
+        {
+          "kind": "message",
+          "tool": null,
+          "generated_tokens": 10
+        },
+        {
+          "kind": "done",
+          "tool": null,
+          "generated_tokens": 15
+        }
+      ],
+      "observations": [
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 311,
+          "turn_tokens_incl_template_and_generation_prompt": 357
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 227,
+          "turn_tokens_incl_template_and_generation_prompt": 273
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 322,
+          "turn_tokens_incl_template_and_generation_prompt": 368
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 162,
+          "turn_tokens_incl_template_and_generation_prompt": 208
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 145,
+          "turn_tokens_incl_template_and_generation_prompt": 191
+        },
+        {
+          "kind": "user",
+          "raw_observation_tokens": 8,
+          "turn_tokens_incl_template_and_generation_prompt": 54
+        }
+      ],
+      "seconds": {
+        "env_build_and_reset": 0.0169,
+        "tool_calls_total": 0.0006,
+        "tool_call_max": 0.0002,
+        "db_scoring_fuzzy": 0.0254
+      }
+    },
+    {
+      "task_id": "itsmbench_msp_025",
+      "gold_tool_calls": 4,
+      "agent_turns": 6,
+      "step_count": 6,
+      "db_match": true,
+      "initial_prompt_tokens": 28104,
+      "response_tokens": 1476,
+      "full_sequence_tokens": 29580,
+      "generated_tokens": 242,
+      "environment_tokens": 1234,
+      "actions": [
+        {
+          "kind": "tool_call",
+          "tool": "find_incident_by_number",
+          "generated_tokens": 30
+        },
+        {
+          "kind": "tool_call",
+          "tool": "get_user",
+          "generated_tokens": 25
+        },
+        {
+          "kind": "tool_call",
+          "tool": "update_incident",
+          "generated_tokens": 67
+        },
+        {
+          "kind": "tool_call",
+          "tool": "send_notification",
+          "generated_tokens": 95
+        },
+        {
+          "kind": "message",
+          "tool": null,
+          "generated_tokens": 10
+        },
+        {
+          "kind": "done",
+          "tool": null,
+          "generated_tokens": 15
+        }
+      ],
+      "observations": [
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 304,
+          "turn_tokens_incl_template_and_generation_prompt": 350
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 227,
+          "turn_tokens_incl_template_and_generation_prompt": 273
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 321,
+          "turn_tokens_incl_template_and_generation_prompt": 367
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 144,
+          "turn_tokens_incl_template_and_generation_prompt": 190
+        },
+        {
+          "kind": "user",
+          "raw_observation_tokens": 8,
+          "turn_tokens_incl_template_and_generation_prompt": 54
+        }
+      ],
+      "seconds": {
+        "env_build_and_reset": 0.0166,
+        "tool_calls_total": 0.0006,
+        "tool_call_max": 0.0002,
+        "db_scoring_fuzzy": 0.0255
+      }
+    },
+    {
+      "task_id": "itsmbench_msp_026",
+      "gold_tool_calls": 4,
+      "agent_turns": 6,
+      "step_count": 6,
+      "db_match": true,
+      "initial_prompt_tokens": 28104,
+      "response_tokens": 1476,
+      "full_sequence_tokens": 29580,
+      "generated_tokens": 242,
+      "environment_tokens": 1234,
+      "actions": [
+        {
+          "kind": "tool_call",
+          "tool": "find_incident_by_number",
+          "generated_tokens": 30
+        },
+        {
+          "kind": "tool_call",
+          "tool": "get_user",
+          "generated_tokens": 25
+        },
+        {
+          "kind": "tool_call",
+          "tool": "update_incident",
+          "generated_tokens": 67
+        },
+        {
+          "kind": "tool_call",
+          "tool": "send_notification",
+          "generated_tokens": 95
+        },
+        {
+          "kind": "message",
+          "tool": null,
+          "generated_tokens": 10
+        },
+        {
+          "kind": "done",
+          "tool": null,
+          "generated_tokens": 15
+        }
+      ],
+      "observations": [
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 304,
+          "turn_tokens_incl_template_and_generation_prompt": 350
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 227,
+          "turn_tokens_incl_template_and_generation_prompt": 273
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 321,
+          "turn_tokens_incl_template_and_generation_prompt": 367
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 144,
+          "turn_tokens_incl_template_and_generation_prompt": 190
+        },
+        {
+          "kind": "user",
+          "raw_observation_tokens": 8,
+          "turn_tokens_incl_template_and_generation_prompt": 54
+        }
+      ],
+      "seconds": {
+        "env_build_and_reset": 0.0164,
+        "tool_calls_total": 0.0005,
+        "tool_call_max": 0.0002,
+        "db_scoring_fuzzy": 0.0248
+      }
+    },
+    {
+      "task_id": "itsmbench_msp_029",
+      "gold_tool_calls": 3,
+      "agent_turns": 5,
+      "step_count": 5,
+      "db_match": true,
+      "initial_prompt_tokens": 28104,
+      "response_tokens": 972,
+      "full_sequence_tokens": 29076,
+      "generated_tokens": 192,
+      "environment_tokens": 780,
+      "actions": [
+        {
+          "kind": "tool_call",
+          "tool": "update_incident",
+          "generated_tokens": 54
+        },
+        {
+          "kind": "tool_call",
+          "tool": "update_incident_sla_details",
+          "generated_tokens": 39
+        },
+        {
+          "kind": "tool_call",
+          "tool": "send_notification",
+          "generated_tokens": 74
+        },
+        {
+          "kind": "message",
+          "tool": null,
+          "generated_tokens": 10
+        },
+        {
+          "kind": "done",
+          "tool": null,
+          "generated_tokens": 15
+        }
+      ],
+      "observations": [
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 303,
+          "turn_tokens_incl_template_and_generation_prompt": 349
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 162,
+          "turn_tokens_incl_template_and_generation_prompt": 208
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 123,
+          "turn_tokens_incl_template_and_generation_prompt": 169
+        },
+        {
+          "kind": "user",
+          "raw_observation_tokens": 8,
+          "turn_tokens_incl_template_and_generation_prompt": 54
+        }
+      ],
+      "seconds": {
+        "env_build_and_reset": 0.0163,
+        "tool_calls_total": 0.0005,
+        "tool_call_max": 0.0002,
+        "db_scoring_fuzzy": 0.0244
+      }
+    },
+    {
+      "task_id": "itsmbench_single_008",
+      "gold_tool_calls": 6,
+      "agent_turns": 8,
+      "step_count": 8,
+      "db_match": true,
+      "initial_prompt_tokens": 28104,
+      "response_tokens": 1924,
+      "full_sequence_tokens": 30028,
+      "generated_tokens": 307,
+      "environment_tokens": 1617,
+      "actions": [
+        {
+          "kind": "tool_call",
+          "tool": "get_user",
+          "generated_tokens": 25
+        },
+        {
+          "kind": "tool_call",
+          "tool": "find_incident_by_number",
+          "generated_tokens": 30
+        },
+        {
+          "kind": "tool_call",
+          "tool": "update_incident",
+          "generated_tokens": 64
+        },
+        {
+          "kind": "tool_call",
+          "tool": "update_incident_sla_details",
+          "generated_tokens": 47
+        },
+        {
+          "kind": "tool_call",
+          "tool": "get_user",
+          "generated_tokens": 25
+        },
+        {
+          "kind": "tool_call",
+          "tool": "send_notification",
+          "generated_tokens": 91
+        },
+        {
+          "kind": "message",
+          "tool": null,
+          "generated_tokens": 10
+        },
+        {
+          "kind": "done",
+          "tool": null,
+          "generated_tokens": 15
+        }
+      ],
+      "observations": [
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 154,
+          "turn_tokens_incl_template_and_generation_prompt": 200
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 333,
+          "turn_tokens_incl_template_and_generation_prompt": 379
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 341,
+          "turn_tokens_incl_template_and_generation_prompt": 387
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 162,
+          "turn_tokens_incl_template_and_generation_prompt": 208
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 157,
+          "turn_tokens_incl_template_and_generation_prompt": 203
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 140,
+          "turn_tokens_incl_template_and_generation_prompt": 186
+        },
+        {
+          "kind": "user",
+          "raw_observation_tokens": 8,
+          "turn_tokens_incl_template_and_generation_prompt": 54
+        }
+      ],
+      "seconds": {
+        "env_build_and_reset": 0.009,
+        "tool_calls_total": 0.0007,
+        "tool_call_max": 0.0002,
+        "db_scoring_fuzzy": 0.0059
+      }
+    },
+    {
+      "task_id": "itsmbench_single_009",
+      "gold_tool_calls": 8,
+      "agent_turns": 10,
+      "step_count": 10,
+      "db_match": true,
+      "initial_prompt_tokens": 28104,
+      "response_tokens": 2158,
+      "full_sequence_tokens": 30262,
+      "generated_tokens": 309,
+      "environment_tokens": 1849,
+      "actions": [
+        {
+          "kind": "tool_call",
+          "tool": "get_user_using_name",
+          "generated_tokens": 32
+        },
+        {
+          "kind": "tool_call",
+          "tool": "find_incident_by_number",
+          "generated_tokens": 30
+        },
+        {
+          "kind": "tool_call",
+          "tool": "get_user_using_name",
+          "generated_tokens": 32
+        },
+        {
+          "kind": "tool_call",
+          "tool": "find_group_by_name",
+          "generated_tokens": 23
+        },
+        {
+          "kind": "tool_call",
+          "tool": "list_group_members",
+          "generated_tokens": 26
+        },
+        {
+          "kind": "tool_call",
+          "tool": "find_configuration_item_by_serial_number",
+          "generated_tokens": 31
+        },
+        {
+          "kind": "tool_call",
+          "tool": "update_incident",
+          "generated_tokens": 69
+        },
+        {
+          "kind": "tool_call",
+          "tool": "link_affected_ci_to_incident",
+          "generated_tokens": 41
+        },
+        {
+          "kind": "message",
+          "tool": null,
+          "generated_tokens": 10
+        },
+        {
+          "kind": "done",
+          "tool": null,
+          "generated_tokens": 15
+        }
+      ],
+      "observations": [
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 157,
+          "turn_tokens_incl_template_and_generation_prompt": 203
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 325,
+          "turn_tokens_incl_template_and_generation_prompt": 371
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 157,
+          "turn_tokens_incl_template_and_generation_prompt": 203
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 116,
+          "turn_tokens_incl_template_and_generation_prompt": 162
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 116,
+          "turn_tokens_incl_template_and_generation_prompt": 162
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 126,
+          "turn_tokens_incl_template_and_generation_prompt": 172
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 332,
+          "turn_tokens_incl_template_and_generation_prompt": 378
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 98,
+          "turn_tokens_incl_template_and_generation_prompt": 144
+        },
+        {
+          "kind": "user",
+          "raw_observation_tokens": 8,
+          "turn_tokens_incl_template_and_generation_prompt": 54
+        }
+      ],
+      "seconds": {
+        "env_build_and_reset": 0.0087,
+        "tool_calls_total": 0.0013,
+        "tool_call_max": 0.0004,
+        "db_scoring_fuzzy": 0.0044
+      }
+    },
+    {
+      "task_id": "itsmbench_single_010",
+      "gold_tool_calls": 6,
+      "agent_turns": 8,
+      "step_count": 8,
+      "db_match": true,
+      "initial_prompt_tokens": 28104,
+      "response_tokens": 1827,
+      "full_sequence_tokens": 29931,
+      "generated_tokens": 235,
+      "environment_tokens": 1592,
+      "actions": [
+        {
+          "kind": "tool_call",
+          "tool": "get_user_using_name",
+          "generated_tokens": 32
+        },
+        {
+          "kind": "tool_call",
+          "tool": "find_incident_by_number",
+          "generated_tokens": 30
+        },
+        {
+          "kind": "tool_call",
+          "tool": "find_incident_slas",
+          "generated_tokens": 28
+        },
+        {
+          "kind": "tool_call",
+          "tool": "find_sla_definition_by_name",
+          "generated_tokens": 27
+        },
+        {
+          "kind": "tool_call",
+          "tool": "update_incident",
+          "generated_tokens": 32
+        },
+        {
+          "kind": "tool_call",
+          "tool": "update_incident_sla_details",
+          "generated_tokens": 61
+        },
+        {
+          "kind": "message",
+          "tool": null,
+          "generated_tokens": 10
+        },
+        {
+          "kind": "done",
+          "tool": null,
+          "generated_tokens": 15
+        }
+      ],
+      "observations": [
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 154,
+          "turn_tokens_incl_template_and_generation_prompt": 200
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 326,
+          "turn_tokens_incl_template_and_generation_prompt": 372
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 177,
+          "turn_tokens_incl_template_and_generation_prompt": 223
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 116,
+          "turn_tokens_incl_template_and_generation_prompt": 162
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 326,
+          "turn_tokens_incl_template_and_generation_prompt": 372
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 163,
+          "turn_tokens_incl_template_and_generation_prompt": 209
+        },
+        {
+          "kind": "user",
+          "raw_observation_tokens": 8,
+          "turn_tokens_incl_template_and_generation_prompt": 54
+        }
+      ],
+      "seconds": {
+        "env_build_and_reset": 0.0091,
+        "tool_calls_total": 0.0008,
+        "tool_call_max": 0.0002,
+        "db_scoring_fuzzy": 0.0057
+      }
+    },
+    {
+      "task_id": "itsmbench_single_014",
+      "gold_tool_calls": 9,
+      "agent_turns": 11,
+      "step_count": 11,
+      "db_match": true,
+      "initial_prompt_tokens": 28104,
+      "response_tokens": 2395,
+      "full_sequence_tokens": 30499,
+      "generated_tokens": 322,
+      "environment_tokens": 2073,
+      "actions": [
+        {
+          "kind": "tool_call",
+          "tool": "get_user_using_name",
+          "generated_tokens": 32
+        },
+        {
+          "kind": "tool_call",
+          "tool": "find_incident_by_number",
+          "generated_tokens": 30
+        },
+        {
+          "kind": "tool_call",
+          "tool": "find_incident_slas",
+          "generated_tokens": 28
+        },
+        {
+          "kind": "tool_call",
+          "tool": "update_incident_sla_details",
+          "generated_tokens": 48
+        },
+        {
+          "kind": "tool_call",
+          "tool": "find_group_by_name",
+          "generated_tokens": 23
+        },
+        {
+          "kind": "tool_call",
+          "tool": "get_user",
+          "generated_tokens": 25
+        },
+        {
+          "kind": "tool_call",
+          "tool": "send_notification",
+          "generated_tokens": 43
+        },
+        {
+          "kind": "tool_call",
+          "tool": "update_incident",
+          "generated_tokens": 39
+        },
+        {
+          "kind": "tool_call",
+          "tool": "find_notifications_sent_for_incident",
+          "generated_tokens": 29
+        },
+        {
+          "kind": "message",
+          "tool": null,
+          "generated_tokens": 10
+        },
+        {
+          "kind": "done",
+          "tool": null,
+          "generated_tokens": 15
+        }
+      ],
+      "observations": [
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 157,
+          "turn_tokens_incl_template_and_generation_prompt": 203
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 324,
+          "turn_tokens_incl_template_and_generation_prompt": 370
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 158,
+          "turn_tokens_incl_template_and_generation_prompt": 204
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 145,
+          "turn_tokens_incl_template_and_generation_prompt": 191
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 116,
+          "turn_tokens_incl_template_and_generation_prompt": 162
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 152,
+          "turn_tokens_incl_template_and_generation_prompt": 198
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 111,
+          "turn_tokens_incl_template_and_generation_prompt": 157
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 322,
+          "turn_tokens_incl_template_and_generation_prompt": 368
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 120,
+          "turn_tokens_incl_template_and_generation_prompt": 166
+        },
+        {
+          "kind": "user",
+          "raw_observation_tokens": 8,
+          "turn_tokens_incl_template_and_generation_prompt": 54
+        }
+      ],
+      "seconds": {
+        "env_build_and_reset": 0.0082,
+        "tool_calls_total": 0.001,
+        "tool_call_max": 0.0002,
+        "db_scoring_fuzzy": 0.0044
+      }
+    },
+    {
+      "task_id": "itsmbench_single_019",
+      "gold_tool_calls": 6,
+      "agent_turns": 8,
+      "step_count": 8,
+      "db_match": true,
+      "initial_prompt_tokens": 28104,
+      "response_tokens": 1894,
+      "full_sequence_tokens": 29998,
+      "generated_tokens": 270,
+      "environment_tokens": 1624,
+      "actions": [
+        {
+          "kind": "tool_call",
+          "tool": "find_incident_by_number",
+          "generated_tokens": 30
+        },
+        {
+          "kind": "tool_call",
+          "tool": "update_incident",
+          "generated_tokens": 43
+        },
+        {
+          "kind": "tool_call",
+          "tool": "find_incident_slas",
+          "generated_tokens": 28
+        },
+        {
+          "kind": "tool_call",
+          "tool": "update_incident_sla_details",
+          "generated_tokens": 39
+        },
+        {
+          "kind": "tool_call",
+          "tool": "get_user",
+          "generated_tokens": 25
+        },
+        {
+          "kind": "tool_call",
+          "tool": "send_notification",
+          "generated_tokens": 80
+        },
+        {
+          "kind": "message",
+          "tool": null,
+          "generated_tokens": 10
+        },
+        {
+          "kind": "done",
+          "tool": null,
+          "generated_tokens": 15
+        }
+      ],
+      "observations": [
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 333,
+          "turn_tokens_incl_template_and_generation_prompt": 379
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 335,
+          "turn_tokens_incl_template_and_generation_prompt": 381
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 178,
+          "turn_tokens_incl_template_and_generation_prompt": 224
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 162,
+          "turn_tokens_incl_template_and_generation_prompt": 208
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 157,
+          "turn_tokens_incl_template_and_generation_prompt": 203
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 129,
+          "turn_tokens_incl_template_and_generation_prompt": 175
+        },
+        {
+          "kind": "user",
+          "raw_observation_tokens": 8,
+          "turn_tokens_incl_template_and_generation_prompt": 54
+        }
+      ],
+      "seconds": {
+        "env_build_and_reset": 0.0093,
+        "tool_calls_total": 0.0007,
+        "tool_call_max": 0.0002,
+        "db_scoring_fuzzy": 0.0057
+      }
+    },
+    {
+      "task_id": "itsmbench_single_020",
+      "gold_tool_calls": 7,
+      "agent_turns": 9,
+      "step_count": 9,
+      "db_match": true,
+      "initial_prompt_tokens": 28104,
+      "response_tokens": 2130,
+      "full_sequence_tokens": 30234,
+      "generated_tokens": 312,
+      "environment_tokens": 1818,
+      "actions": [
+        {
+          "kind": "tool_call",
+          "tool": "get_user",
+          "generated_tokens": 25
+        },
+        {
+          "kind": "tool_call",
+          "tool": "find_incident_by_number",
+          "generated_tokens": 30
+        },
+        {
+          "kind": "tool_call",
+          "tool": "find_incident_slas",
+          "generated_tokens": 35
+        },
+        {
+          "kind": "tool_call",
+          "tool": "update_incident",
+          "generated_tokens": 43
+        },
+        {
+          "kind": "tool_call",
+          "tool": "update_incident_sla_details",
+          "generated_tokens": 39
+        },
+        {
+          "kind": "tool_call",
+          "tool": "get_user",
+          "generated_tokens": 25
+        },
+        {
+          "kind": "tool_call",
+          "tool": "send_notification",
+          "generated_tokens": 90
+        },
+        {
+          "kind": "message",
+          "tool": null,
+          "generated_tokens": 10
+        },
+        {
+          "kind": "done",
+          "tool": null,
+          "generated_tokens": 15
+        }
+      ],
+      "observations": [
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 157,
+          "turn_tokens_incl_template_and_generation_prompt": 203
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 323,
+          "turn_tokens_incl_template_and_generation_prompt": 369
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 178,
+          "turn_tokens_incl_template_and_generation_prompt": 224
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 325,
+          "turn_tokens_incl_template_and_generation_prompt": 371
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 162,
+          "turn_tokens_incl_template_and_generation_prompt": 208
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 152,
+          "turn_tokens_incl_template_and_generation_prompt": 198
+        },
+        {
+          "kind": "tool",
+          "raw_observation_tokens": 145,
+          "turn_tokens_incl_template_and_generation_prompt": 191
+        },
+        {
+          "kind": "user",
+          "raw_observation_tokens": 8,
+          "turn_tokens_incl_template_and_generation_prompt": 54
+        }
+      ],
+      "seconds": {
+        "env_build_and_reset": 0.0082,
+        "tool_calls_total": 0.0008,
+        "tool_call_max": 0.0002,
+        "db_scoring_fuzzy": 0.0043
+      }
+    }
+  ]
+}

@@ -207,7 +207,7 @@ class ItsmTransition:
 - 评分时的 `TaskDefinitionError` 或其他非基础设施异常直接转为 `failed`，不重试。
 - 任务时钟：执行工具和评分都在 `task_clock` 上下文里进行，正常、业务错误、工具内部异常、评分失败、预算截断、用户故障各条路径结束后，调用线程的时钟都恢复为进入前的值（第 5 步有测试）。
 
-`max_steps` 的取值不在本步决定。参考值：Bench2 `run_task` 默认 12，gym 默认 100，AirLineRL airline 是 64；gold action 数为 2–16，中位数 8。具体预算由第 6 步测定。
+预算（第 6 步提交，待验收）：`configs/itsm/budget_v1.yaml`，依据见 `docs/itsm_step6/README.md`。初版取 `max_steps=40`、`max_action_tokens=512`、`max_prompt_length=28672`、`max_response_length=12288`、`max_model_len=40960`；训练与评测使用同一套 episode 预算。数据划分见 `configs/data/itsm_split_v1.json`。
 
 ## 8. 错误分类
 

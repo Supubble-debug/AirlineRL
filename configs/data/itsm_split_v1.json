@@ -1,0 +1,1010 @@
+{
+  "version": "itsm_split_v1",
+  "usage": "train: optimisation; dev: debugging, budget checks and checkpoint selection; heldout: final frozen evaluation only, never for debugging, tuning or checkpoint selection",
+  "method": {
+    "family_rule": "link two tasks if the Jaccard similarity of their gold write-tool sets >= 0.6 or they share a creation tool; families are connected components; names/business types curated by first task ID",
+    "creation_tools": [
+      "add_child_incident",
+      "add_location",
+      "add_new_service",
+      "add_new_sla_definition",
+      "add_new_user",
+      "add_new_user_group",
+      "create_knowledge_article",
+      "create_problem",
+      "register_configuration_item",
+      "register_new_service_offering"
+    ],
+    "split_rule": "enumerate all family->split assignments; keep sizes within size_ranges, >= 2 tasks of each tenancy in dev and heldout, >= 2 families in dev, >= 5 families and >= 3 business types in heldout, no family above 50% of heldout; score = sum |size - target| + 10 * sum over dev/heldout |msp share - overall msp share|; lowest score wins, ties broken by random.Random(seed).choice over the sorted tied assignments",
+    "seed": 20261030,
+    "target_sizes": {
+      "train": 29,
+      "dev": 12,
+      "heldout": 12
+    },
+    "size_ranges": {
+      "train": [
+        26,
+        34
+      ],
+      "dev": [
+        9,
+        14
+      ],
+      "heldout": [
+        10,
+        14
+      ]
+    },
+    "feasible_assignments": 381,
+    "best_score": 3.768043277,
+    "tied_at_best": 6
+  },
+  "data": {
+    "bench2_source": "Enterprise-Worlds 37175af590d3b9c7d2288501b604020e547e3783",
+    "files_sha256": {
+      "README.md": "b8604f66da95a8b19bf74d3f67719b6aaac701e1f01b83bb202387015de24c02",
+      "fk_spec.json": "54fa139096687e1a7da918925ed5b4b60f1390fa04b0d139bbb6170ae2b95849",
+      "msp_db.json": "96f1c9ae06c0fbbf5d1879529283813c0ecda69ba3f4514a97fe591d96eb30c4",
+      "policy.md": "6d029256b224722e71164dea0e3e36839a9e098cfd55b92849305cc94d300d23",
+      "single_tenant_db.json": "660e23dc68305af217b1fc50b1ad45f6b949ba47f581c5b1d1e0cf75e50920b3",
+      "tasks.json": "e82c54a25edf334e696da103586f7456ffba1e73b4d375439a424caf989817a0"
+    }
+  },
+  "families": {
+    "change_problem_advance_with_kb": {
+      "business_type": "problem_change_lifecycle",
+      "split": "train",
+      "tasks": [
+        "itsmbench_msp_005",
+        "itsmbench_msp_006",
+        "itsmbench_msp_007",
+        "itsmbench_msp_008",
+        "itsmbench_msp_009",
+        "itsmbench_msp_010",
+        "itsmbench_msp_011",
+        "itsmbench_msp_012",
+        "itsmbench_msp_013",
+        "itsmbench_msp_014",
+        "itsmbench_msp_015",
+        "itsmbench_msp_016",
+        "itsmbench_msp_017",
+        "itsmbench_msp_018",
+        "itsmbench_msp_031",
+        "itsmbench_single_011",
+        "itsmbench_single_015"
+      ]
+    },
+    "change_with_ci_and_kb_links": {
+      "business_type": "problem_change_lifecycle",
+      "split": "heldout",
+      "tasks": [
+        "itsmbench_msp_030"
+      ]
+    },
+    "ci_maintenance": {
+      "business_type": "cmdb",
+      "split": "train",
+      "tasks": [
+        "itsmbench_single_018"
+      ]
+    },
+    "incident_handoff_with_child": {
+      "business_type": "incident_lifecycle",
+      "split": "heldout",
+      "tasks": [
+        "itsmbench_single_012",
+        "itsmbench_single_013"
+      ]
+    },
+    "incident_hold_and_notify": {
+      "business_type": "incident_lifecycle",
+      "split": "dev",
+      "tasks": [
+        "itsmbench_msp_019",
+        "itsmbench_msp_021",
+        "itsmbench_msp_022",
+        "itsmbench_msp_024",
+        "itsmbench_msp_025",
+        "itsmbench_msp_026",
+        "itsmbench_msp_029",
+        "itsmbench_single_008",
+        "itsmbench_single_010",
+        "itsmbench_single_014",
+        "itsmbench_single_019",
+        "itsmbench_single_020"
+      ]
+    },
+    "incident_reassign_with_ci": {
+      "business_type": "incident_lifecycle",
+      "split": "dev",
+      "tasks": [
+        "itsmbench_single_009"
+      ]
+    },
+    "incident_resolve": {
+      "business_type": "incident_lifecycle",
+      "split": "heldout",
+      "tasks": [
+        "itsmbench_msp_023"
+      ]
+    },
+    "knowledge_update_and_notify": {
+      "business_type": "knowledge",
+      "split": "heldout",
+      "tasks": [
+        "itsmbench_single_016"
+      ]
+    },
+    "onboarding_and_catalog_admin": {
+      "business_type": "user_and_catalog_admin",
+      "split": "train",
+      "tasks": [
+        "itsmbench_msp_001",
+        "itsmbench_msp_002",
+        "itsmbench_msp_003",
+        "itsmbench_msp_004",
+        "itsmbench_single_001",
+        "itsmbench_single_002",
+        "itsmbench_single_003",
+        "itsmbench_single_004",
+        "itsmbench_single_005",
+        "itsmbench_single_006",
+        "itsmbench_single_007"
+      ]
+    },
+    "problem_from_incident_and_change_mapping": {
+      "business_type": "problem_change_lifecycle",
+      "split": "heldout",
+      "tasks": [
+        "itsmbench_msp_027",
+        "itsmbench_msp_028",
+        "itsmbench_single_017",
+        "itsmbench_single_021",
+        "itsmbench_single_022"
+      ]
+    },
+    "service_retirement": {
+      "business_type": "service_catalog",
+      "split": "heldout",
+      "tasks": [
+        "itsmbench_msp_020"
+      ]
+    }
+  },
+  "splits": {
+    "train": [
+      "itsmbench_msp_001",
+      "itsmbench_msp_002",
+      "itsmbench_msp_003",
+      "itsmbench_msp_004",
+      "itsmbench_msp_005",
+      "itsmbench_msp_006",
+      "itsmbench_msp_007",
+      "itsmbench_msp_008",
+      "itsmbench_msp_009",
+      "itsmbench_msp_010",
+      "itsmbench_msp_011",
+      "itsmbench_msp_012",
+      "itsmbench_msp_013",
+      "itsmbench_msp_014",
+      "itsmbench_msp_015",
+      "itsmbench_msp_016",
+      "itsmbench_msp_017",
+      "itsmbench_msp_018",
+      "itsmbench_msp_031",
+      "itsmbench_single_001",
+      "itsmbench_single_002",
+      "itsmbench_single_003",
+      "itsmbench_single_004",
+      "itsmbench_single_005",
+      "itsmbench_single_006",
+      "itsmbench_single_007",
+      "itsmbench_single_011",
+      "itsmbench_single_015",
+      "itsmbench_single_018"
+    ],
+    "dev": [
+      "itsmbench_msp_019",
+      "itsmbench_msp_021",
+      "itsmbench_msp_022",
+      "itsmbench_msp_024",
+      "itsmbench_msp_025",
+      "itsmbench_msp_026",
+      "itsmbench_msp_029",
+      "itsmbench_single_008",
+      "itsmbench_single_009",
+      "itsmbench_single_010",
+      "itsmbench_single_014",
+      "itsmbench_single_019",
+      "itsmbench_single_020"
+    ],
+    "heldout": [
+      "itsmbench_msp_020",
+      "itsmbench_msp_023",
+      "itsmbench_msp_027",
+      "itsmbench_msp_028",
+      "itsmbench_msp_030",
+      "itsmbench_single_012",
+      "itsmbench_single_013",
+      "itsmbench_single_016",
+      "itsmbench_single_017",
+      "itsmbench_single_021",
+      "itsmbench_single_022"
+    ]
+  },
+  "tasks": {
+    "itsmbench_msp_001": {
+      "split": "train",
+      "family": "onboarding_and_catalog_admin",
+      "business_type": "user_and_catalog_admin",
+      "tenancy": "provider_client",
+      "seed_db": "msp_db.json",
+      "objects_written": [
+        "cmdb",
+        "user"
+      ],
+      "gold_actions": 6
+    },
+    "itsmbench_msp_002": {
+      "split": "train",
+      "family": "onboarding_and_catalog_admin",
+      "business_type": "user_and_catalog_admin",
+      "tenancy": "provider_client",
+      "seed_db": "msp_db.json",
+      "objects_written": [
+        "cmdb",
+        "user"
+      ],
+      "gold_actions": 6
+    },
+    "itsmbench_msp_003": {
+      "split": "train",
+      "family": "onboarding_and_catalog_admin",
+      "business_type": "user_and_catalog_admin",
+      "tenancy": "provider_client",
+      "seed_db": "msp_db.json",
+      "objects_written": [
+        "cmdb",
+        "location",
+        "user"
+      ],
+      "gold_actions": 6
+    },
+    "itsmbench_msp_004": {
+      "split": "train",
+      "family": "onboarding_and_catalog_admin",
+      "business_type": "user_and_catalog_admin",
+      "tenancy": "provider_client",
+      "seed_db": "msp_db.json",
+      "objects_written": [
+        "cmdb",
+        "user"
+      ],
+      "gold_actions": 8
+    },
+    "itsmbench_msp_005": {
+      "split": "train",
+      "family": "change_problem_advance_with_kb",
+      "business_type": "problem_change_lifecycle",
+      "tenancy": "provider_client",
+      "seed_db": "msp_db.json",
+      "objects_written": [
+        "incident",
+        "knowledge",
+        "sla",
+        "user"
+      ],
+      "gold_actions": 11
+    },
+    "itsmbench_msp_006": {
+      "split": "train",
+      "family": "change_problem_advance_with_kb",
+      "business_type": "problem_change_lifecycle",
+      "tenancy": "provider_client",
+      "seed_db": "msp_db.json",
+      "objects_written": [
+        "incident",
+        "knowledge",
+        "problem",
+        "sla"
+      ],
+      "gold_actions": 10
+    },
+    "itsmbench_msp_007": {
+      "split": "train",
+      "family": "change_problem_advance_with_kb",
+      "business_type": "problem_change_lifecycle",
+      "tenancy": "provider_client",
+      "seed_db": "msp_db.json",
+      "objects_written": [
+        "change",
+        "knowledge",
+        "problem"
+      ],
+      "gold_actions": 10
+    },
+    "itsmbench_msp_008": {
+      "split": "train",
+      "family": "change_problem_advance_with_kb",
+      "business_type": "problem_change_lifecycle",
+      "tenancy": "provider_client",
+      "seed_db": "msp_db.json",
+      "objects_written": [
+        "change",
+        "knowledge",
+        "problem"
+      ],
+      "gold_actions": 8
+    },
+    "itsmbench_msp_009": {
+      "split": "train",
+      "family": "change_problem_advance_with_kb",
+      "business_type": "problem_change_lifecycle",
+      "tenancy": "provider_client",
+      "seed_db": "msp_db.json",
+      "objects_written": [
+        "change",
+        "knowledge",
+        "problem"
+      ],
+      "gold_actions": 8
+    },
+    "itsmbench_msp_010": {
+      "split": "train",
+      "family": "change_problem_advance_with_kb",
+      "business_type": "problem_change_lifecycle",
+      "tenancy": "provider_client",
+      "seed_db": "msp_db.json",
+      "objects_written": [
+        "change",
+        "knowledge",
+        "problem"
+      ],
+      "gold_actions": 8
+    },
+    "itsmbench_msp_011": {
+      "split": "train",
+      "family": "change_problem_advance_with_kb",
+      "business_type": "problem_change_lifecycle",
+      "tenancy": "provider_client",
+      "seed_db": "msp_db.json",
+      "objects_written": [
+        "change",
+        "knowledge",
+        "problem",
+        "user"
+      ],
+      "gold_actions": 10
+    },
+    "itsmbench_msp_012": {
+      "split": "train",
+      "family": "change_problem_advance_with_kb",
+      "business_type": "problem_change_lifecycle",
+      "tenancy": "provider_client",
+      "seed_db": "msp_db.json",
+      "objects_written": [
+        "change",
+        "knowledge",
+        "problem",
+        "user"
+      ],
+      "gold_actions": 11
+    },
+    "itsmbench_msp_013": {
+      "split": "train",
+      "family": "change_problem_advance_with_kb",
+      "business_type": "problem_change_lifecycle",
+      "tenancy": "provider_client",
+      "seed_db": "msp_db.json",
+      "objects_written": [
+        "change",
+        "incident",
+        "knowledge",
+        "problem",
+        "sla"
+      ],
+      "gold_actions": 11
+    },
+    "itsmbench_msp_014": {
+      "split": "train",
+      "family": "change_problem_advance_with_kb",
+      "business_type": "problem_change_lifecycle",
+      "tenancy": "provider_client",
+      "seed_db": "msp_db.json",
+      "objects_written": [
+        "change",
+        "knowledge",
+        "problem",
+        "user"
+      ],
+      "gold_actions": 11
+    },
+    "itsmbench_msp_015": {
+      "split": "train",
+      "family": "change_problem_advance_with_kb",
+      "business_type": "problem_change_lifecycle",
+      "tenancy": "provider_client",
+      "seed_db": "msp_db.json",
+      "objects_written": [
+        "change",
+        "knowledge",
+        "problem",
+        "user"
+      ],
+      "gold_actions": 10
+    },
+    "itsmbench_msp_016": {
+      "split": "train",
+      "family": "change_problem_advance_with_kb",
+      "business_type": "problem_change_lifecycle",
+      "tenancy": "provider_client",
+      "seed_db": "msp_db.json",
+      "objects_written": [
+        "change",
+        "knowledge",
+        "problem",
+        "user"
+      ],
+      "gold_actions": 10
+    },
+    "itsmbench_msp_017": {
+      "split": "train",
+      "family": "change_problem_advance_with_kb",
+      "business_type": "problem_change_lifecycle",
+      "tenancy": "provider_client",
+      "seed_db": "msp_db.json",
+      "objects_written": [
+        "change",
+        "knowledge",
+        "problem",
+        "user"
+      ],
+      "gold_actions": 10
+    },
+    "itsmbench_msp_018": {
+      "split": "train",
+      "family": "change_problem_advance_with_kb",
+      "business_type": "problem_change_lifecycle",
+      "tenancy": "provider_client",
+      "seed_db": "msp_db.json",
+      "objects_written": [
+        "change",
+        "knowledge",
+        "problem"
+      ],
+      "gold_actions": 8
+    },
+    "itsmbench_msp_019": {
+      "split": "dev",
+      "family": "incident_hold_and_notify",
+      "business_type": "incident_lifecycle",
+      "tenancy": "provider_client",
+      "seed_db": "msp_db.json",
+      "objects_written": [
+        "incident",
+        "notification",
+        "user"
+      ],
+      "gold_actions": 8
+    },
+    "itsmbench_msp_020": {
+      "split": "heldout",
+      "family": "service_retirement",
+      "business_type": "service_catalog",
+      "tenancy": "provider_client",
+      "seed_db": "msp_db.json",
+      "objects_written": [
+        "incident",
+        "service"
+      ],
+      "gold_actions": 8
+    },
+    "itsmbench_msp_021": {
+      "split": "dev",
+      "family": "incident_hold_and_notify",
+      "business_type": "incident_lifecycle",
+      "tenancy": "provider_client",
+      "seed_db": "msp_db.json",
+      "objects_written": [
+        "incident",
+        "notification",
+        "sla"
+      ],
+      "gold_actions": 6
+    },
+    "itsmbench_msp_022": {
+      "split": "dev",
+      "family": "incident_hold_and_notify",
+      "business_type": "incident_lifecycle",
+      "tenancy": "provider_client",
+      "seed_db": "msp_db.json",
+      "objects_written": [
+        "incident",
+        "notification",
+        "sla"
+      ],
+      "gold_actions": 6
+    },
+    "itsmbench_msp_023": {
+      "split": "heldout",
+      "family": "incident_resolve",
+      "business_type": "incident_lifecycle",
+      "tenancy": "provider_client",
+      "seed_db": "msp_db.json",
+      "objects_written": [
+        "incident"
+      ],
+      "gold_actions": 2
+    },
+    "itsmbench_msp_024": {
+      "split": "dev",
+      "family": "incident_hold_and_notify",
+      "business_type": "incident_lifecycle",
+      "tenancy": "provider_client",
+      "seed_db": "msp_db.json",
+      "objects_written": [
+        "incident",
+        "notification",
+        "sla"
+      ],
+      "gold_actions": 5
+    },
+    "itsmbench_msp_025": {
+      "split": "dev",
+      "family": "incident_hold_and_notify",
+      "business_type": "incident_lifecycle",
+      "tenancy": "provider_client",
+      "seed_db": "msp_db.json",
+      "objects_written": [
+        "incident",
+        "notification"
+      ],
+      "gold_actions": 4
+    },
+    "itsmbench_msp_026": {
+      "split": "dev",
+      "family": "incident_hold_and_notify",
+      "business_type": "incident_lifecycle",
+      "tenancy": "provider_client",
+      "seed_db": "msp_db.json",
+      "objects_written": [
+        "incident",
+        "notification"
+      ],
+      "gold_actions": 4
+    },
+    "itsmbench_msp_027": {
+      "split": "heldout",
+      "family": "problem_from_incident_and_change_mapping",
+      "business_type": "problem_change_lifecycle",
+      "tenancy": "provider_client",
+      "seed_db": "msp_db.json",
+      "objects_written": [
+        "problem"
+      ],
+      "gold_actions": 4
+    },
+    "itsmbench_msp_028": {
+      "split": "heldout",
+      "family": "problem_from_incident_and_change_mapping",
+      "business_type": "problem_change_lifecycle",
+      "tenancy": "provider_client",
+      "seed_db": "msp_db.json",
+      "objects_written": [
+        "problem"
+      ],
+      "gold_actions": 4
+    },
+    "itsmbench_msp_029": {
+      "split": "dev",
+      "family": "incident_hold_and_notify",
+      "business_type": "incident_lifecycle",
+      "tenancy": "provider_client",
+      "seed_db": "msp_db.json",
+      "objects_written": [
+        "incident",
+        "notification",
+        "sla"
+      ],
+      "gold_actions": 3
+    },
+    "itsmbench_msp_030": {
+      "split": "heldout",
+      "family": "change_with_ci_and_kb_links",
+      "business_type": "problem_change_lifecycle",
+      "tenancy": "provider_client",
+      "seed_db": "msp_db.json",
+      "objects_written": [
+        "change",
+        "cmdb",
+        "incident",
+        "knowledge"
+      ],
+      "gold_actions": 9
+    },
+    "itsmbench_msp_031": {
+      "split": "train",
+      "family": "change_problem_advance_with_kb",
+      "business_type": "problem_change_lifecycle",
+      "tenancy": "provider_client",
+      "seed_db": "msp_db.json",
+      "objects_written": [
+        "change",
+        "knowledge",
+        "problem"
+      ],
+      "gold_actions": 10
+    },
+    "itsmbench_single_001": {
+      "split": "train",
+      "family": "onboarding_and_catalog_admin",
+      "business_type": "user_and_catalog_admin",
+      "tenancy": "single_tenant",
+      "seed_db": "single_tenant_db.json",
+      "objects_written": [
+        "location",
+        "sla",
+        "user"
+      ],
+      "gold_actions": 7
+    },
+    "itsmbench_single_002": {
+      "split": "train",
+      "family": "onboarding_and_catalog_admin",
+      "business_type": "user_and_catalog_admin",
+      "tenancy": "single_tenant",
+      "seed_db": "single_tenant_db.json",
+      "objects_written": [
+        "cmdb",
+        "location",
+        "sla",
+        "user"
+      ],
+      "gold_actions": 11
+    },
+    "itsmbench_single_003": {
+      "split": "train",
+      "family": "onboarding_and_catalog_admin",
+      "business_type": "user_and_catalog_admin",
+      "tenancy": "single_tenant",
+      "seed_db": "single_tenant_db.json",
+      "objects_written": [
+        "location",
+        "service",
+        "user"
+      ],
+      "gold_actions": 8
+    },
+    "itsmbench_single_004": {
+      "split": "train",
+      "family": "onboarding_and_catalog_admin",
+      "business_type": "user_and_catalog_admin",
+      "tenancy": "single_tenant",
+      "seed_db": "single_tenant_db.json",
+      "objects_written": [
+        "cmdb",
+        "location",
+        "sla",
+        "user"
+      ],
+      "gold_actions": 9
+    },
+    "itsmbench_single_005": {
+      "split": "train",
+      "family": "onboarding_and_catalog_admin",
+      "business_type": "user_and_catalog_admin",
+      "tenancy": "single_tenant",
+      "seed_db": "single_tenant_db.json",
+      "objects_written": [
+        "cmdb",
+        "sla",
+        "user"
+      ],
+      "gold_actions": 10
+    },
+    "itsmbench_single_006": {
+      "split": "train",
+      "family": "onboarding_and_catalog_admin",
+      "business_type": "user_and_catalog_admin",
+      "tenancy": "single_tenant",
+      "seed_db": "single_tenant_db.json",
+      "objects_written": [
+        "incident",
+        "notification",
+        "sla",
+        "template"
+      ],
+      "gold_actions": 11
+    },
+    "itsmbench_single_007": {
+      "split": "train",
+      "family": "onboarding_and_catalog_admin",
+      "business_type": "user_and_catalog_admin",
+      "tenancy": "single_tenant",
+      "seed_db": "single_tenant_db.json",
+      "objects_written": [
+        "change",
+        "incident",
+        "notification",
+        "sla",
+        "template"
+      ],
+      "gold_actions": 16
+    },
+    "itsmbench_single_008": {
+      "split": "dev",
+      "family": "incident_hold_and_notify",
+      "business_type": "incident_lifecycle",
+      "tenancy": "single_tenant",
+      "seed_db": "single_tenant_db.json",
+      "objects_written": [
+        "incident",
+        "notification",
+        "sla"
+      ],
+      "gold_actions": 6
+    },
+    "itsmbench_single_009": {
+      "split": "dev",
+      "family": "incident_reassign_with_ci",
+      "business_type": "incident_lifecycle",
+      "tenancy": "single_tenant",
+      "seed_db": "single_tenant_db.json",
+      "objects_written": [
+        "cmdb",
+        "incident"
+      ],
+      "gold_actions": 8
+    },
+    "itsmbench_single_010": {
+      "split": "dev",
+      "family": "incident_hold_and_notify",
+      "business_type": "incident_lifecycle",
+      "tenancy": "single_tenant",
+      "seed_db": "single_tenant_db.json",
+      "objects_written": [
+        "incident",
+        "sla"
+      ],
+      "gold_actions": 6
+    },
+    "itsmbench_single_011": {
+      "split": "train",
+      "family": "change_problem_advance_with_kb",
+      "business_type": "problem_change_lifecycle",
+      "tenancy": "single_tenant",
+      "seed_db": "single_tenant_db.json",
+      "objects_written": [
+        "change",
+        "knowledge",
+        "problem"
+      ],
+      "gold_actions": 11
+    },
+    "itsmbench_single_012": {
+      "split": "heldout",
+      "family": "incident_handoff_with_child",
+      "business_type": "incident_lifecycle",
+      "tenancy": "single_tenant",
+      "seed_db": "single_tenant_db.json",
+      "objects_written": [
+        "incident",
+        "knowledge"
+      ],
+      "gold_actions": 10
+    },
+    "itsmbench_single_013": {
+      "split": "heldout",
+      "family": "incident_handoff_with_child",
+      "business_type": "incident_lifecycle",
+      "tenancy": "single_tenant",
+      "seed_db": "single_tenant_db.json",
+      "objects_written": [
+        "incident",
+        "knowledge",
+        "notification"
+      ],
+      "gold_actions": 8
+    },
+    "itsmbench_single_014": {
+      "split": "dev",
+      "family": "incident_hold_and_notify",
+      "business_type": "incident_lifecycle",
+      "tenancy": "single_tenant",
+      "seed_db": "single_tenant_db.json",
+      "objects_written": [
+        "incident",
+        "notification",
+        "sla"
+      ],
+      "gold_actions": 9
+    },
+    "itsmbench_single_015": {
+      "split": "train",
+      "family": "change_problem_advance_with_kb",
+      "business_type": "problem_change_lifecycle",
+      "tenancy": "single_tenant",
+      "seed_db": "single_tenant_db.json",
+      "objects_written": [
+        "change",
+        "knowledge",
+        "problem"
+      ],
+      "gold_actions": 11
+    },
+    "itsmbench_single_016": {
+      "split": "heldout",
+      "family": "knowledge_update_and_notify",
+      "business_type": "knowledge",
+      "tenancy": "single_tenant",
+      "seed_db": "single_tenant_db.json",
+      "objects_written": [
+        "knowledge",
+        "notification"
+      ],
+      "gold_actions": 9
+    },
+    "itsmbench_single_017": {
+      "split": "heldout",
+      "family": "problem_from_incident_and_change_mapping",
+      "business_type": "problem_change_lifecycle",
+      "tenancy": "single_tenant",
+      "seed_db": "single_tenant_db.json",
+      "objects_written": [
+        "change",
+        "problem"
+      ],
+      "gold_actions": 10
+    },
+    "itsmbench_single_018": {
+      "split": "train",
+      "family": "ci_maintenance",
+      "business_type": "cmdb",
+      "tenancy": "single_tenant",
+      "seed_db": "single_tenant_db.json",
+      "objects_written": [
+        "cmdb"
+      ],
+      "gold_actions": 2
+    },
+    "itsmbench_single_019": {
+      "split": "dev",
+      "family": "incident_hold_and_notify",
+      "business_type": "incident_lifecycle",
+      "tenancy": "single_tenant",
+      "seed_db": "single_tenant_db.json",
+      "objects_written": [
+        "incident",
+        "notification",
+        "sla"
+      ],
+      "gold_actions": 6
+    },
+    "itsmbench_single_020": {
+      "split": "dev",
+      "family": "incident_hold_and_notify",
+      "business_type": "incident_lifecycle",
+      "tenancy": "single_tenant",
+      "seed_db": "single_tenant_db.json",
+      "objects_written": [
+        "incident",
+        "notification",
+        "sla"
+      ],
+      "gold_actions": 7
+    },
+    "itsmbench_single_021": {
+      "split": "heldout",
+      "family": "problem_from_incident_and_change_mapping",
+      "business_type": "problem_change_lifecycle",
+      "tenancy": "single_tenant",
+      "seed_db": "single_tenant_db.json",
+      "objects_written": [
+        "change",
+        "knowledge",
+        "notification"
+      ],
+      "gold_actions": 9
+    },
+    "itsmbench_single_022": {
+      "split": "heldout",
+      "family": "problem_from_incident_and_change_mapping",
+      "business_type": "problem_change_lifecycle",
+      "tenancy": "single_tenant",
+      "seed_db": "single_tenant_db.json",
+      "objects_written": [
+        "change",
+        "notification",
+        "problem"
+      ],
+      "gold_actions": 9
+    }
+  },
+  "distribution": {
+    "train": {
+      "tasks": 29,
+      "tenancy": {
+        "provider_client": 19,
+        "single_tenant": 10
+      },
+      "business_type": {
+        "cmdb": 1,
+        "problem_change_lifecycle": 17,
+        "user_and_catalog_admin": 11
+      },
+      "family": {
+        "change_problem_advance_with_kb": 17,
+        "ci_maintenance": 1,
+        "onboarding_and_catalog_admin": 11
+      },
+      "objects_written": {
+        "change": 16,
+        "cmdb": 8,
+        "incident": 5,
+        "knowledge": 17,
+        "location": 5,
+        "notification": 2,
+        "problem": 16,
+        "service": 1,
+        "sla": 9,
+        "template": 2,
+        "user": 16
+      },
+      "gold_actions_total": 268
+    },
+    "dev": {
+      "tasks": 13,
+      "tenancy": {
+        "provider_client": 7,
+        "single_tenant": 6
+      },
+      "business_type": {
+        "incident_lifecycle": 13
+      },
+      "family": {
+        "incident_hold_and_notify": 12,
+        "incident_reassign_with_ci": 1
+      },
+      "objects_written": {
+        "cmdb": 1,
+        "incident": 13,
+        "notification": 11,
+        "sla": 9,
+        "user": 1
+      },
+      "gold_actions_total": 78
+    },
+    "heldout": {
+      "tasks": 11,
+      "tenancy": {
+        "provider_client": 5,
+        "single_tenant": 6
+      },
+      "business_type": {
+        "incident_lifecycle": 3,
+        "knowledge": 1,
+        "problem_change_lifecycle": 6,
+        "service_catalog": 1
+      },
+      "family": {
+        "change_with_ci_and_kb_links": 1,
+        "incident_handoff_with_child": 2,
+        "incident_resolve": 1,
+        "knowledge_update_and_notify": 1,
+        "problem_from_incident_and_change_mapping": 5,
+        "service_retirement": 1
+      },
+      "objects_written": {
+        "change": 4,
+        "cmdb": 1,
+        "incident": 5,
+        "knowledge": 5,
+        "notification": 4,
+        "problem": 4,
+        "service": 1
+      },
+      "gold_actions_total": 82
+    }
+  }
+}

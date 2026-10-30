@@ -1,0 +1,78 @@
+# ITSM episode and model budgets, v1 (step 6). Pending user acceptance; once
+# accepted this is the frozen protocol, and any change needs a stated reason and
+# a new acceptance.
+#
+# Basis: docs/itsm_step6/token_measurements.json (pinned Qwen3-8B tokenizer,
+# scripted gold replays of train/dev only, CPU). Those replays measure the
+# environment side and gold tool-call lengths, not real policy outputs; user
+# turns were placeholders. Items marked "pending_step7" must be checked with
+# bounded real calls before they are relied on.
+
+version: itsm_budget_v1
+tokenizer:
+  repo: Qwen/Qwen3-8B
+  revision: b968826d9c46dd6066d109eabc6255188de91218
+  chat_template_sha256: a55ee1b1660128b7098723e0abcd92caa0788061051c62d51cbe87d9cf1974d8
+  enable_thinking: false
+
+# Applies unchanged to every training experiment (E1-E5).
+train:
+  # Total sequence = the model's max_position_embeddings (40960, no rope scaling).
+  # Measured full gold-replay sequence reaches 33868 > the 32768 native window.
+  max_model_len: 40960
+  # Initial prompt is 28104 tokens (policy 7794 + 94 tool schemas 20051 +
+  # instructions/template + greeting and a short first user turn); the rest of
+  # 28672 (568 tokens) is headroom for a longer real first user turn.
+  max_prompt_length: 28672
+  # 40960 - 28672. Gold-replay response: median 2513, p90 3241, max 5764 (2.1x
+  # headroom on the longest, for recoveries, extra user turns and messages).
+  max_response_length: 12288
+  # Per action. Gold tool calls: median 32, p90 63, max 127 (send_notification).
+  # 4x the longest gold call, to cover user-facing messages, which were not
+  # measured (placeholders). Not the airline 256. pending_step7: truncation rate.
+  max_action_tokens: 512
+  # Orchestrator steps (user replies + executed tool calls). Gold replay: max 18
+  # with 2 placeholder user turns; gold tool calls max 16. Allows ~8 real user
+  # turns plus error recovery: (16 + 8) * ~1.7.
+  max_steps: 40
+  # No separate cap: every non-terminal action consumes a step, so
+  # agent_turns <= max_steps by construction (reported, not enforced).
+  max_agent_turns: null
+  context_rotation: false  # decision D3
+  text_match: fuzzy  # decision D1b
+  user_llm: deepseek/deepseek-v4-flash  # decision D5
+  user_llm_temperature: 0.0
+  # Proposed, not yet implemented (step 7 loop): an unfiltered list/find call
+  # returns up to 10371 tokens (list_users), most of the response budget. Cap
+  # each observation at 4096 tokens (> the 2690-token largest gold observation),
+  # marking the cut in the observation. pending_step7: implementation + rate.
+  max_observation_tokens: 4096
+  worker:
+    # Local CPU (WSL2): tool call <= 0.9 ms, env build/reset <= 112 ms, fuzzy
+    # DB scoring <= 26 ms. The user-simulator HTTP call dominates and is
+    # unmeasured (no real LLM call in this step).
+    user_llm_timeout_s: 60  # pending_step7
+    call_timeout_s: 90  # one user call + margin; pending_step7
+    episode_timeout_s: 1800  # 40 steps; pending_step7
+    max_scoring_retries: 3  # protocol §12: 4 attempts in total
+
+# Applies unchanged to every evaluated model (E0-E5); same episode budget as
+# train so DB rewards mean the same thing in training and evaluation.
+eval:
+  max_model_len: 40960
+  max_prompt_length: 28672
+  max_response_length: 12288
+  max_action_tokens: 512
+  max_steps: 40
+  max_agent_turns: null
+  context_rotation: false
+  max_observation_tokens: 4096
+  db_text_match: [fuzzy, llm]  # llm judge = deepseek/deepseek-v4-pro, decision D7
+  nl_judge: deepseek/deepseek-v4-pro  # decision D7
+  user_llm: deepseek/deepseek-v4-flash
+  user_llm_temperature: 0.0
+  worker:
+    user_llm_timeout_s: 60
+    call_timeout_s: 90
+    episode_timeout_s: 1800
+    max_scoring_retries: 3

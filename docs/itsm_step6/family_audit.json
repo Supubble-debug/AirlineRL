@@ -1,0 +1,1584 @@
+{
+  "manifest_version": "itsm_split_v1",
+  "note": "links: every pair joined by the family rule (all same_family by construction). unlinked_similarity_signals: pairs below the rule but with similar descriptions (token Jaccard >= 0.35) or >= 3 shared gold IDs. A shared ID is often not a shared object: deltas and creation tools reuse the next sequential ID for different objects (e.g. CHG_004 in single_007/015/022 are three different delta-created changes). same_seed_entities keeps only IDs that are the same pre-existing seed record in both tasks; these are reported for review, not used as a rule. residual_to_train: highest write-tool overlap of each dev/heldout task with any train task (sub-workflows such as update_incident remain shared across splits).",
+  "watched_pairs": [
+    {
+      "a": "itsmbench_msp_021",
+      "b": "itsmbench_msp_022",
+      "tenancy": [
+        "provider_client",
+        "provider_client"
+      ],
+      "write_jaccard": 1.0,
+      "description_jaccard": 0.75,
+      "family": [
+        "incident_hold_and_notify",
+        "incident_hold_and_notify"
+      ],
+      "split": [
+        "dev",
+        "dev"
+      ]
+    },
+    {
+      "a": "itsmbench_msp_025",
+      "b": "itsmbench_msp_026",
+      "tenancy": [
+        "provider_client",
+        "provider_client"
+      ],
+      "write_jaccard": 1.0,
+      "description_jaccard": 0.247,
+      "family": [
+        "incident_hold_and_notify",
+        "incident_hold_and_notify"
+      ],
+      "split": [
+        "dev",
+        "dev"
+      ]
+    },
+    {
+      "a": "itsmbench_msp_027",
+      "b": "itsmbench_msp_028",
+      "tenancy": [
+        "provider_client",
+        "provider_client"
+      ],
+      "write_jaccard": 1.0,
+      "description_jaccard": 0.394,
+      "family": [
+        "problem_from_incident_and_change_mapping",
+        "problem_from_incident_and_change_mapping"
+      ],
+      "split": [
+        "heldout",
+        "heldout"
+      ]
+    },
+    {
+      "a": "itsmbench_msp_021",
+      "b": "itsmbench_single_019",
+      "tenancy": [
+        "provider_client",
+        "single_tenant"
+      ],
+      "write_jaccard": 1.0,
+      "description_jaccard": 0.084,
+      "family": [
+        "incident_hold_and_notify",
+        "incident_hold_and_notify"
+      ],
+      "split": [
+        "dev",
+        "dev"
+      ]
+    },
+    {
+      "a": "itsmbench_msp_027",
+      "b": "itsmbench_single_017",
+      "tenancy": [
+        "provider_client",
+        "single_tenant"
+      ],
+      "write_jaccard": 0.25,
+      "description_jaccard": 0.203,
+      "family": [
+        "problem_from_incident_and_change_mapping",
+        "problem_from_incident_and_change_mapping"
+      ],
+      "split": [
+        "heldout",
+        "heldout"
+      ]
+    },
+    {
+      "a": "itsmbench_msp_001",
+      "b": "itsmbench_single_002",
+      "tenancy": [
+        "provider_client",
+        "single_tenant"
+      ],
+      "write_jaccard": 0.6,
+      "description_jaccard": 0.189,
+      "family": [
+        "onboarding_and_catalog_admin",
+        "onboarding_and_catalog_admin"
+      ],
+      "split": [
+        "train",
+        "train"
+      ]
+    }
+  ],
+  "links": [
+    {
+      "a": "itsmbench_msp_001",
+      "b": "itsmbench_msp_002",
+      "reason": "write_jaccard=1.00",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_001",
+      "b": "itsmbench_msp_003",
+      "reason": "write_jaccard=0.75",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_001",
+      "b": "itsmbench_msp_004",
+      "reason": "write_jaccard=0.75",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_001",
+      "b": "itsmbench_single_001",
+      "reason": "shared_creation=add_new_user",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_001",
+      "b": "itsmbench_single_002",
+      "reason": "write_jaccard=0.60",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_001",
+      "b": "itsmbench_single_003",
+      "reason": "shared_creation=add_new_user",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_001",
+      "b": "itsmbench_single_004",
+      "reason": "shared_creation=add_new_user,register_configuration_item",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_001",
+      "b": "itsmbench_single_005",
+      "reason": "shared_creation=add_new_user,register_configuration_item",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_002",
+      "b": "itsmbench_msp_003",
+      "reason": "write_jaccard=0.75",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_002",
+      "b": "itsmbench_msp_004",
+      "reason": "write_jaccard=0.75",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_002",
+      "b": "itsmbench_single_001",
+      "reason": "shared_creation=add_new_user",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_002",
+      "b": "itsmbench_single_002",
+      "reason": "write_jaccard=0.60",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_002",
+      "b": "itsmbench_single_003",
+      "reason": "shared_creation=add_new_user",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_002",
+      "b": "itsmbench_single_004",
+      "reason": "shared_creation=add_new_user,register_configuration_item",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_002",
+      "b": "itsmbench_single_005",
+      "reason": "shared_creation=add_new_user,register_configuration_item",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_003",
+      "b": "itsmbench_msp_004",
+      "reason": "write_jaccard=0.60",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_003",
+      "b": "itsmbench_single_001",
+      "reason": "write_jaccard=0.60",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_003",
+      "b": "itsmbench_single_002",
+      "reason": "shared_creation=add_new_user,register_configuration_item",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_003",
+      "b": "itsmbench_single_003",
+      "reason": "write_jaccard=0.60",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_003",
+      "b": "itsmbench_single_004",
+      "reason": "write_jaccard=0.67",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_003",
+      "b": "itsmbench_single_005",
+      "reason": "shared_creation=add_new_user,register_configuration_item",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_004",
+      "b": "itsmbench_single_001",
+      "reason": "shared_creation=add_new_user",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_004",
+      "b": "itsmbench_single_002",
+      "reason": "shared_creation=add_new_user,register_configuration_item",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_004",
+      "b": "itsmbench_single_003",
+      "reason": "shared_creation=add_new_user",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_004",
+      "b": "itsmbench_single_004",
+      "reason": "shared_creation=add_new_user,register_configuration_item",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_004",
+      "b": "itsmbench_single_005",
+      "reason": "shared_creation=add_new_user,register_configuration_item",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_005",
+      "b": "itsmbench_msp_006",
+      "reason": "write_jaccard=0.60",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_006",
+      "b": "itsmbench_msp_013",
+      "reason": "write_jaccard=0.80",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_007",
+      "b": "itsmbench_msp_008",
+      "reason": "write_jaccard=1.00",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_007",
+      "b": "itsmbench_msp_009",
+      "reason": "write_jaccard=1.00",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_007",
+      "b": "itsmbench_msp_010",
+      "reason": "write_jaccard=1.00",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_007",
+      "b": "itsmbench_msp_011",
+      "reason": "write_jaccard=0.75",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_007",
+      "b": "itsmbench_msp_012",
+      "reason": "write_jaccard=0.75",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_007",
+      "b": "itsmbench_msp_013",
+      "reason": "write_jaccard=0.60",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_007",
+      "b": "itsmbench_msp_014",
+      "reason": "write_jaccard=0.75",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_007",
+      "b": "itsmbench_msp_015",
+      "reason": "write_jaccard=0.75",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_007",
+      "b": "itsmbench_msp_016",
+      "reason": "write_jaccard=0.75",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_007",
+      "b": "itsmbench_msp_017",
+      "reason": "write_jaccard=0.75",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_007",
+      "b": "itsmbench_msp_018",
+      "reason": "write_jaccard=1.00",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_007",
+      "b": "itsmbench_msp_031",
+      "reason": "write_jaccard=1.00",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_007",
+      "b": "itsmbench_single_011",
+      "reason": "write_jaccard=0.60",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_007",
+      "b": "itsmbench_single_015",
+      "reason": "write_jaccard=0.60",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_008",
+      "b": "itsmbench_msp_009",
+      "reason": "write_jaccard=1.00",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_008",
+      "b": "itsmbench_msp_010",
+      "reason": "write_jaccard=1.00",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_008",
+      "b": "itsmbench_msp_011",
+      "reason": "write_jaccard=0.75",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_008",
+      "b": "itsmbench_msp_012",
+      "reason": "write_jaccard=0.75",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_008",
+      "b": "itsmbench_msp_013",
+      "reason": "write_jaccard=0.60",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_008",
+      "b": "itsmbench_msp_014",
+      "reason": "write_jaccard=0.75",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_008",
+      "b": "itsmbench_msp_015",
+      "reason": "write_jaccard=0.75",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_008",
+      "b": "itsmbench_msp_016",
+      "reason": "write_jaccard=0.75",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_008",
+      "b": "itsmbench_msp_017",
+      "reason": "write_jaccard=0.75",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_008",
+      "b": "itsmbench_msp_018",
+      "reason": "write_jaccard=1.00",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_008",
+      "b": "itsmbench_msp_031",
+      "reason": "write_jaccard=1.00",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_008",
+      "b": "itsmbench_single_011",
+      "reason": "write_jaccard=0.60",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_008",
+      "b": "itsmbench_single_015",
+      "reason": "write_jaccard=0.60",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_009",
+      "b": "itsmbench_msp_010",
+      "reason": "write_jaccard=1.00",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_009",
+      "b": "itsmbench_msp_011",
+      "reason": "write_jaccard=0.75",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_009",
+      "b": "itsmbench_msp_012",
+      "reason": "write_jaccard=0.75",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_009",
+      "b": "itsmbench_msp_013",
+      "reason": "write_jaccard=0.60",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_009",
+      "b": "itsmbench_msp_014",
+      "reason": "write_jaccard=0.75",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_009",
+      "b": "itsmbench_msp_015",
+      "reason": "write_jaccard=0.75",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_009",
+      "b": "itsmbench_msp_016",
+      "reason": "write_jaccard=0.75",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_009",
+      "b": "itsmbench_msp_017",
+      "reason": "write_jaccard=0.75",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_009",
+      "b": "itsmbench_msp_018",
+      "reason": "write_jaccard=1.00",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_009",
+      "b": "itsmbench_msp_031",
+      "reason": "write_jaccard=1.00",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_009",
+      "b": "itsmbench_single_011",
+      "reason": "write_jaccard=0.60",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_009",
+      "b": "itsmbench_single_015",
+      "reason": "write_jaccard=0.60",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_010",
+      "b": "itsmbench_msp_011",
+      "reason": "write_jaccard=0.75",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_010",
+      "b": "itsmbench_msp_012",
+      "reason": "write_jaccard=0.75",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_010",
+      "b": "itsmbench_msp_013",
+      "reason": "write_jaccard=0.60",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_010",
+      "b": "itsmbench_msp_014",
+      "reason": "write_jaccard=0.75",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_010",
+      "b": "itsmbench_msp_015",
+      "reason": "write_jaccard=0.75",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_010",
+      "b": "itsmbench_msp_016",
+      "reason": "write_jaccard=0.75",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_010",
+      "b": "itsmbench_msp_017",
+      "reason": "write_jaccard=0.75",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_010",
+      "b": "itsmbench_msp_018",
+      "reason": "write_jaccard=1.00",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_010",
+      "b": "itsmbench_msp_031",
+      "reason": "write_jaccard=1.00",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_010",
+      "b": "itsmbench_single_011",
+      "reason": "write_jaccard=0.60",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_010",
+      "b": "itsmbench_single_015",
+      "reason": "write_jaccard=0.60",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_011",
+      "b": "itsmbench_msp_012",
+      "reason": "write_jaccard=1.00",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_011",
+      "b": "itsmbench_msp_014",
+      "reason": "write_jaccard=1.00",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_011",
+      "b": "itsmbench_msp_015",
+      "reason": "write_jaccard=1.00",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_011",
+      "b": "itsmbench_msp_016",
+      "reason": "write_jaccard=1.00",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_011",
+      "b": "itsmbench_msp_017",
+      "reason": "write_jaccard=1.00",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_011",
+      "b": "itsmbench_msp_018",
+      "reason": "write_jaccard=0.75",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_011",
+      "b": "itsmbench_msp_031",
+      "reason": "write_jaccard=0.75",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_012",
+      "b": "itsmbench_msp_014",
+      "reason": "write_jaccard=1.00",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_012",
+      "b": "itsmbench_msp_015",
+      "reason": "write_jaccard=1.00",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_012",
+      "b": "itsmbench_msp_016",
+      "reason": "write_jaccard=1.00",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_012",
+      "b": "itsmbench_msp_017",
+      "reason": "write_jaccard=1.00",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_012",
+      "b": "itsmbench_msp_018",
+      "reason": "write_jaccard=0.75",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_012",
+      "b": "itsmbench_msp_031",
+      "reason": "write_jaccard=0.75",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_013",
+      "b": "itsmbench_msp_018",
+      "reason": "write_jaccard=0.60",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_013",
+      "b": "itsmbench_msp_031",
+      "reason": "write_jaccard=0.60",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_014",
+      "b": "itsmbench_msp_015",
+      "reason": "write_jaccard=1.00",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_014",
+      "b": "itsmbench_msp_016",
+      "reason": "write_jaccard=1.00",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_014",
+      "b": "itsmbench_msp_017",
+      "reason": "write_jaccard=1.00",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_014",
+      "b": "itsmbench_msp_018",
+      "reason": "write_jaccard=0.75",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_014",
+      "b": "itsmbench_msp_031",
+      "reason": "write_jaccard=0.75",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_015",
+      "b": "itsmbench_msp_016",
+      "reason": "write_jaccard=1.00",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_015",
+      "b": "itsmbench_msp_017",
+      "reason": "write_jaccard=1.00",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_015",
+      "b": "itsmbench_msp_018",
+      "reason": "write_jaccard=0.75",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_015",
+      "b": "itsmbench_msp_031",
+      "reason": "write_jaccard=0.75",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_016",
+      "b": "itsmbench_msp_017",
+      "reason": "write_jaccard=1.00",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_016",
+      "b": "itsmbench_msp_018",
+      "reason": "write_jaccard=0.75",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_016",
+      "b": "itsmbench_msp_031",
+      "reason": "write_jaccard=0.75",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_017",
+      "b": "itsmbench_msp_018",
+      "reason": "write_jaccard=0.75",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_017",
+      "b": "itsmbench_msp_031",
+      "reason": "write_jaccard=0.75",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_018",
+      "b": "itsmbench_msp_031",
+      "reason": "write_jaccard=1.00",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_018",
+      "b": "itsmbench_single_011",
+      "reason": "write_jaccard=0.60",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_018",
+      "b": "itsmbench_single_015",
+      "reason": "write_jaccard=0.60",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_019",
+      "b": "itsmbench_msp_025",
+      "reason": "write_jaccard=0.67",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_019",
+      "b": "itsmbench_msp_026",
+      "reason": "write_jaccard=0.67",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_021",
+      "b": "itsmbench_msp_022",
+      "reason": "write_jaccard=1.00",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_021",
+      "b": "itsmbench_msp_024",
+      "reason": "write_jaccard=1.00",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_021",
+      "b": "itsmbench_msp_025",
+      "reason": "write_jaccard=0.67",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_021",
+      "b": "itsmbench_msp_026",
+      "reason": "write_jaccard=0.67",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_021",
+      "b": "itsmbench_msp_029",
+      "reason": "write_jaccard=1.00",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_021",
+      "b": "itsmbench_single_008",
+      "reason": "write_jaccard=1.00",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_021",
+      "b": "itsmbench_single_010",
+      "reason": "write_jaccard=0.67",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_021",
+      "b": "itsmbench_single_014",
+      "reason": "write_jaccard=1.00",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_021",
+      "b": "itsmbench_single_019",
+      "reason": "write_jaccard=1.00",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_021",
+      "b": "itsmbench_single_020",
+      "reason": "write_jaccard=1.00",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_022",
+      "b": "itsmbench_msp_024",
+      "reason": "write_jaccard=1.00",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_022",
+      "b": "itsmbench_msp_025",
+      "reason": "write_jaccard=0.67",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_022",
+      "b": "itsmbench_msp_026",
+      "reason": "write_jaccard=0.67",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_022",
+      "b": "itsmbench_msp_029",
+      "reason": "write_jaccard=1.00",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_022",
+      "b": "itsmbench_single_008",
+      "reason": "write_jaccard=1.00",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_022",
+      "b": "itsmbench_single_010",
+      "reason": "write_jaccard=0.67",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_022",
+      "b": "itsmbench_single_014",
+      "reason": "write_jaccard=1.00",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_022",
+      "b": "itsmbench_single_019",
+      "reason": "write_jaccard=1.00",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_022",
+      "b": "itsmbench_single_020",
+      "reason": "write_jaccard=1.00",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_024",
+      "b": "itsmbench_msp_025",
+      "reason": "write_jaccard=0.67",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_024",
+      "b": "itsmbench_msp_026",
+      "reason": "write_jaccard=0.67",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_024",
+      "b": "itsmbench_msp_029",
+      "reason": "write_jaccard=1.00",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_024",
+      "b": "itsmbench_single_008",
+      "reason": "write_jaccard=1.00",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_024",
+      "b": "itsmbench_single_010",
+      "reason": "write_jaccard=0.67",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_024",
+      "b": "itsmbench_single_014",
+      "reason": "write_jaccard=1.00",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_024",
+      "b": "itsmbench_single_019",
+      "reason": "write_jaccard=1.00",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_024",
+      "b": "itsmbench_single_020",
+      "reason": "write_jaccard=1.00",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_025",
+      "b": "itsmbench_msp_026",
+      "reason": "write_jaccard=1.00",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_025",
+      "b": "itsmbench_msp_029",
+      "reason": "write_jaccard=0.67",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_025",
+      "b": "itsmbench_single_008",
+      "reason": "write_jaccard=0.67",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_025",
+      "b": "itsmbench_single_014",
+      "reason": "write_jaccard=0.67",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_025",
+      "b": "itsmbench_single_019",
+      "reason": "write_jaccard=0.67",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_025",
+      "b": "itsmbench_single_020",
+      "reason": "write_jaccard=0.67",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_026",
+      "b": "itsmbench_msp_029",
+      "reason": "write_jaccard=0.67",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_026",
+      "b": "itsmbench_single_008",
+      "reason": "write_jaccard=0.67",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_026",
+      "b": "itsmbench_single_014",
+      "reason": "write_jaccard=0.67",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_026",
+      "b": "itsmbench_single_019",
+      "reason": "write_jaccard=0.67",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_026",
+      "b": "itsmbench_single_020",
+      "reason": "write_jaccard=0.67",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_027",
+      "b": "itsmbench_msp_028",
+      "reason": "write_jaccard=1.00",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_027",
+      "b": "itsmbench_single_017",
+      "reason": "shared_creation=create_problem",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_028",
+      "b": "itsmbench_single_017",
+      "reason": "shared_creation=create_problem",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_029",
+      "b": "itsmbench_single_008",
+      "reason": "write_jaccard=1.00",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_029",
+      "b": "itsmbench_single_010",
+      "reason": "write_jaccard=0.67",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_029",
+      "b": "itsmbench_single_014",
+      "reason": "write_jaccard=1.00",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_029",
+      "b": "itsmbench_single_019",
+      "reason": "write_jaccard=1.00",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_029",
+      "b": "itsmbench_single_020",
+      "reason": "write_jaccard=1.00",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_031",
+      "b": "itsmbench_single_011",
+      "reason": "write_jaccard=0.60",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_msp_031",
+      "b": "itsmbench_single_015",
+      "reason": "write_jaccard=0.60",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_single_001",
+      "b": "itsmbench_single_002",
+      "reason": "shared_creation=add_new_user",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_single_001",
+      "b": "itsmbench_single_003",
+      "reason": "write_jaccard=0.60",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_single_001",
+      "b": "itsmbench_single_004",
+      "reason": "write_jaccard=0.67",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_single_001",
+      "b": "itsmbench_single_005",
+      "reason": "shared_creation=add_new_user",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_single_002",
+      "b": "itsmbench_single_003",
+      "reason": "shared_creation=add_new_user",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_single_002",
+      "b": "itsmbench_single_004",
+      "reason": "shared_creation=add_new_user,register_configuration_item",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_single_002",
+      "b": "itsmbench_single_005",
+      "reason": "shared_creation=add_new_user,register_configuration_item",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_single_003",
+      "b": "itsmbench_single_004",
+      "reason": "shared_creation=add_location,add_new_user",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_single_003",
+      "b": "itsmbench_single_005",
+      "reason": "shared_creation=add_new_user",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_single_004",
+      "b": "itsmbench_single_005",
+      "reason": "write_jaccard=0.71",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_single_004",
+      "b": "itsmbench_single_006",
+      "reason": "shared_creation=add_new_sla_definition",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_single_004",
+      "b": "itsmbench_single_007",
+      "reason": "shared_creation=add_new_sla_definition",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_single_005",
+      "b": "itsmbench_single_006",
+      "reason": "shared_creation=add_new_sla_definition",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_single_005",
+      "b": "itsmbench_single_007",
+      "reason": "shared_creation=add_new_sla_definition",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_single_006",
+      "b": "itsmbench_single_007",
+      "reason": "write_jaccard=0.71",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_single_008",
+      "b": "itsmbench_single_010",
+      "reason": "write_jaccard=0.67",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_single_008",
+      "b": "itsmbench_single_014",
+      "reason": "write_jaccard=1.00",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_single_008",
+      "b": "itsmbench_single_019",
+      "reason": "write_jaccard=1.00",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_single_008",
+      "b": "itsmbench_single_020",
+      "reason": "write_jaccard=1.00",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_single_010",
+      "b": "itsmbench_single_014",
+      "reason": "write_jaccard=0.67",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_single_010",
+      "b": "itsmbench_single_019",
+      "reason": "write_jaccard=0.67",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_single_010",
+      "b": "itsmbench_single_020",
+      "reason": "write_jaccard=0.67",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_single_011",
+      "b": "itsmbench_single_015",
+      "reason": "write_jaccard=1.00",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_single_012",
+      "b": "itsmbench_single_013",
+      "reason": "shared_creation=add_child_incident",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_single_014",
+      "b": "itsmbench_single_019",
+      "reason": "write_jaccard=1.00",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_single_014",
+      "b": "itsmbench_single_020",
+      "reason": "write_jaccard=1.00",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_single_017",
+      "b": "itsmbench_single_022",
+      "reason": "write_jaccard=0.60",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_single_019",
+      "b": "itsmbench_single_020",
+      "reason": "write_jaccard=1.00",
+      "same_family": true
+    },
+    {
+      "a": "itsmbench_single_021",
+      "b": "itsmbench_single_022",
+      "reason": "write_jaccard=0.60",
+      "same_family": true
+    }
+  ],
+  "unlinked_similarity_signals": [
+    {
+      "a": "itsmbench_msp_006",
+      "b": "itsmbench_msp_031",
+      "write_jaccard": 0.4,
+      "description_jaccard": 0.2,
+      "shared_gold_ids": [
+        "KB_013",
+        "PRB0000012",
+        "PRB_012"
+      ],
+      "same_seed_entities": [
+        "KB_013"
+      ],
+      "splits": [
+        "train",
+        "train"
+      ],
+      "involves_train_and_heldout": false
+    },
+    {
+      "a": "itsmbench_msp_011",
+      "b": "itsmbench_msp_013",
+      "write_jaccard": 0.5,
+      "description_jaccard": 0.22,
+      "shared_gold_ids": [
+        "CHG0000026",
+        "CHG_026",
+        "PRB0000012",
+        "PRB_012"
+      ],
+      "same_seed_entities": [],
+      "splits": [
+        "train",
+        "train"
+      ],
+      "involves_train_and_heldout": false
+    },
+    {
+      "a": "itsmbench_msp_013",
+      "b": "itsmbench_msp_016",
+      "write_jaccard": 0.5,
+      "description_jaccard": 0.208,
+      "shared_gold_ids": [
+        "CHG0000026",
+        "CHG_026",
+        "PRB0000012",
+        "PRB_012"
+      ],
+      "same_seed_entities": [],
+      "splits": [
+        "train",
+        "train"
+      ],
+      "involves_train_and_heldout": false
+    },
+    {
+      "a": "itsmbench_single_009",
+      "b": "itsmbench_single_017",
+      "write_jaccard": 0.0,
+      "description_jaccard": 0.127,
+      "shared_gold_ids": [
+        "CI_004",
+        "INC0000007",
+        "INC_020"
+      ],
+      "same_seed_entities": [
+        "CI_004",
+        "INC_020"
+      ],
+      "splits": [
+        "dev",
+        "heldout"
+      ],
+      "involves_train_and_heldout": false
+    },
+    {
+      "a": "itsmbench_single_015",
+      "b": "itsmbench_single_022",
+      "write_jaccard": 0.5,
+      "description_jaccard": 0.214,
+      "shared_gold_ids": [
+        "CHG0000004",
+        "CHG_004",
+        "PRB0000003",
+        "PRB_003"
+      ],
+      "same_seed_entities": [],
+      "splits": [
+        "train",
+        "heldout"
+      ],
+      "involves_train_and_heldout": true
+    },
+    {
+      "a": "itsmbench_single_020",
+      "b": "itsmbench_single_021",
+      "write_jaccard": 0.167,
+      "description_jaccard": 0.105,
+      "shared_gold_ids": [
+        "INC0000003",
+        "INC_010",
+        "USER_007"
+      ],
+      "same_seed_entities": [
+        "INC_010",
+        "USER_007"
+      ],
+      "splits": [
+        "dev",
+        "heldout"
+      ],
+      "involves_train_and_heldout": false
+    }
+  ],
+  "residual_to_train": {
+    "itsmbench_msp_019": {
+      "split": "dev",
+      "nearest_train_task": "itsmbench_single_006",
+      "write_jaccard": 0.333,
+      "shared_write_tools": [
+        "send_notification",
+        "update_incident"
+      ]
+    },
+    "itsmbench_msp_020": {
+      "split": "heldout",
+      "nearest_train_task": "itsmbench_msp_006",
+      "write_jaccard": 0.143,
+      "shared_write_tools": [
+        "update_incident"
+      ]
+    },
+    "itsmbench_msp_021": {
+      "split": "dev",
+      "nearest_train_task": "itsmbench_single_007",
+      "write_jaccard": 0.429,
+      "shared_write_tools": [
+        "send_notification",
+        "update_incident",
+        "update_incident_sla_details"
+      ]
+    },
+    "itsmbench_msp_022": {
+      "split": "dev",
+      "nearest_train_task": "itsmbench_single_007",
+      "write_jaccard": 0.429,
+      "shared_write_tools": [
+        "send_notification",
+        "update_incident",
+        "update_incident_sla_details"
+      ]
+    },
+    "itsmbench_msp_023": {
+      "split": "heldout",
+      "nearest_train_task": "itsmbench_msp_006",
+      "write_jaccard": 0.25,
+      "shared_write_tools": [
+        "update_incident"
+      ]
+    },
+    "itsmbench_msp_024": {
+      "split": "dev",
+      "nearest_train_task": "itsmbench_single_007",
+      "write_jaccard": 0.429,
+      "shared_write_tools": [
+        "send_notification",
+        "update_incident",
+        "update_incident_sla_details"
+      ]
+    },
+    "itsmbench_msp_025": {
+      "split": "dev",
+      "nearest_train_task": "itsmbench_single_006",
+      "write_jaccard": 0.4,
+      "shared_write_tools": [
+        "send_notification",
+        "update_incident"
+      ]
+    },
+    "itsmbench_msp_026": {
+      "split": "dev",
+      "nearest_train_task": "itsmbench_single_006",
+      "write_jaccard": 0.4,
+      "shared_write_tools": [
+        "send_notification",
+        "update_incident"
+      ]
+    },
+    "itsmbench_msp_027": {
+      "split": "heldout",
+      "nearest_train_task": "itsmbench_single_018",
+      "write_jaccard": 0.0,
+      "shared_write_tools": []
+    },
+    "itsmbench_msp_028": {
+      "split": "heldout",
+      "nearest_train_task": "itsmbench_single_018",
+      "write_jaccard": 0.0,
+      "shared_write_tools": []
+    },
+    "itsmbench_msp_029": {
+      "split": "dev",
+      "nearest_train_task": "itsmbench_single_007",
+      "write_jaccard": 0.429,
+      "shared_write_tools": [
+        "send_notification",
+        "update_incident",
+        "update_incident_sla_details"
+      ]
+    },
+    "itsmbench_msp_030": {
+      "split": "heldout",
+      "nearest_train_task": "itsmbench_msp_013",
+      "write_jaccard": 0.5,
+      "shared_write_tools": [
+        "link_knowledge_to_incident",
+        "update_change",
+        "update_incident"
+      ]
+    },
+    "itsmbench_single_008": {
+      "split": "dev",
+      "nearest_train_task": "itsmbench_single_007",
+      "write_jaccard": 0.429,
+      "shared_write_tools": [
+        "send_notification",
+        "update_incident",
+        "update_incident_sla_details"
+      ]
+    },
+    "itsmbench_single_009": {
+      "split": "dev",
+      "nearest_train_task": "itsmbench_msp_006",
+      "write_jaccard": 0.2,
+      "shared_write_tools": [
+        "update_incident"
+      ]
+    },
+    "itsmbench_single_010": {
+      "split": "dev",
+      "nearest_train_task": "itsmbench_msp_006",
+      "write_jaccard": 0.5,
+      "shared_write_tools": [
+        "update_incident",
+        "update_incident_sla_details"
+      ]
+    },
+    "itsmbench_single_012": {
+      "split": "heldout",
+      "nearest_train_task": "itsmbench_msp_006",
+      "write_jaccard": 0.4,
+      "shared_write_tools": [
+        "link_knowledge_to_incident",
+        "update_incident"
+      ]
+    },
+    "itsmbench_single_013": {
+      "split": "heldout",
+      "nearest_train_task": "itsmbench_msp_031",
+      "write_jaccard": 0.2,
+      "shared_write_tools": [
+        "link_knowledge_to_incident"
+      ]
+    },
+    "itsmbench_single_014": {
+      "split": "dev",
+      "nearest_train_task": "itsmbench_single_007",
+      "write_jaccard": 0.429,
+      "shared_write_tools": [
+        "send_notification",
+        "update_incident",
+        "update_incident_sla_details"
+      ]
+    },
+    "itsmbench_single_016": {
+      "split": "heldout",
+      "nearest_train_task": "itsmbench_msp_031",
+      "write_jaccard": 0.2,
+      "shared_write_tools": [
+        "link_knowledge_to_incident"
+      ]
+    },
+    "itsmbench_single_017": {
+      "split": "heldout",
+      "nearest_train_task": "itsmbench_single_015",
+      "write_jaccard": 0.5,
+      "shared_write_tools": [
+        "map_change_request",
+        "update_change",
+        "update_problem"
+      ]
+    },
+    "itsmbench_single_019": {
+      "split": "dev",
+      "nearest_train_task": "itsmbench_single_007",
+      "write_jaccard": 0.429,
+      "shared_write_tools": [
+        "send_notification",
+        "update_incident",
+        "update_incident_sla_details"
+      ]
+    },
+    "itsmbench_single_020": {
+      "split": "dev",
+      "nearest_train_task": "itsmbench_single_007",
+      "write_jaccard": 0.429,
+      "shared_write_tools": [
+        "send_notification",
+        "update_incident",
+        "update_incident_sla_details"
+      ]
+    },
+    "itsmbench_single_021": {
+      "split": "heldout",
+      "nearest_train_task": "itsmbench_single_015",
+      "write_jaccard": 0.5,
+      "shared_write_tools": [
+        "link_knowledge_to_incident",
+        "map_change_request",
+        "update_change"
+      ]
+    },
+    "itsmbench_single_022": {
+      "split": "heldout",
+      "nearest_train_task": "itsmbench_single_015",
+      "write_jaccard": 0.5,
+      "shared_write_tools": [
+        "map_change_request",
+        "update_change",
+        "update_problem"
+      ]
+    }
+  }
+}

@@ -11,8 +11,9 @@
 | 2：接口与奖励契约 | 用户认可；D1–D6 已定，D5 改为 `deepseek/deepseek-v4-flash` | 2026-10-28 用户原话：“认可，除了D5我认为可以用deepseek-flash。至于风险，到了那一步再说。没问题就第三步”。 |
 | 3：离线环境与评分回归 | 用户认可（第 1 次修订后）；D7、D8 已定 | 2026-10-28 用户要求修订（该消息不是验收通过）。2026-10-29 用户原话：“根据本次修订报告，第 3 步验收通过。请记录以下决定：D8：保持 Bench2 现有自由文本比较规则……D7：评测时 DB 文本裁判与 NL 裁判均采用 deepseek/deepseek-v4-pro，温度 0……完成上述文档收尾后，仅执行第 4 步”。决定全文写入协议 §12、§14.2–§14.4。 |
 | 4：最小单 episode adapter | 用户认可（含第 1、2 次补修，提交 `223a3ac`） | 2026-10-30 用户原话：“第 4 步及相关补修验收通过，包含提交 223a3ac。记录本条批准，现在仅执行第 5 步：生命周期与隔离。” |
-| 5：生命周期与隔离 | **补修待验收**（第 1 次补修） | 未批准。2026-10-30 用户原话：“第 5 步暂不验收，仅补修一处：子进程在空闲期间退出后，下一次 _call() 的 conn.send() 会直接抛 BrokenPipeError”。 |
-| 6 及以后 | 未开始 | — |
+| 5：生命周期与隔离 | 用户认可（含第 1 次补修，提交 `b067d90`） | 2026-10-30 用户原话：“第 5 步及补修 b067d90 验收通过。记录本条批准，现在仅执行第 6 步：数据划分与预算冻结。” |
+| 6：数据划分与预算冻结 | **待验收**（含一项待你决定的划分取舍） | 未批准 |
+| 7 及以后 | 未开始 | — |
 
 ## 运行环境
 
@@ -227,4 +228,24 @@
   - `pytest_itsm_worker.log`：9 passed，退出码 0；
   - `pytest_idle_exit_repeats.log`：新测试重复 3 次，均 2 passed；
   - `pytest_airlinerl_full.log`：`tests/unit tests/remote` 共 551 passed，退出码 0；无残留子进程。
+
+## 第 6 步证据
+
+- 产物清单与全部依据：`docs/itsm_step6/README.md`。
+- 改动：
+  - 新增 `src/agent_rl/data/itsm_split.py`、`scripts/data/build_itsm_split.py`、`scripts/data/measure_itsm_tokens.py`；
+  - 新增 `configs/data/itsm_split_v1.json`、`configs/itsm/budget_v1.yaml`；
+  - 新增 `docs/itsm_step6/`（README、`family_audit.json`、`token_measurements.json`）；
+  - 新增 `tests/unit/test_itsm_split.py`（16 项）、`tests/unit/test_itsm_budget.py`（5 项）；
+  - 协议 §7 改为指向预算文件。
+  - Bench2、环境、评分和训练代码均未修改。
+- 划分：11 个家族（写工具 Jaccard ≥ 0.6 或共享新建对象工具，取连通分量），train 29 / dev 13 / held-out 11，按家族整体划分，种子 20261030。互斥、覆盖、家族不跨划分、MSP-021/022、025/026、027/028 及跨 tenancy 近重复同处一个划分，均有测试。
+- **待你决定**：三个大家族占 40/53 题，存在取舍（README §2.3）。v1 选择让 held-out 更大更多样，代价是训练集没有"挂起并通知"工作流，dev 主要反映该工作流。
+- token 测量：tokenizer `Qwen/Qwen3-8B@b968826d…`，chat template sha256 `a55ee1b1…`，`enable_thinking=False`；只用 train/dev 的 gold 回放，不代表实际策略输出。初始 prompt 28,104，gold 回放响应最大 5,764，完整序列最大 33,868。
+- 运行（在 `code/main` 下，日志在 `/home/sar/work/EnterGym/output/itsm-step6/`）：
+  - `python scripts/data/build_itsm_split.py --check`：up to date；
+  - `python scripts/data/measure_itsm_tokens.py --tokenizer-dir ~/.cache/entergym/tokenizers/Qwen3-8B-b968826d`：退出码 0（`measure_tokens.log`），HF 离线模式运行；
+  - `pytest tests/unit/test_itsm_split.py tests/unit/test_itsm_budget.py -v`：21 passed（`pytest_itsm_step6.log`）；
+  - `pytest tests/unit tests/remote -q`：572 passed（`pytest_airlinerl_full.log`）。
+- 没有启动 GPU，没有加载模型权重，没有调用真实 LLM，没有接入第 7 步采样或第 9 步调度。
 
