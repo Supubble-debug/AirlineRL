@@ -62,7 +62,7 @@ def test_every_entry_point_requires_an_explicit_version() -> None:
     with pytest.raises(TypeError):
         task_ids("train")  # type: ignore[call-arg]
     with pytest.raises(ValueError, match="unknown split_version"):
-        load_task_set(split_version="itsm_split_v3")
+        load_task_set(split_version="itsm_split_v4")
 
 
 def test_v1_and_v2_task_sets() -> None:

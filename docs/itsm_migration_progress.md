@@ -18,8 +18,9 @@
 | 6C：数据与预算整合 | 用户认可；预算选项 A（完整观察，超长时以 response_length 结束）；40,960 仍待验证 | 2026-10-30 先有用户原话：“第6C步验收结果保留，但暂不开始完整第7步。”随后用户原话：“第6C已验收通过，预算选项为A，40,960仍待验证。” |
 | 6D-1：EnterpriseOps-Gym 下一批候选筛选与规模方案 | 用户部分批准：第 1–4、6–8 题进入 6D-2 验证；第 5、9、10 题暂缓；D6D-1、D6D-2 均选 ①；门槛不放宽 | 2026-10-30 用户原话：“本轮仅批准第1–4、6–8题进入6D-2迁移验证，不保证最终全部纳入。第5、9、10题暂缓，不改政策、不制定MSP SLA全局规则，不沿用省略user_role的口径，不放宽共享写工具门槛。……提交6D-1报告及本条决定后，仅完成上述7题的6D-2验证，按既定逐题标准提交结果，失败则隔离。不为凑数放宽标准，不自动扩大规模或启动训练。”全文见 `docs/itsm_step6d/README.md` §6。 |
 | 6D-2：7 题迁移验证 | 用户认可：第 1、3、6、7 题作为 v3 新增训练题（train 目标 32 → 36）；第 2、4、8 题继续隔离；不授权重新设计第 4 题 | 2026-10-30 用户原话：“第 6D-2 验收通过。一、数据决定 1. 批准第 1、3、6、7 题作为 v3 新增训练题，训练集目标规模由 32 增至 36。2. v1/v2 不改；本次批准不等于 v3 最终验收或冻结。3. 第 2、4、8 题继续隔离。4. 暂不授权重新设计第 4 题，不修改 D8、fuzzy 阈值、policy 或评分。5. 第 5、9、10 题及其他备选题继续暂缓，不扩大训练候选范围。” |
-| 6D-3：v3 held-out 候选审读与迁移验证 | **待验收**（测试通过 ≠ 验收）：1 题通过（`99ba2325_54f35603`），7 题隔离；held-out 预期 11 → 12 | 2026-10-30 用户原话（同一条消息）：“二、只执行第 6D-3：v3 held-out 候选审读与迁移验证。范围限定为 docs/itsm_step6d/v3_proposal.md 已列出的 8 道候选。两道服务目录题继续优先保留给 held-out，不转入 train。……不通过的候选隔离并记录理由，不另找题替补，不放宽门槛。不运行模型，不用 held-out 调试长度、预算或模型配置。……本步先不生成正式 v3 manifest，不开始第 7 步，不启动 GPU、不调用真实 LLM、不做 SFT 或训练。完成后停止，等待我检验确认。” 2026-10-31 用户原话：“目前已完成6d-3”，未出现“验收通过”，状态按实际仍记为待验收。 |
-| S0：联合数据用途与 SFT 轨迹试点设计（新路线，仅离线） | **S0-R1 补修待验收**（测试通过 ≠ 验收） | 未批准。2026-10-31 用户原话：“研究主线改为 SFT → GRPO，执行仍逐步验收。本次只执行 S0：联合数据用途与 SFT 轨迹试点设计，不开始采样或训练。……将之前建议的 6D-3-R1 检查纳入本步，避免另开重复流程。……仅修改设计与必要离线审计，不联网调用 LLM、不启动 GPU、不训练、不自动进入第 7 步或 S1。完成后停止，等待我验收。” 随后：“请阅读code/main/docs/playbook2.md，这是新路线，之前的code/main/docs/itsm_migration_agent_playbook.md是原路线”。 2026-10-31 用户原话：“S0 暂不最终验收，只执行 S0-R1 补修。按本次逐项决定更新提案……1. 新增 b6ef60ca 反例……将该题改为暂停 GRPO、保留 SFT 来源。2. 修正核心要求的判定逻辑：不能用一个结构化反例 DB=0，覆盖另一个已确认的核心错误反例 DB=1……3. ……原有 5 题登记为待补 R1，第 9 步前完成。78a5 接纳为 SFT-only 来源；54f35603 保留给 held-out。4. 修正 Teacher/裁判偏差表述，补充实际模型版本核对方案。API 上限须包含重试及所有收费请求，并在发起请求前预留费用……只修订 S0、运行受影响的离线验证并提交验收。本次不生成正式 v3，不进入第 7 步或 S1，不调用 LLM、不启动 GPU、不训练。完成后停止。” |
+| 6D-3：v3 held-out 候选审读与迁移验证 | 用户认可：1 题通过（`99ba2325_54f35603`，纳入 held-out），7 题隔离 | 2026-10-30 用户原话（同一条消息）：“二、只执行第 6D-3：v3 held-out 候选审读与迁移验证。范围限定为 docs/itsm_step6d/v3_proposal.md 已列出的 8 道候选。两道服务目录题继续优先保留给 held-out，不转入 train。……不通过的候选隔离并记录理由，不另找题替补，不放宽门槛。不运行模型，不用 held-out 调试长度、预算或模型配置。……本步先不生成正式 v3 manifest，不开始第 7 步，不启动 GPU、不调用真实 LLM、不做 SFT 或训练。完成后停止，等待我检验确认。” 2026-10-31 用户原话：“目前已完成6d-3”，未出现“验收通过”，状态按实际仍记为待验收。 2026-10-31 用户原话：“6D-3 验收通过，54f35603 纳入 held-out。” |
+| S0：联合数据用途与 SFT 轨迹试点设计（新路线，仅离线） | 用户认可（含 S0-R1）；D-S0-1/2/3/4/5/6 已定，D-S0-8 的 API 上限已定（45 美元），GPU 上限待批 | 未批准。2026-10-31 用户原话：“研究主线改为 SFT → GRPO，执行仍逐步验收。本次只执行 S0：联合数据用途与 SFT 轨迹试点设计，不开始采样或训练。……将之前建议的 6D-3-R1 检查纳入本步，避免另开重复流程。……仅修改设计与必要离线审计，不联网调用 LLM、不启动 GPU、不训练、不自动进入第 7 步或 S1。完成后停止，等待我验收。” 随后：“请阅读code/main/docs/playbook2.md，这是新路线，之前的code/main/docs/itsm_migration_agent_playbook.md是原路线”。 2026-10-31 用户原话：“S0 暂不最终验收，只执行 S0-R1 补修。按本次逐项决定更新提案……1. 新增 b6ef60ca 反例……将该题改为暂停 GRPO、保留 SFT 来源。2. 修正核心要求的判定逻辑：不能用一个结构化反例 DB=0，覆盖另一个已确认的核心错误反例 DB=1……3. ……原有 5 题登记为待补 R1，第 9 步前完成。78a5 接纳为 SFT-only 来源；54f35603 保留给 held-out。4. 修正 Teacher/裁判偏差表述，补充实际模型版本核对方案。API 上限须包含重试及所有收费请求，并在发起请求前预留费用……只修订 S0、运行受影响的离线验证并提交验收。本次不生成正式 v3，不进入第 7 步或 S1，不调用 LLM、不启动 GPU、不训练。完成后停止。” 2026-10-31 用户原话：“S0-R1 验收通过。明确确认本次回复中的各项决定：五道派生题暂停 GRPO；78a5 保留为 SFT-only 来源”。 |
+| v3 manifest 与用途登记 `itsm_usage_v1` 冻结 | **待验收**（测试通过 ≠ 验收） | 未批准。2026-10-31 用户原话：“S0-R1 验收通过。明确确认本次回复中的各项决定：五道派生题暂停 GRPO；78a5 保留为 SFT-only 来源；6D-3 验收通过，54f35603 纳入 held-out。现在只执行：生成 v3 manifest 与用途登记，提交冻结验收。……4. Teacher 候选改为 GPT-6.1 Sol，供应商为 Micu：https://www.micuapi.ai 接口兼容性、实际模型 ID、参数、版本和价格留到第 7 步验证；不静默替换模型，不照搬 DeepSeek 参数。5. S1 总费用上限为 45 美元。换用 GPT 后重新核算单请求、单轨迹和总预留；本步只更新预算说明，不调用模型。……不开始第 7 步或 S1，不调用 LLM、不启动 GPU、不训练。完成后停止，等待我验收。” |
 | 7 及以后（新路线顺序 S0 → 7 → 8 → S1 → … → S5 → 9 → … → 15） | 未开始 | — |
 
 ## 运行环境
@@ -398,4 +399,16 @@
   - Teacher/裁判同源偏差的表述已修正（不再声称 E1–E5 彼此比较不受影响），补充实际模型版本核对方案；API 上限改为 45 美元，计入全部重试和收费请求，按轨迹和按请求预留费用，停止条件不依赖账单。
 - 运行（在 `code/main` 下，日志在 `/home/sar/work/EnterGym/output/itsm-stepS0-r1/`）：`build_itsm_s0_usage_audit.py --check` 在哈希种子 1、7 下都是 up to date；held-out 候选、6D-2 批次、试点、v1、v2 的 `--check` 均为 up to date；`pytest tests/unit tests/remote -q`：721 passed（`pytest_full.log`）。
 - 没有生成 v3，没有进入第 7 步或 S1，没有调用 LLM，没有启动 GPU，没有训练。
+
+## v3 manifest 与用途登记证据（2026-10-31）
+
+- 产物与变更说明：`docs/itsm_v3_usage/README.md`；`configs/data/itsm_split_v3.json`；`configs/data/itsm_usage_v1.json`。
+- 改动：新增 `src/agent_rl/data/itsm_split_v3.py`、`src/agent_rl/data/itsm_usage.py`、`scripts/data/build_itsm_split_v3.py`、`scripts/data/build_itsm_usage.py`、`tests/unit/test_itsm_split_v3.py`（17 项）；`src/agent_rl/data/itsm_task_sets.py` 增加 v3 与按用途选题（`training_task_ids`），并拒绝直接列出 v3 train；`docs/itsm_stepS0/README.md` 更新 Teacher（GPT-6.1 Sol / Micu）、§6.1 预算公式与 §8 决定；`docs/itsm_step6d/v3_proposal.md`、`docs/itsm_step6d3/README.md` 更新状态。v1/v2 manifest、Bench2、评分、阈值、policy、gold 与各批次文件均未修改。
+- 结果：
+  - v3：train 37 / dev 13 / held-out 12，15 个家族（train 6、dev 2、held-out 7）；家族、实体、近重复与上游来源隔离检查全部通过；每题记录 content 与 source 两个哈希。
+  - 用途：SFT 来源 37，GRPO 候选 31（可训练 26、R1 pending 5），SFT-only 6；来源获准与轨迹接纳分开登记，轨迹接纳目前为空。
+  - 入口：v3 train 必须通过 `training_task_ids` 选取；`purpose="grpo"` 只返回 26 题，不含 SFT-only、pending、dev、held-out；held-out 仍需 `final_evaluation=True`。
+  - S1 预算：总上限 45 美元；GPT-6.1 Sol 价格未知，改为公式核算，第 7 步核实价格后代入。
+- 运行：在 `code/main` 下运行，日志在 `/home/sar/work/EnterGym/output/itsm-v3-usage/`：`build_itsm_split_v3.py --check`、`build_itsm_usage.py --check` 在哈希种子 1、7、13 下都是 up to date；S0 审计、held-out 候选、6D-2 批次、试点、v1、v2 的 `--check` 均为 up to date；`pytest tests/unit tests/remote -q`：738 passed（`pytest_full.log`），跑完没有残留子进程。另有 2 条旧断言按当前状态更新：`test_itsm_eops_heldout_v3` 原先断言 v3 文件不存在，改为断言 54f35603 在 v3 held-out、隔离题不在任何划分；`test_itsm_task_sets` 中"未知版本"的示例从 itsm_split_v3 改为 itsm_split_v4。
+- 没有开始第 7 步或 S1，没有调用 LLM，没有启动 GPU，没有训练。
 

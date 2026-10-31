@@ -1,5 +1,7 @@
 # 第 6D-3 步：v3 held-out 候选审读与迁移验证
 
+状态：2026-10-31 验收通过，`99ba2325_54f35603` 纳入 v3 held-out（`docs/itsm_v3_usage/README.md`）。
+
 范围：只处理 `docs/itsm_step6d/v3_proposal.md` 列出的 8 道候选。不另找题替补，不放宽门槛，不生成正式 v3 manifest，不运行模型，不测量 held-out 候选的 token 长度，也不用它们调试预算或模型配置。
 
 ## 1. 候选清单与准入规则（转换之前固定）

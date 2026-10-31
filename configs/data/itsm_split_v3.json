@@ -1,0 +1,1910 @@
+{
+  "version": "itsm_split_v3",
+  "positioning": "cross-family and workflow-composition generalisation: whole workflow families are held out, but sub-workflows (e.g. authorise a change, move a problem to root cause, map them) recur across splits in new combinations; a write-tool Jaccard below the family threshold is not by itself evidence of no near-duplicate (see family_audit.json cross_split_shared_subworkflows)",
+  "usage": "train: training-source union (SFT and GRPO candidates); a task's SFT/GRPO use comes only from the usage registry configs/data/itsm_usage_v1.json, never from this split (SFT-only and R1-pending tasks are in train but not GRPO-trainable); dev: debugging and budget/length checks only, not checkpoint selection; heldout: final frozen evaluation only, never for debugging, tuning, length/budget work, Teacher demonstrations or checkpoint selection",
+  "method": {
+    "base": "split v2 kept: its 56 tasks keep their v2 split; dev is identical to v2; v3 adds four 6D-2 train tasks and the SFT-only source 78a5b71e_a4fb07a9 to train, and the 6D-3 task 99ba2325_54f35603 to heldout; the assignment is not re-optimised",
+    "family_rule": "as v1/v2: link two tasks if the Jaccard similarity of their gold write-tool sets >= 0.6 or they share a creation tool; families are the connected components over all 62 tasks; a v2 family name is kept only for a family whose members are exactly its v2 members",
+    "creation_tools": [
+      "add_child_incident",
+      "add_location",
+      "add_new_service",
+      "add_new_sla_definition",
+      "add_new_user",
+      "add_new_user_group",
+      "create_knowledge_article",
+      "create_problem",
+      "register_configuration_item",
+      "register_new_service_offering"
+    ],
+    "checksums": "content_sha256: canonical JSON of the fields that define the task for env and scoring (as v2); source_sha256: canonical JSON of the task's full entry in its source file (provenance, upstream verifiers and validation cases included)",
+    "accepted": {
+      "date": "2026-10-31",
+      "decision": "S0-R1 验收通过。明确确认本次回复中的各项决定：五道派生题暂停 GRPO；78a5 保留为 SFT-only 来源；6D-3 验收通过，54f35603 纳入 held-out。现在只执行：生成 v3 manifest 与用途登记，提交冻结验收。1. v1/v2 不改。v3 训练来源并集为 37，dev 13、held-out 12。",
+      "earlier": [
+        {
+          "date": "2026-10-30",
+          "decision": "第 6D-2 验收通过。……批准第 1、3、6、7 题作为 v3 新增训练题"
+        }
+      ]
+    }
+  },
+  "data": {
+    "bench2": {
+      "bench2_source": "Enterprise-Worlds 37175af590d3b9c7d2288501b604020e547e3783",
+      "files_sha256": {
+        "README.md": "b8604f66da95a8b19bf74d3f67719b6aaac701e1f01b83bb202387015de24c02",
+        "fk_spec.json": "54fa139096687e1a7da918925ed5b4b60f1390fa04b0d139bbb6170ae2b95849",
+        "msp_db.json": "96f1c9ae06c0fbbf5d1879529283813c0ecda69ba3f4514a97fe591d96eb30c4",
+        "policy.md": "6d029256b224722e71164dea0e3e36839a9e098cfd55b92849305cc94d300d23",
+        "single_tenant_db.json": "660e23dc68305af217b1fc50b1ad45f6b949ba47f581c5b1d1e0cf75e50920b3",
+        "tasks.json": "e82c54a25edf334e696da103586f7456ffba1e73b4d375439a424caf989817a0"
+      }
+    },
+    "source_files": {
+      "pilot": {
+        "path": "configs/data/itsm_eops_pilot_v1.json",
+        "version": "itsm_eops_pilot_v1",
+        "sha256": "7aa17c58c3307d068ad6eacf70e21d0b0c384039717389619c16cefb76865dfe"
+      },
+      "batch2": {
+        "path": "configs/data/itsm_eops_batch2_v1.json",
+        "version": "itsm_eops_batch2_v1",
+        "sha256": "d6eaea6840bb5b8042c0b857de0eb8ed34bd8be78d3d0f818b686abacfb74c54"
+      },
+      "heldout_candidates": {
+        "path": "configs/data/itsm_eops_heldout_v3_candidates.json",
+        "version": "itsm_eops_heldout_v3_candidates_v1",
+        "sha256": "442281a37c73329322781c05a917256aec351f3faf0ec0ee04e00755c088e0c7"
+      }
+    },
+    "base_manifests": {
+      "itsm_split_v1": {
+        "path": "configs/data/itsm_split_v1.json",
+        "sha256": "77cc55196b01f8429d17b1b89c8fcf61c4eae4757db0103511941a0c88631beb"
+      },
+      "itsm_split_v2": {
+        "path": "configs/data/itsm_split_v2.json",
+        "sha256": "f5ba77a58184aa4984eed8db755e56f909d4bdf62ce16cc9e6834f1c45694ce8"
+      }
+    }
+  },
+  "sizes": {
+    "train": 37,
+    "dev": 13,
+    "heldout": 12
+  },
+  "family_changes": {
+    "v2_family_count": 11,
+    "v3_family_count": 15,
+    "unchanged_from_v2": [
+      "change_with_ci_and_kb_links",
+      "ci_maintenance",
+      "incident_handoff_with_child",
+      "incident_hold_and_notify",
+      "incident_intake_with_ci_update",
+      "incident_reassign_with_ci",
+      "incident_resolve",
+      "knowledge_update_and_notify",
+      "problem_from_incident_and_change_mapping",
+      "service_retirement"
+    ],
+    "v2_families_no_longer_present": [
+      "onboarding_catalog_and_change_problem_kb_merged"
+    ],
+    "changed": {
+      "change_post_implementation_review": {
+        "origin": "new_in_v3",
+        "v2_families": [],
+        "added_in_v3": [
+          "itsmbench_eops_78a5b71e_a4fb07a9"
+        ],
+        "split": "train"
+      },
+      "ci_retire_and_affected_link": {
+        "origin": "new_in_v3",
+        "v2_families": [],
+        "added_in_v3": [
+          "itsmbench_eops_99ba2325_887f5580"
+        ],
+        "split": "train"
+      },
+      "notification_queue_repair": {
+        "origin": "new_in_v3",
+        "v2_families": [],
+        "added_in_v3": [
+          "itsmbench_eops_01395ded_eff85dae"
+        ],
+        "split": "train"
+      },
+      "onboarding_catalog_change_problem_kb_v3": {
+        "origin": "extended_v2_family",
+        "v2_families": [
+          "onboarding_catalog_and_change_problem_kb_merged"
+        ],
+        "added_in_v3": [
+          "itsmbench_eops_46ca2862_56a4f834",
+          "itsmbench_eops_99ba2325_7915481a"
+        ],
+        "split": "train"
+      },
+      "service_hold_instead_of_retirement": {
+        "origin": "new_in_v3",
+        "v2_families": [],
+        "added_in_v3": [
+          "itsmbench_eops_99ba2325_54f35603"
+        ],
+        "split": "heldout"
+      }
+    }
+  },
+  "isolation": {
+    "rule": "pairs involving a derived task: <= 1 shared write tool and < 2 shared same-seed gold entities with any dev/held-out task; no near duplicate (same seed, same write-tool set, >= 2 shared gold entities) between any training and evaluation task; no upstream task on both sides. Bench2 train x eval pairs sharing >= 2 write tools are the sub-workflow recombination accepted since v1 and are counted, not blocked",
+    "training": 37,
+    "evaluation": 25,
+    "flagged_pairs": [],
+    "bench2_train_eval_pairs_sharing_ge_2_write_tools": 118,
+    "near_duplicates": [],
+    "upstream_in_both": [],
+    "checks": {
+      "derived_pairs_share_le_1_write_tool_lt_2_entities_no_near_duplicate": true,
+      "no_near_duplicate_across_training_and_evaluation": true,
+      "no_upstream_task_in_training_and_evaluation": true
+    }
+  },
+  "families": {
+    "change_post_implementation_review": {
+      "split": "train",
+      "origin": "new_in_v3",
+      "v2_families": [],
+      "added_in_v3": [
+        "itsmbench_eops_78a5b71e_a4fb07a9"
+      ],
+      "business_types": [
+        "problem_change_lifecycle"
+      ],
+      "note": "advance a change to review (update_change only); SFT-only source in train",
+      "tasks": [
+        "itsmbench_eops_78a5b71e_a4fb07a9"
+      ]
+    },
+    "change_with_ci_and_kb_links": {
+      "split": "heldout",
+      "origin": "unchanged_from_v2",
+      "v2_families": [
+        "change_with_ci_and_kb_links"
+      ],
+      "added_in_v3": [],
+      "business_types": [
+        "problem_change_lifecycle"
+      ],
+      "tasks": [
+        "itsmbench_msp_030"
+      ]
+    },
+    "ci_maintenance": {
+      "split": "train",
+      "origin": "unchanged_from_v2",
+      "v2_families": [
+        "ci_maintenance"
+      ],
+      "added_in_v3": [],
+      "business_types": [
+        "cmdb"
+      ],
+      "tasks": [
+        "itsmbench_single_018"
+      ]
+    },
+    "ci_retire_and_affected_link": {
+      "split": "train",
+      "origin": "new_in_v3",
+      "v2_families": [],
+      "added_in_v3": [
+        "itsmbench_eops_99ba2325_887f5580"
+      ],
+      "business_types": [
+        "cmdb"
+      ],
+      "note": "retire a CI, link an active CI as affected, refuse the retired one; train",
+      "tasks": [
+        "itsmbench_eops_99ba2325_887f5580"
+      ]
+    },
+    "incident_handoff_with_child": {
+      "split": "heldout",
+      "origin": "unchanged_from_v2",
+      "v2_families": [
+        "incident_handoff_with_child"
+      ],
+      "added_in_v3": [],
+      "business_types": [
+        "incident_lifecycle"
+      ],
+      "tasks": [
+        "itsmbench_single_012",
+        "itsmbench_single_013"
+      ]
+    },
+    "incident_hold_and_notify": {
+      "split": "dev",
+      "origin": "unchanged_from_v2",
+      "v2_families": [
+        "incident_hold_and_notify"
+      ],
+      "added_in_v3": [],
+      "business_types": [
+        "incident_lifecycle"
+      ],
+      "tasks": [
+        "itsmbench_msp_019",
+        "itsmbench_msp_021",
+        "itsmbench_msp_022",
+        "itsmbench_msp_024",
+        "itsmbench_msp_025",
+        "itsmbench_msp_026",
+        "itsmbench_msp_029",
+        "itsmbench_single_008",
+        "itsmbench_single_010",
+        "itsmbench_single_014",
+        "itsmbench_single_019",
+        "itsmbench_single_020"
+      ]
+    },
+    "incident_intake_with_ci_update": {
+      "split": "train",
+      "origin": "unchanged_from_v2",
+      "v2_families": [
+        "incident_intake_with_ci_update"
+      ],
+      "added_in_v3": [],
+      "business_types": [
+        "incident_lifecycle"
+      ],
+      "tasks": [
+        "itsmbench_eops_66392a82_52c8290e"
+      ]
+    },
+    "incident_reassign_with_ci": {
+      "split": "dev",
+      "origin": "unchanged_from_v2",
+      "v2_families": [
+        "incident_reassign_with_ci"
+      ],
+      "added_in_v3": [],
+      "business_types": [
+        "incident_lifecycle"
+      ],
+      "tasks": [
+        "itsmbench_single_009"
+      ]
+    },
+    "incident_resolve": {
+      "split": "heldout",
+      "origin": "unchanged_from_v2",
+      "v2_families": [
+        "incident_resolve"
+      ],
+      "added_in_v3": [],
+      "business_types": [
+        "incident_lifecycle"
+      ],
+      "tasks": [
+        "itsmbench_msp_023"
+      ]
+    },
+    "knowledge_update_and_notify": {
+      "split": "heldout",
+      "origin": "unchanged_from_v2",
+      "v2_families": [
+        "knowledge_update_and_notify"
+      ],
+      "added_in_v3": [],
+      "business_types": [
+        "knowledge"
+      ],
+      "tasks": [
+        "itsmbench_single_016"
+      ]
+    },
+    "notification_queue_repair": {
+      "split": "train",
+      "origin": "new_in_v3",
+      "v2_families": [],
+      "added_in_v3": [
+        "itsmbench_eops_01395ded_eff85dae"
+      ],
+      "business_types": [
+        "incident_lifecycle"
+      ],
+      "note": "update a stuck notification and send role-specific notifications; train",
+      "tasks": [
+        "itsmbench_eops_01395ded_eff85dae"
+      ]
+    },
+    "onboarding_catalog_change_problem_kb_v3": {
+      "split": "train",
+      "origin": "extended_v2_family",
+      "v2_families": [
+        "onboarding_catalog_and_change_problem_kb_merged"
+      ],
+      "added_in_v3": [
+        "itsmbench_eops_46ca2862_56a4f834",
+        "itsmbench_eops_99ba2325_7915481a"
+      ],
+      "business_types": [
+        "cmdb",
+        "incident_lifecycle",
+        "knowledge",
+        "problem_change_lifecycle",
+        "service_catalog",
+        "user_and_catalog_admin"
+      ],
+      "note": "v2 onboarding_catalog_and_change_problem_kb_merged extended by 46ca2862_56a4f834 (register_new_service_offering) and 99ba2325_7915481a (create_knowledge_article); train only",
+      "tasks": [
+        "itsmbench_eops_1d219d93_d1ba6c2d",
+        "itsmbench_eops_46ca2862_56a4f834",
+        "itsmbench_eops_46ca2862_b6ef60ca",
+        "itsmbench_eops_99ba2325_7915481a",
+        "itsmbench_msp_001",
+        "itsmbench_msp_002",
+        "itsmbench_msp_003",
+        "itsmbench_msp_004",
+        "itsmbench_msp_005",
+        "itsmbench_msp_006",
+        "itsmbench_msp_007",
+        "itsmbench_msp_008",
+        "itsmbench_msp_009",
+        "itsmbench_msp_010",
+        "itsmbench_msp_011",
+        "itsmbench_msp_012",
+        "itsmbench_msp_013",
+        "itsmbench_msp_014",
+        "itsmbench_msp_015",
+        "itsmbench_msp_016",
+        "itsmbench_msp_017",
+        "itsmbench_msp_018",
+        "itsmbench_msp_031",
+        "itsmbench_single_001",
+        "itsmbench_single_002",
+        "itsmbench_single_003",
+        "itsmbench_single_004",
+        "itsmbench_single_005",
+        "itsmbench_single_006",
+        "itsmbench_single_007",
+        "itsmbench_single_011",
+        "itsmbench_single_015"
+      ]
+    },
+    "problem_from_incident_and_change_mapping": {
+      "split": "heldout",
+      "origin": "unchanged_from_v2",
+      "v2_families": [
+        "problem_from_incident_and_change_mapping"
+      ],
+      "added_in_v3": [],
+      "business_types": [
+        "problem_change_lifecycle"
+      ],
+      "tasks": [
+        "itsmbench_msp_027",
+        "itsmbench_msp_028",
+        "itsmbench_single_017",
+        "itsmbench_single_021",
+        "itsmbench_single_022"
+      ]
+    },
+    "service_hold_instead_of_retirement": {
+      "split": "heldout",
+      "origin": "new_in_v3",
+      "v2_families": [],
+      "added_in_v3": [
+        "itsmbench_eops_99ba2325_54f35603"
+      ],
+      "business_types": [
+        "service_catalog"
+      ],
+      "note": "set a service and its offerings non-operational instead of retiring it; held-out",
+      "tasks": [
+        "itsmbench_eops_99ba2325_54f35603"
+      ]
+    },
+    "service_retirement": {
+      "split": "heldout",
+      "origin": "unchanged_from_v2",
+      "v2_families": [
+        "service_retirement"
+      ],
+      "added_in_v3": [],
+      "business_types": [
+        "service_catalog"
+      ],
+      "tasks": [
+        "itsmbench_msp_020"
+      ]
+    }
+  },
+  "splits": {
+    "train": [
+      "itsmbench_eops_01395ded_eff85dae",
+      "itsmbench_eops_1d219d93_d1ba6c2d",
+      "itsmbench_eops_46ca2862_56a4f834",
+      "itsmbench_eops_46ca2862_b6ef60ca",
+      "itsmbench_eops_66392a82_52c8290e",
+      "itsmbench_eops_78a5b71e_a4fb07a9",
+      "itsmbench_eops_99ba2325_7915481a",
+      "itsmbench_eops_99ba2325_887f5580",
+      "itsmbench_msp_001",
+      "itsmbench_msp_002",
+      "itsmbench_msp_003",
+      "itsmbench_msp_004",
+      "itsmbench_msp_005",
+      "itsmbench_msp_006",
+      "itsmbench_msp_007",
+      "itsmbench_msp_008",
+      "itsmbench_msp_009",
+      "itsmbench_msp_010",
+      "itsmbench_msp_011",
+      "itsmbench_msp_012",
+      "itsmbench_msp_013",
+      "itsmbench_msp_014",
+      "itsmbench_msp_015",
+      "itsmbench_msp_016",
+      "itsmbench_msp_017",
+      "itsmbench_msp_018",
+      "itsmbench_msp_031",
+      "itsmbench_single_001",
+      "itsmbench_single_002",
+      "itsmbench_single_003",
+      "itsmbench_single_004",
+      "itsmbench_single_005",
+      "itsmbench_single_006",
+      "itsmbench_single_007",
+      "itsmbench_single_011",
+      "itsmbench_single_015",
+      "itsmbench_single_018"
+    ],
+    "dev": [
+      "itsmbench_msp_019",
+      "itsmbench_msp_021",
+      "itsmbench_msp_022",
+      "itsmbench_msp_024",
+      "itsmbench_msp_025",
+      "itsmbench_msp_026",
+      "itsmbench_msp_029",
+      "itsmbench_single_008",
+      "itsmbench_single_009",
+      "itsmbench_single_010",
+      "itsmbench_single_014",
+      "itsmbench_single_019",
+      "itsmbench_single_020"
+    ],
+    "heldout": [
+      "itsmbench_eops_99ba2325_54f35603",
+      "itsmbench_msp_020",
+      "itsmbench_msp_023",
+      "itsmbench_msp_027",
+      "itsmbench_msp_028",
+      "itsmbench_msp_030",
+      "itsmbench_single_012",
+      "itsmbench_single_013",
+      "itsmbench_single_016",
+      "itsmbench_single_017",
+      "itsmbench_single_021",
+      "itsmbench_single_022"
+    ]
+  },
+  "tasks": {
+    "itsmbench_eops_01395ded_eff85dae": {
+      "split": "train",
+      "family": "notification_queue_repair",
+      "business_type": "incident_lifecycle",
+      "source": "enterpriseops_gym_derived",
+      "source_file": "batch2",
+      "added_in": "v3",
+      "tenancy": "msp_provider_internal",
+      "seed_db": "msp_db.json",
+      "org_slicing": true,
+      "objects_written": [
+        "notification"
+      ],
+      "gold_actions": 11,
+      "content_sha256": "5842812e7ecbdfecf6cafcf851f89a0807a2429d76da9ab17c0924401fa0478d",
+      "source_sha256": "f64216a63902c9efc0e76f9695f455b035f3505bea594538a3e8a03165873b27",
+      "derived_from": {
+        "dataset": "EnterpriseOps-Gym",
+        "repo": "https://github.com/ServiceNow/EnterpriseOps-Gym",
+        "commit": "271f2c357f763376997dfd16807fcde2474ae41b",
+        "hf_dataset": "ServiceNow-AI/EnterpriseOps-Gym",
+        "hf_revision": "c8e538eae8a6205294f0a86675fefdc1fac408f6",
+        "license": "Apache-2.0",
+        "attribution": "Adapted from EnterpriseOps-Gym (ServiceNow), Apache-2.0; see Bench2/NOTICE",
+        "upstream_task_id": "task_20251223_064932_736_01395ded_eff85dae",
+        "upstream_user_prompt_sha256": "a10ef0b734b49a85917affb01cb2827f438f993b537b06cddbe910d8cd2adbf4",
+        "upstream_seed": "db_1765893060767_9rwtfbbp7.sql",
+        "upstream_seed_sha256": "65e917166cba0d30d5c2fba2765f266361173af9ee51e31498a0f83dbdc14c2f",
+        "source_file": "batch2",
+        "route": "faithful",
+        "org_ids": [
+          "ORG_001"
+        ],
+        "equivalent_to_upstream_evaluation": false
+      }
+    },
+    "itsmbench_eops_1d219d93_d1ba6c2d": {
+      "split": "train",
+      "family": "onboarding_catalog_change_problem_kb_v3",
+      "business_type": "cmdb",
+      "source": "enterpriseops_gym_derived",
+      "source_file": "pilot",
+      "added_in": "v2",
+      "tenancy": "msp_provider_internal",
+      "seed_db": "msp_db.json",
+      "org_slicing": false,
+      "objects_written": [
+        "cmdb",
+        "knowledge",
+        "location",
+        "user"
+      ],
+      "gold_actions": 10,
+      "content_sha256": "36108549851b8f2fffd35303d03e5e7b9612659dd1948c8377fd8055e3be2704",
+      "source_sha256": "1e82ddb6d1b4894d3682298ffbbeb5876de081c21268741b40dee766d1d1dbd4",
+      "derived_from": {
+        "dataset": "EnterpriseOps-Gym",
+        "repo": "https://github.com/ServiceNow/EnterpriseOps-Gym",
+        "commit": "271f2c357f763376997dfd16807fcde2474ae41b",
+        "hf_dataset": "ServiceNow-AI/EnterpriseOps-Gym",
+        "hf_revision": "c8e538eae8a6205294f0a86675fefdc1fac408f6",
+        "license": "Apache-2.0",
+        "attribution": "Adapted from EnterpriseOps-Gym (ServiceNow), Apache-2.0; see Bench2/NOTICE",
+        "upstream_task_id": "task_20251223_101136_983_1d219d93_d1ba6c2d",
+        "upstream_user_prompt_sha256": "f39c967267f0c2f0092535e59f78e7924315b2589177023f1f3b5edc9cacf061",
+        "upstream_seed": "db_1765893060767_9rwtfbbp7.sql",
+        "upstream_seed_sha256": "65e917166cba0d30d5c2fba2765f266361173af9ee51e31498a0f83dbdc14c2f",
+        "source_file": "pilot",
+        "route": "faithful",
+        "org_ids": null,
+        "equivalent_to_upstream_evaluation": false
+      }
+    },
+    "itsmbench_eops_46ca2862_56a4f834": {
+      "split": "train",
+      "family": "onboarding_catalog_change_problem_kb_v3",
+      "business_type": "service_catalog",
+      "source": "enterpriseops_gym_derived",
+      "source_file": "batch2",
+      "added_in": "v3",
+      "tenancy": "msp_provider_internal",
+      "seed_db": "msp_db.json",
+      "org_slicing": true,
+      "objects_written": [
+        "service",
+        "template"
+      ],
+      "gold_actions": 8,
+      "content_sha256": "dc2049b473dab648fc1d0b90441316faf20c9e9cb9c423a189e96f2eee2214ae",
+      "source_sha256": "08ea8ebeed35c4db1e6d8b8754a4626fbf6e04ca3ebb5e1805703bc7ad8e809f",
+      "derived_from": {
+        "dataset": "EnterpriseOps-Gym",
+        "repo": "https://github.com/ServiceNow/EnterpriseOps-Gym",
+        "commit": "271f2c357f763376997dfd16807fcde2474ae41b",
+        "hf_dataset": "ServiceNow-AI/EnterpriseOps-Gym",
+        "hf_revision": "c8e538eae8a6205294f0a86675fefdc1fac408f6",
+        "license": "Apache-2.0",
+        "attribution": "Adapted from EnterpriseOps-Gym (ServiceNow), Apache-2.0; see Bench2/NOTICE",
+        "upstream_task_id": "task_20260113_143610_437_46ca2862_56a4f834",
+        "upstream_user_prompt_sha256": "430744868e451eb8a5fa4744bbf54ed02c2bc36300dc6e10239c7fae4b652d4c",
+        "upstream_seed": "db_1765893060767_9rwtfbbp7.sql",
+        "upstream_seed_sha256": "65e917166cba0d30d5c2fba2765f266361173af9ee51e31498a0f83dbdc14c2f",
+        "source_file": "batch2",
+        "route": "faithful",
+        "org_ids": [
+          "ORG_001"
+        ],
+        "equivalent_to_upstream_evaluation": false
+      }
+    },
+    "itsmbench_eops_46ca2862_b6ef60ca": {
+      "split": "train",
+      "family": "onboarding_catalog_change_problem_kb_v3",
+      "business_type": "incident_lifecycle",
+      "source": "enterpriseops_gym_derived",
+      "source_file": "pilot",
+      "added_in": "v2",
+      "tenancy": "single_tenant",
+      "seed_db": "single_tenant_db.json",
+      "org_slicing": false,
+      "objects_written": [
+        "cmdb",
+        "incident",
+        "sla"
+      ],
+      "gold_actions": 8,
+      "content_sha256": "d4001e9d5128a7a72d505938af1f4648b0f5dff1a6d8203eb50d0ba2e738677c",
+      "source_sha256": "1f80aad2ddaca1ed6a51dc9f6a03e17eadeaac8bacffaa8ce3fd1e064b5a0b9d",
+      "derived_from": {
+        "dataset": "EnterpriseOps-Gym",
+        "repo": "https://github.com/ServiceNow/EnterpriseOps-Gym",
+        "commit": "271f2c357f763376997dfd16807fcde2474ae41b",
+        "hf_dataset": "ServiceNow-AI/EnterpriseOps-Gym",
+        "hf_revision": "c8e538eae8a6205294f0a86675fefdc1fac408f6",
+        "license": "Apache-2.0",
+        "attribution": "Adapted from EnterpriseOps-Gym (ServiceNow), Apache-2.0; see Bench2/NOTICE",
+        "upstream_task_id": "task_20260113_182602_664_46ca2862_b6ef60ca",
+        "upstream_user_prompt_sha256": "035b09163ea407259938beff0541cb68258e441c9a69afe785b6f4decc074e66",
+        "upstream_seed": "db_1765301900121_3mwjj54xy.sql",
+        "upstream_seed_sha256": "99f193904ef9c1f06c3ecff48000697653f178d6300c70e86d34d5a17081e3a4",
+        "source_file": "pilot",
+        "route": "faithful",
+        "org_ids": null,
+        "equivalent_to_upstream_evaluation": false
+      }
+    },
+    "itsmbench_eops_66392a82_52c8290e": {
+      "split": "train",
+      "family": "incident_intake_with_ci_update",
+      "business_type": "incident_lifecycle",
+      "source": "enterpriseops_gym_derived",
+      "source_file": "pilot",
+      "added_in": "v2",
+      "tenancy": "single_tenant",
+      "seed_db": "single_tenant_db.json",
+      "org_slicing": false,
+      "objects_written": [
+        "cmdb",
+        "incident",
+        "sla"
+      ],
+      "gold_actions": 8,
+      "content_sha256": "b03debc7b6c4cf27875bb06bc083c43a33a151942b07904b6795e071a6985866",
+      "source_sha256": "468873562abad18befc6cd625e9d6fea2623ee78ff0b381f2f7e8209b7d309d9",
+      "derived_from": {
+        "dataset": "EnterpriseOps-Gym",
+        "repo": "https://github.com/ServiceNow/EnterpriseOps-Gym",
+        "commit": "271f2c357f763376997dfd16807fcde2474ae41b",
+        "hf_dataset": "ServiceNow-AI/EnterpriseOps-Gym",
+        "hf_revision": "c8e538eae8a6205294f0a86675fefdc1fac408f6",
+        "license": "Apache-2.0",
+        "attribution": "Adapted from EnterpriseOps-Gym (ServiceNow), Apache-2.0; see Bench2/NOTICE",
+        "upstream_task_id": "task_20251218_124419_383_66392a82_52c8290e",
+        "upstream_user_prompt_sha256": "625e6f45652ab4fff7c0c1338757bae07d7ccaed7347c856edfb5f450f0b415f",
+        "upstream_seed": "db_1765984530018_6f72jkf3p.sql",
+        "upstream_seed_sha256": "aaca465e8ca9c74dd54279bd2842003c8d08950d643b65199575b4fc86198096",
+        "source_file": "pilot",
+        "route": "faithful",
+        "org_ids": null,
+        "equivalent_to_upstream_evaluation": false
+      }
+    },
+    "itsmbench_eops_78a5b71e_a4fb07a9": {
+      "split": "train",
+      "family": "change_post_implementation_review",
+      "business_type": "problem_change_lifecycle",
+      "source": "enterpriseops_gym_derived",
+      "source_file": "batch2",
+      "added_in": "v3",
+      "tenancy": "msp_provider_internal",
+      "seed_db": "msp_db.json",
+      "org_slicing": true,
+      "objects_written": [
+        "change"
+      ],
+      "gold_actions": 5,
+      "content_sha256": "5c554bfb55495e2f0f8e6d530fafca53c89dd0314a392c0bd972e61bad8def85",
+      "source_sha256": "4b681307e02cc090b02123d96ae9efb0ad678044293fbc601455f2edc1690bff",
+      "derived_from": {
+        "dataset": "EnterpriseOps-Gym",
+        "repo": "https://github.com/ServiceNow/EnterpriseOps-Gym",
+        "commit": "271f2c357f763376997dfd16807fcde2474ae41b",
+        "hf_dataset": "ServiceNow-AI/EnterpriseOps-Gym",
+        "hf_revision": "c8e538eae8a6205294f0a86675fefdc1fac408f6",
+        "license": "Apache-2.0",
+        "attribution": "Adapted from EnterpriseOps-Gym (ServiceNow), Apache-2.0; see Bench2/NOTICE",
+        "upstream_task_id": "task_20260114_081229_036_78a5b71e_a4fb07a9",
+        "upstream_user_prompt_sha256": "1187cc2baaf406b3ecac2fe03dedcbe37c3f2c0ce62ad34fdb4601d166f0ee9a",
+        "upstream_seed": "db_1765893060767_9rwtfbbp7.sql",
+        "upstream_seed_sha256": "65e917166cba0d30d5c2fba2765f266361173af9ee51e31498a0f83dbdc14c2f",
+        "source_file": "batch2",
+        "route": "faithful",
+        "org_ids": [
+          "ORG_001"
+        ],
+        "equivalent_to_upstream_evaluation": false
+      }
+    },
+    "itsmbench_eops_99ba2325_54f35603": {
+      "split": "heldout",
+      "family": "service_hold_instead_of_retirement",
+      "business_type": "service_catalog",
+      "source": "enterpriseops_gym_derived",
+      "source_file": "heldout_candidates",
+      "added_in": "v3",
+      "tenancy": "msp_multi_client",
+      "seed_db": "msp_db.json",
+      "org_slicing": true,
+      "objects_written": [
+        "service"
+      ],
+      "gold_actions": 8,
+      "content_sha256": "863b3b14bc27557f4bf2be75089e78c36757684a08ed3f50b269eda5d3e71df0",
+      "source_sha256": "14c9d4fb6cf0bb755724f001c747a6a2523b54381239cef2149c5e793df912b2",
+      "derived_from": {
+        "dataset": "EnterpriseOps-Gym",
+        "repo": "https://github.com/ServiceNow/EnterpriseOps-Gym",
+        "commit": "271f2c357f763376997dfd16807fcde2474ae41b",
+        "hf_dataset": "ServiceNow-AI/EnterpriseOps-Gym",
+        "hf_revision": "c8e538eae8a6205294f0a86675fefdc1fac408f6",
+        "license": "Apache-2.0",
+        "attribution": "Adapted from EnterpriseOps-Gym (ServiceNow), Apache-2.0; see Bench2/NOTICE",
+        "upstream_task_id": "task_20260113_031046_703_99ba2325_54f35603",
+        "upstream_user_prompt_sha256": "467d71399617256b83d766d9a9993297958f9e2fd85994c0de3795e7ddab6c04",
+        "upstream_seed": "db_1765893060767_9rwtfbbp7.sql",
+        "upstream_seed_sha256": "65e917166cba0d30d5c2fba2765f266361173af9ee51e31498a0f83dbdc14c2f",
+        "source_file": "heldout_candidates",
+        "route": "faithful",
+        "org_ids": [
+          "ORG_001",
+          "ORG_007",
+          "ORG_016"
+        ],
+        "equivalent_to_upstream_evaluation": false
+      }
+    },
+    "itsmbench_eops_99ba2325_7915481a": {
+      "split": "train",
+      "family": "onboarding_catalog_change_problem_kb_v3",
+      "business_type": "knowledge",
+      "source": "enterpriseops_gym_derived",
+      "source_file": "batch2",
+      "added_in": "v3",
+      "tenancy": "msp_provider_internal",
+      "seed_db": "msp_db.json",
+      "org_slicing": true,
+      "objects_written": [
+        "cmdb",
+        "knowledge",
+        "service"
+      ],
+      "gold_actions": 6,
+      "content_sha256": "c5cbd1c8b72b32dd74f6adde8d6ba10a1143cba002283b8b126ee7ef6f6588b0",
+      "source_sha256": "fba2b8170da778420a788f00a7e595a35fb8ad6efed8c74b9314162f23dfa706",
+      "derived_from": {
+        "dataset": "EnterpriseOps-Gym",
+        "repo": "https://github.com/ServiceNow/EnterpriseOps-Gym",
+        "commit": "271f2c357f763376997dfd16807fcde2474ae41b",
+        "hf_dataset": "ServiceNow-AI/EnterpriseOps-Gym",
+        "hf_revision": "c8e538eae8a6205294f0a86675fefdc1fac408f6",
+        "license": "Apache-2.0",
+        "attribution": "Adapted from EnterpriseOps-Gym (ServiceNow), Apache-2.0; see Bench2/NOTICE",
+        "upstream_task_id": "task_20260114_174427_042_99ba2325_7915481a",
+        "upstream_user_prompt_sha256": "be6b23aed4059ab92da64893f6ab0d162781bbc7f39be916fe6731049f8b6c89",
+        "upstream_seed": "db_1765893060767_9rwtfbbp7.sql",
+        "upstream_seed_sha256": "65e917166cba0d30d5c2fba2765f266361173af9ee51e31498a0f83dbdc14c2f",
+        "source_file": "batch2",
+        "route": "faithful",
+        "org_ids": [
+          "ORG_001"
+        ],
+        "equivalent_to_upstream_evaluation": false
+      }
+    },
+    "itsmbench_eops_99ba2325_887f5580": {
+      "split": "train",
+      "family": "ci_retire_and_affected_link",
+      "business_type": "cmdb",
+      "source": "enterpriseops_gym_derived",
+      "source_file": "batch2",
+      "added_in": "v3",
+      "tenancy": "msp_provider_internal",
+      "seed_db": "msp_db.json",
+      "org_slicing": true,
+      "objects_written": [
+        "cmdb"
+      ],
+      "gold_actions": 6,
+      "content_sha256": "8e25f28635692d72cc62a7bb870925bb06a5d9b65eb486c54973074b183ef721",
+      "source_sha256": "1a955a076cac2ddb1c37ce25d673da67c36208593e54b9cc467c0c80657b5c9f",
+      "derived_from": {
+        "dataset": "EnterpriseOps-Gym",
+        "repo": "https://github.com/ServiceNow/EnterpriseOps-Gym",
+        "commit": "271f2c357f763376997dfd16807fcde2474ae41b",
+        "hf_dataset": "ServiceNow-AI/EnterpriseOps-Gym",
+        "hf_revision": "c8e538eae8a6205294f0a86675fefdc1fac408f6",
+        "license": "Apache-2.0",
+        "attribution": "Adapted from EnterpriseOps-Gym (ServiceNow), Apache-2.0; see Bench2/NOTICE",
+        "upstream_task_id": "task_20251219_081545_939_99ba2325_887f5580",
+        "upstream_user_prompt_sha256": "0bdd8af26cc1a36fa97759e1274bfbc3a54bf5872275d2296fcf6978ccc12298",
+        "upstream_seed": "db_1765893060767_9rwtfbbp7.sql",
+        "upstream_seed_sha256": "65e917166cba0d30d5c2fba2765f266361173af9ee51e31498a0f83dbdc14c2f",
+        "source_file": "batch2",
+        "route": "faithful",
+        "org_ids": [
+          "ORG_001"
+        ],
+        "equivalent_to_upstream_evaluation": false
+      }
+    },
+    "itsmbench_msp_001": {
+      "split": "train",
+      "family": "onboarding_catalog_change_problem_kb_v3",
+      "business_type": "user_and_catalog_admin",
+      "source": "bench2",
+      "source_file": "bench2_tasks_json",
+      "added_in": "v1",
+      "tenancy": "provider_client",
+      "seed_db": "msp_db.json",
+      "org_slicing": true,
+      "objects_written": [
+        "cmdb",
+        "user"
+      ],
+      "gold_actions": 6,
+      "content_sha256": "716cd51157f852330c1d015106e8a98e51c5906de0e13d7a2e749661323012e1",
+      "source_sha256": "716cd51157f852330c1d015106e8a98e51c5906de0e13d7a2e749661323012e1"
+    },
+    "itsmbench_msp_002": {
+      "split": "train",
+      "family": "onboarding_catalog_change_problem_kb_v3",
+      "business_type": "user_and_catalog_admin",
+      "source": "bench2",
+      "source_file": "bench2_tasks_json",
+      "added_in": "v1",
+      "tenancy": "provider_client",
+      "seed_db": "msp_db.json",
+      "org_slicing": true,
+      "objects_written": [
+        "cmdb",
+        "user"
+      ],
+      "gold_actions": 6,
+      "content_sha256": "ace5fffa0ac5c57d191564b0c3f8cf6b61e3f87d9d6b0064fa0cd08e4220516d",
+      "source_sha256": "ace5fffa0ac5c57d191564b0c3f8cf6b61e3f87d9d6b0064fa0cd08e4220516d"
+    },
+    "itsmbench_msp_003": {
+      "split": "train",
+      "family": "onboarding_catalog_change_problem_kb_v3",
+      "business_type": "user_and_catalog_admin",
+      "source": "bench2",
+      "source_file": "bench2_tasks_json",
+      "added_in": "v1",
+      "tenancy": "provider_client",
+      "seed_db": "msp_db.json",
+      "org_slicing": true,
+      "objects_written": [
+        "cmdb",
+        "location",
+        "user"
+      ],
+      "gold_actions": 6,
+      "content_sha256": "331764a30a3d26f9a63a46e052049df1ccb260d7f8ec8f6c6586194065eb0839",
+      "source_sha256": "331764a30a3d26f9a63a46e052049df1ccb260d7f8ec8f6c6586194065eb0839"
+    },
+    "itsmbench_msp_004": {
+      "split": "train",
+      "family": "onboarding_catalog_change_problem_kb_v3",
+      "business_type": "user_and_catalog_admin",
+      "source": "bench2",
+      "source_file": "bench2_tasks_json",
+      "added_in": "v1",
+      "tenancy": "provider_client",
+      "seed_db": "msp_db.json",
+      "org_slicing": true,
+      "objects_written": [
+        "cmdb",
+        "user"
+      ],
+      "gold_actions": 8,
+      "content_sha256": "ed536886fc1ac3ab6c8b06f7c96cfb338066fe23ea6b781676a4336d4e5d5a9a",
+      "source_sha256": "ed536886fc1ac3ab6c8b06f7c96cfb338066fe23ea6b781676a4336d4e5d5a9a"
+    },
+    "itsmbench_msp_005": {
+      "split": "train",
+      "family": "onboarding_catalog_change_problem_kb_v3",
+      "business_type": "problem_change_lifecycle",
+      "source": "bench2",
+      "source_file": "bench2_tasks_json",
+      "added_in": "v1",
+      "tenancy": "provider_client",
+      "seed_db": "msp_db.json",
+      "org_slicing": true,
+      "objects_written": [
+        "incident",
+        "knowledge",
+        "sla",
+        "user"
+      ],
+      "gold_actions": 11,
+      "content_sha256": "776110d53b0c3075191b638a89a9246ddf156758f96bf99d328c9a890241d291",
+      "source_sha256": "776110d53b0c3075191b638a89a9246ddf156758f96bf99d328c9a890241d291"
+    },
+    "itsmbench_msp_006": {
+      "split": "train",
+      "family": "onboarding_catalog_change_problem_kb_v3",
+      "business_type": "problem_change_lifecycle",
+      "source": "bench2",
+      "source_file": "bench2_tasks_json",
+      "added_in": "v1",
+      "tenancy": "provider_client",
+      "seed_db": "msp_db.json",
+      "org_slicing": true,
+      "objects_written": [
+        "incident",
+        "knowledge",
+        "problem",
+        "sla"
+      ],
+      "gold_actions": 10,
+      "content_sha256": "f4beff8037ea24cd614a7ffa86a766fa38f9b388d8b2582d2886cd13bdc4503c",
+      "source_sha256": "f4beff8037ea24cd614a7ffa86a766fa38f9b388d8b2582d2886cd13bdc4503c"
+    },
+    "itsmbench_msp_007": {
+      "split": "train",
+      "family": "onboarding_catalog_change_problem_kb_v3",
+      "business_type": "problem_change_lifecycle",
+      "source": "bench2",
+      "source_file": "bench2_tasks_json",
+      "added_in": "v1",
+      "tenancy": "provider_client",
+      "seed_db": "msp_db.json",
+      "org_slicing": true,
+      "objects_written": [
+        "change",
+        "knowledge",
+        "problem"
+      ],
+      "gold_actions": 10,
+      "content_sha256": "5ef0b3fc40a7582a651bcbf4aa2613219bb517721dd6bd23b3d3c48a52cdf59c",
+      "source_sha256": "5ef0b3fc40a7582a651bcbf4aa2613219bb517721dd6bd23b3d3c48a52cdf59c"
+    },
+    "itsmbench_msp_008": {
+      "split": "train",
+      "family": "onboarding_catalog_change_problem_kb_v3",
+      "business_type": "problem_change_lifecycle",
+      "source": "bench2",
+      "source_file": "bench2_tasks_json",
+      "added_in": "v1",
+      "tenancy": "provider_client",
+      "seed_db": "msp_db.json",
+      "org_slicing": true,
+      "objects_written": [
+        "change",
+        "knowledge",
+        "problem"
+      ],
+      "gold_actions": 8,
+      "content_sha256": "8e97283dc572c809a7139e68028e4d6a42bdff81607bd504e95a0f4083075b54",
+      "source_sha256": "8e97283dc572c809a7139e68028e4d6a42bdff81607bd504e95a0f4083075b54"
+    },
+    "itsmbench_msp_009": {
+      "split": "train",
+      "family": "onboarding_catalog_change_problem_kb_v3",
+      "business_type": "problem_change_lifecycle",
+      "source": "bench2",
+      "source_file": "bench2_tasks_json",
+      "added_in": "v1",
+      "tenancy": "provider_client",
+      "seed_db": "msp_db.json",
+      "org_slicing": true,
+      "objects_written": [
+        "change",
+        "knowledge",
+        "problem"
+      ],
+      "gold_actions": 8,
+      "content_sha256": "0dc1d1f4babc5ff710a4de679a14e4bd5df5e15696c89b6faf3f2dfd37053ed9",
+      "source_sha256": "0dc1d1f4babc5ff710a4de679a14e4bd5df5e15696c89b6faf3f2dfd37053ed9"
+    },
+    "itsmbench_msp_010": {
+      "split": "train",
+      "family": "onboarding_catalog_change_problem_kb_v3",
+      "business_type": "problem_change_lifecycle",
+      "source": "bench2",
+      "source_file": "bench2_tasks_json",
+      "added_in": "v1",
+      "tenancy": "provider_client",
+      "seed_db": "msp_db.json",
+      "org_slicing": true,
+      "objects_written": [
+        "change",
+        "knowledge",
+        "problem"
+      ],
+      "gold_actions": 8,
+      "content_sha256": "666acb90bd1f1e10f0d18a3733a46bda5bc3de6ce1e494a604ff69e7777e049c",
+      "source_sha256": "666acb90bd1f1e10f0d18a3733a46bda5bc3de6ce1e494a604ff69e7777e049c"
+    },
+    "itsmbench_msp_011": {
+      "split": "train",
+      "family": "onboarding_catalog_change_problem_kb_v3",
+      "business_type": "problem_change_lifecycle",
+      "source": "bench2",
+      "source_file": "bench2_tasks_json",
+      "added_in": "v1",
+      "tenancy": "provider_client",
+      "seed_db": "msp_db.json",
+      "org_slicing": true,
+      "objects_written": [
+        "change",
+        "knowledge",
+        "problem",
+        "user"
+      ],
+      "gold_actions": 10,
+      "content_sha256": "34d82b8a9f29927cb497f78774efda97d89919d8e32cab58d2a8ca7338bc655a",
+      "source_sha256": "34d82b8a9f29927cb497f78774efda97d89919d8e32cab58d2a8ca7338bc655a"
+    },
+    "itsmbench_msp_012": {
+      "split": "train",
+      "family": "onboarding_catalog_change_problem_kb_v3",
+      "business_type": "problem_change_lifecycle",
+      "source": "bench2",
+      "source_file": "bench2_tasks_json",
+      "added_in": "v1",
+      "tenancy": "provider_client",
+      "seed_db": "msp_db.json",
+      "org_slicing": true,
+      "objects_written": [
+        "change",
+        "knowledge",
+        "problem",
+        "user"
+      ],
+      "gold_actions": 11,
+      "content_sha256": "731dc3f65b4c5691c8fe594a97a9b921d0a299cb09480521d9f5eea49c33cf00",
+      "source_sha256": "731dc3f65b4c5691c8fe594a97a9b921d0a299cb09480521d9f5eea49c33cf00"
+    },
+    "itsmbench_msp_013": {
+      "split": "train",
+      "family": "onboarding_catalog_change_problem_kb_v3",
+      "business_type": "problem_change_lifecycle",
+      "source": "bench2",
+      "source_file": "bench2_tasks_json",
+      "added_in": "v1",
+      "tenancy": "provider_client",
+      "seed_db": "msp_db.json",
+      "org_slicing": true,
+      "objects_written": [
+        "change",
+        "incident",
+        "knowledge",
+        "problem",
+        "sla"
+      ],
+      "gold_actions": 11,
+      "content_sha256": "95e87e044a0d330b157585e0bec1421326fe6401ac8b3980bcd315b04b2861a0",
+      "source_sha256": "95e87e044a0d330b157585e0bec1421326fe6401ac8b3980bcd315b04b2861a0"
+    },
+    "itsmbench_msp_014": {
+      "split": "train",
+      "family": "onboarding_catalog_change_problem_kb_v3",
+      "business_type": "problem_change_lifecycle",
+      "source": "bench2",
+      "source_file": "bench2_tasks_json",
+      "added_in": "v1",
+      "tenancy": "provider_client",
+      "seed_db": "msp_db.json",
+      "org_slicing": true,
+      "objects_written": [
+        "change",
+        "knowledge",
+        "problem",
+        "user"
+      ],
+      "gold_actions": 11,
+      "content_sha256": "c8568c17114b4af5dcaaaa9c627a4b12695fb9e8e68f4d9771953c664c4e48f2",
+      "source_sha256": "c8568c17114b4af5dcaaaa9c627a4b12695fb9e8e68f4d9771953c664c4e48f2"
+    },
+    "itsmbench_msp_015": {
+      "split": "train",
+      "family": "onboarding_catalog_change_problem_kb_v3",
+      "business_type": "problem_change_lifecycle",
+      "source": "bench2",
+      "source_file": "bench2_tasks_json",
+      "added_in": "v1",
+      "tenancy": "provider_client",
+      "seed_db": "msp_db.json",
+      "org_slicing": true,
+      "objects_written": [
+        "change",
+        "knowledge",
+        "problem",
+        "user"
+      ],
+      "gold_actions": 10,
+      "content_sha256": "8e8e44b1c26d45366e40abc9c08a8de32d32253096239d445781e86305df16f6",
+      "source_sha256": "8e8e44b1c26d45366e40abc9c08a8de32d32253096239d445781e86305df16f6"
+    },
+    "itsmbench_msp_016": {
+      "split": "train",
+      "family": "onboarding_catalog_change_problem_kb_v3",
+      "business_type": "problem_change_lifecycle",
+      "source": "bench2",
+      "source_file": "bench2_tasks_json",
+      "added_in": "v1",
+      "tenancy": "provider_client",
+      "seed_db": "msp_db.json",
+      "org_slicing": true,
+      "objects_written": [
+        "change",
+        "knowledge",
+        "problem",
+        "user"
+      ],
+      "gold_actions": 10,
+      "content_sha256": "f54739133223ebbd60ea07668cab67d7c21ad439939a6f5fc1dbc3ece48e62d9",
+      "source_sha256": "f54739133223ebbd60ea07668cab67d7c21ad439939a6f5fc1dbc3ece48e62d9"
+    },
+    "itsmbench_msp_017": {
+      "split": "train",
+      "family": "onboarding_catalog_change_problem_kb_v3",
+      "business_type": "problem_change_lifecycle",
+      "source": "bench2",
+      "source_file": "bench2_tasks_json",
+      "added_in": "v1",
+      "tenancy": "provider_client",
+      "seed_db": "msp_db.json",
+      "org_slicing": true,
+      "objects_written": [
+        "change",
+        "knowledge",
+        "problem",
+        "user"
+      ],
+      "gold_actions": 10,
+      "content_sha256": "8ba943a90f954f74cb85c9e9d8372f1101a525a96ffe2403fb19c140c004cf55",
+      "source_sha256": "8ba943a90f954f74cb85c9e9d8372f1101a525a96ffe2403fb19c140c004cf55"
+    },
+    "itsmbench_msp_018": {
+      "split": "train",
+      "family": "onboarding_catalog_change_problem_kb_v3",
+      "business_type": "problem_change_lifecycle",
+      "source": "bench2",
+      "source_file": "bench2_tasks_json",
+      "added_in": "v1",
+      "tenancy": "provider_client",
+      "seed_db": "msp_db.json",
+      "org_slicing": true,
+      "objects_written": [
+        "change",
+        "knowledge",
+        "problem"
+      ],
+      "gold_actions": 8,
+      "content_sha256": "d1d8f9efc4e0f3330a2fecce52289084e5793ce446a3d93660c637fda2297f18",
+      "source_sha256": "d1d8f9efc4e0f3330a2fecce52289084e5793ce446a3d93660c637fda2297f18"
+    },
+    "itsmbench_msp_019": {
+      "split": "dev",
+      "family": "incident_hold_and_notify",
+      "business_type": "incident_lifecycle",
+      "source": "bench2",
+      "source_file": "bench2_tasks_json",
+      "added_in": "v1",
+      "tenancy": "provider_client",
+      "seed_db": "msp_db.json",
+      "org_slicing": true,
+      "objects_written": [
+        "incident",
+        "notification",
+        "user"
+      ],
+      "gold_actions": 8,
+      "content_sha256": "b2f43df16e461a8f8227133fb3432fd113cf86bbd89d1fd8901aa4559efd3238",
+      "source_sha256": "b2f43df16e461a8f8227133fb3432fd113cf86bbd89d1fd8901aa4559efd3238"
+    },
+    "itsmbench_msp_020": {
+      "split": "heldout",
+      "family": "service_retirement",
+      "business_type": "service_catalog",
+      "source": "bench2",
+      "source_file": "bench2_tasks_json",
+      "added_in": "v1",
+      "tenancy": "provider_client",
+      "seed_db": "msp_db.json",
+      "org_slicing": true,
+      "objects_written": [
+        "incident",
+        "service"
+      ],
+      "gold_actions": 8,
+      "content_sha256": "9fd1d6c40c57c4894366bfd6a8837ccd6cdb90d4d8f79ff6fd623a30ec96b50e",
+      "source_sha256": "9fd1d6c40c57c4894366bfd6a8837ccd6cdb90d4d8f79ff6fd623a30ec96b50e"
+    },
+    "itsmbench_msp_021": {
+      "split": "dev",
+      "family": "incident_hold_and_notify",
+      "business_type": "incident_lifecycle",
+      "source": "bench2",
+      "source_file": "bench2_tasks_json",
+      "added_in": "v1",
+      "tenancy": "provider_client",
+      "seed_db": "msp_db.json",
+      "org_slicing": true,
+      "objects_written": [
+        "incident",
+        "notification",
+        "sla"
+      ],
+      "gold_actions": 6,
+      "content_sha256": "2dd6cebc2ca4167e3430c9bbeed429b2bb4e1b1b55028244bd3886b5ecfcb85a",
+      "source_sha256": "2dd6cebc2ca4167e3430c9bbeed429b2bb4e1b1b55028244bd3886b5ecfcb85a"
+    },
+    "itsmbench_msp_022": {
+      "split": "dev",
+      "family": "incident_hold_and_notify",
+      "business_type": "incident_lifecycle",
+      "source": "bench2",
+      "source_file": "bench2_tasks_json",
+      "added_in": "v1",
+      "tenancy": "provider_client",
+      "seed_db": "msp_db.json",
+      "org_slicing": true,
+      "objects_written": [
+        "incident",
+        "notification",
+        "sla"
+      ],
+      "gold_actions": 6,
+      "content_sha256": "40c5516cee458739bce5b5d56366599d7a2903a17c27321c6d714871f7f8145c",
+      "source_sha256": "40c5516cee458739bce5b5d56366599d7a2903a17c27321c6d714871f7f8145c"
+    },
+    "itsmbench_msp_023": {
+      "split": "heldout",
+      "family": "incident_resolve",
+      "business_type": "incident_lifecycle",
+      "source": "bench2",
+      "source_file": "bench2_tasks_json",
+      "added_in": "v1",
+      "tenancy": "provider_client",
+      "seed_db": "msp_db.json",
+      "org_slicing": true,
+      "objects_written": [
+        "incident"
+      ],
+      "gold_actions": 2,
+      "content_sha256": "2f4bd59b9acc1e119ef022fb689eae90b6db001a9bb790e6ea102e9ac0f0ef0b",
+      "source_sha256": "2f4bd59b9acc1e119ef022fb689eae90b6db001a9bb790e6ea102e9ac0f0ef0b"
+    },
+    "itsmbench_msp_024": {
+      "split": "dev",
+      "family": "incident_hold_and_notify",
+      "business_type": "incident_lifecycle",
+      "source": "bench2",
+      "source_file": "bench2_tasks_json",
+      "added_in": "v1",
+      "tenancy": "provider_client",
+      "seed_db": "msp_db.json",
+      "org_slicing": true,
+      "objects_written": [
+        "incident",
+        "notification",
+        "sla"
+      ],
+      "gold_actions": 5,
+      "content_sha256": "cb4079346da6097e180d60e688b3ef9660f0dd6659d7d753269da2a5cc5b5fc1",
+      "source_sha256": "cb4079346da6097e180d60e688b3ef9660f0dd6659d7d753269da2a5cc5b5fc1"
+    },
+    "itsmbench_msp_025": {
+      "split": "dev",
+      "family": "incident_hold_and_notify",
+      "business_type": "incident_lifecycle",
+      "source": "bench2",
+      "source_file": "bench2_tasks_json",
+      "added_in": "v1",
+      "tenancy": "provider_client",
+      "seed_db": "msp_db.json",
+      "org_slicing": true,
+      "objects_written": [
+        "incident",
+        "notification"
+      ],
+      "gold_actions": 4,
+      "content_sha256": "afa98d7ecc0f6b3fd71354f3b8363996d873335c514bec592bd9068bd82e0df3",
+      "source_sha256": "afa98d7ecc0f6b3fd71354f3b8363996d873335c514bec592bd9068bd82e0df3"
+    },
+    "itsmbench_msp_026": {
+      "split": "dev",
+      "family": "incident_hold_and_notify",
+      "business_type": "incident_lifecycle",
+      "source": "bench2",
+      "source_file": "bench2_tasks_json",
+      "added_in": "v1",
+      "tenancy": "provider_client",
+      "seed_db": "msp_db.json",
+      "org_slicing": true,
+      "objects_written": [
+        "incident",
+        "notification"
+      ],
+      "gold_actions": 4,
+      "content_sha256": "9a7b8e757c1bc236d6e0e7da8161ec2a98d155c0ddd494316c6cd6d092214de8",
+      "source_sha256": "9a7b8e757c1bc236d6e0e7da8161ec2a98d155c0ddd494316c6cd6d092214de8"
+    },
+    "itsmbench_msp_027": {
+      "split": "heldout",
+      "family": "problem_from_incident_and_change_mapping",
+      "business_type": "problem_change_lifecycle",
+      "source": "bench2",
+      "source_file": "bench2_tasks_json",
+      "added_in": "v1",
+      "tenancy": "provider_client",
+      "seed_db": "msp_db.json",
+      "org_slicing": true,
+      "objects_written": [
+        "problem"
+      ],
+      "gold_actions": 4,
+      "content_sha256": "4f7507381dfe2d2735cee1899abb678b3d64b7206cfb7ee63f834bf27c4bc6eb",
+      "source_sha256": "4f7507381dfe2d2735cee1899abb678b3d64b7206cfb7ee63f834bf27c4bc6eb"
+    },
+    "itsmbench_msp_028": {
+      "split": "heldout",
+      "family": "problem_from_incident_and_change_mapping",
+      "business_type": "problem_change_lifecycle",
+      "source": "bench2",
+      "source_file": "bench2_tasks_json",
+      "added_in": "v1",
+      "tenancy": "provider_client",
+      "seed_db": "msp_db.json",
+      "org_slicing": true,
+      "objects_written": [
+        "problem"
+      ],
+      "gold_actions": 4,
+      "content_sha256": "334110f1bae3ba49b4a169214542c0d8a65e8faa5b255b8416a68b2488fd3bdb",
+      "source_sha256": "334110f1bae3ba49b4a169214542c0d8a65e8faa5b255b8416a68b2488fd3bdb"
+    },
+    "itsmbench_msp_029": {
+      "split": "dev",
+      "family": "incident_hold_and_notify",
+      "business_type": "incident_lifecycle",
+      "source": "bench2",
+      "source_file": "bench2_tasks_json",
+      "added_in": "v1",
+      "tenancy": "provider_client",
+      "seed_db": "msp_db.json",
+      "org_slicing": true,
+      "objects_written": [
+        "incident",
+        "notification",
+        "sla"
+      ],
+      "gold_actions": 3,
+      "content_sha256": "e535c0724e7113fbf1693db9d7d793e362f243db5f814bc5f815286b13fb5c8d",
+      "source_sha256": "e535c0724e7113fbf1693db9d7d793e362f243db5f814bc5f815286b13fb5c8d"
+    },
+    "itsmbench_msp_030": {
+      "split": "heldout",
+      "family": "change_with_ci_and_kb_links",
+      "business_type": "problem_change_lifecycle",
+      "source": "bench2",
+      "source_file": "bench2_tasks_json",
+      "added_in": "v1",
+      "tenancy": "provider_client",
+      "seed_db": "msp_db.json",
+      "org_slicing": true,
+      "objects_written": [
+        "change",
+        "cmdb",
+        "incident",
+        "knowledge"
+      ],
+      "gold_actions": 9,
+      "content_sha256": "20012433d0c63ff865a9d49e9e275d615cd2607e3b29b75176bbf7209ba25a7e",
+      "source_sha256": "20012433d0c63ff865a9d49e9e275d615cd2607e3b29b75176bbf7209ba25a7e"
+    },
+    "itsmbench_msp_031": {
+      "split": "train",
+      "family": "onboarding_catalog_change_problem_kb_v3",
+      "business_type": "problem_change_lifecycle",
+      "source": "bench2",
+      "source_file": "bench2_tasks_json",
+      "added_in": "v1",
+      "tenancy": "provider_client",
+      "seed_db": "msp_db.json",
+      "org_slicing": true,
+      "objects_written": [
+        "change",
+        "knowledge",
+        "problem"
+      ],
+      "gold_actions": 10,
+      "content_sha256": "bce732511cd0fe9d4bf12ed4973404b70c0b9f9f8dd11f72914d7110f6343f30",
+      "source_sha256": "bce732511cd0fe9d4bf12ed4973404b70c0b9f9f8dd11f72914d7110f6343f30"
+    },
+    "itsmbench_single_001": {
+      "split": "train",
+      "family": "onboarding_catalog_change_problem_kb_v3",
+      "business_type": "user_and_catalog_admin",
+      "source": "bench2",
+      "source_file": "bench2_tasks_json",
+      "added_in": "v1",
+      "tenancy": "single_tenant",
+      "seed_db": "single_tenant_db.json",
+      "org_slicing": true,
+      "objects_written": [
+        "location",
+        "sla",
+        "user"
+      ],
+      "gold_actions": 7,
+      "content_sha256": "446bf5fad1e333d020e342634c3ef6d7647d006f5d9a5e10189681629a9bd583",
+      "source_sha256": "446bf5fad1e333d020e342634c3ef6d7647d006f5d9a5e10189681629a9bd583"
+    },
+    "itsmbench_single_002": {
+      "split": "train",
+      "family": "onboarding_catalog_change_problem_kb_v3",
+      "business_type": "user_and_catalog_admin",
+      "source": "bench2",
+      "source_file": "bench2_tasks_json",
+      "added_in": "v1",
+      "tenancy": "single_tenant",
+      "seed_db": "single_tenant_db.json",
+      "org_slicing": true,
+      "objects_written": [
+        "cmdb",
+        "location",
+        "sla",
+        "user"
+      ],
+      "gold_actions": 11,
+      "content_sha256": "bae049c55ea24a43540821937b5b59c46e3e5669ad9bdc70dcaf0610939fcd39",
+      "source_sha256": "bae049c55ea24a43540821937b5b59c46e3e5669ad9bdc70dcaf0610939fcd39"
+    },
+    "itsmbench_single_003": {
+      "split": "train",
+      "family": "onboarding_catalog_change_problem_kb_v3",
+      "business_type": "user_and_catalog_admin",
+      "source": "bench2",
+      "source_file": "bench2_tasks_json",
+      "added_in": "v1",
+      "tenancy": "single_tenant",
+      "seed_db": "single_tenant_db.json",
+      "org_slicing": true,
+      "objects_written": [
+        "location",
+        "service",
+        "user"
+      ],
+      "gold_actions": 8,
+      "content_sha256": "70b0c1511e4e4b81d9468e2eff38fa7027c58b13031fb66f4fa9e467b47eb0c7",
+      "source_sha256": "70b0c1511e4e4b81d9468e2eff38fa7027c58b13031fb66f4fa9e467b47eb0c7"
+    },
+    "itsmbench_single_004": {
+      "split": "train",
+      "family": "onboarding_catalog_change_problem_kb_v3",
+      "business_type": "user_and_catalog_admin",
+      "source": "bench2",
+      "source_file": "bench2_tasks_json",
+      "added_in": "v1",
+      "tenancy": "single_tenant",
+      "seed_db": "single_tenant_db.json",
+      "org_slicing": true,
+      "objects_written": [
+        "cmdb",
+        "location",
+        "sla",
+        "user"
+      ],
+      "gold_actions": 9,
+      "content_sha256": "057b48bc8e97ca5699be2247482f0919a7e2439547066e734b27bdca1a78a64a",
+      "source_sha256": "057b48bc8e97ca5699be2247482f0919a7e2439547066e734b27bdca1a78a64a"
+    },
+    "itsmbench_single_005": {
+      "split": "train",
+      "family": "onboarding_catalog_change_problem_kb_v3",
+      "business_type": "user_and_catalog_admin",
+      "source": "bench2",
+      "source_file": "bench2_tasks_json",
+      "added_in": "v1",
+      "tenancy": "single_tenant",
+      "seed_db": "single_tenant_db.json",
+      "org_slicing": true,
+      "objects_written": [
+        "cmdb",
+        "sla",
+        "user"
+      ],
+      "gold_actions": 10,
+      "content_sha256": "a8c79257055a16999f1a23bb518e52cace4405e7edc6e1371ed46e8955c41e73",
+      "source_sha256": "a8c79257055a16999f1a23bb518e52cace4405e7edc6e1371ed46e8955c41e73"
+    },
+    "itsmbench_single_006": {
+      "split": "train",
+      "family": "onboarding_catalog_change_problem_kb_v3",
+      "business_type": "user_and_catalog_admin",
+      "source": "bench2",
+      "source_file": "bench2_tasks_json",
+      "added_in": "v1",
+      "tenancy": "single_tenant",
+      "seed_db": "single_tenant_db.json",
+      "org_slicing": true,
+      "objects_written": [
+        "incident",
+        "notification",
+        "sla",
+        "template"
+      ],
+      "gold_actions": 11,
+      "content_sha256": "e7cfd0b04aecf2cd7333ac47a323ec459fe0cea3c08da50366664a66ff87226f",
+      "source_sha256": "e7cfd0b04aecf2cd7333ac47a323ec459fe0cea3c08da50366664a66ff87226f"
+    },
+    "itsmbench_single_007": {
+      "split": "train",
+      "family": "onboarding_catalog_change_problem_kb_v3",
+      "business_type": "user_and_catalog_admin",
+      "source": "bench2",
+      "source_file": "bench2_tasks_json",
+      "added_in": "v1",
+      "tenancy": "single_tenant",
+      "seed_db": "single_tenant_db.json",
+      "org_slicing": true,
+      "objects_written": [
+        "change",
+        "incident",
+        "notification",
+        "sla",
+        "template"
+      ],
+      "gold_actions": 16,
+      "content_sha256": "efc3c652b024905ce687f0d4d9ce543e64c573b3181956ffc977a81a5452c0b0",
+      "source_sha256": "efc3c652b024905ce687f0d4d9ce543e64c573b3181956ffc977a81a5452c0b0"
+    },
+    "itsmbench_single_008": {
+      "split": "dev",
+      "family": "incident_hold_and_notify",
+      "business_type": "incident_lifecycle",
+      "source": "bench2",
+      "source_file": "bench2_tasks_json",
+      "added_in": "v1",
+      "tenancy": "single_tenant",
+      "seed_db": "single_tenant_db.json",
+      "org_slicing": true,
+      "objects_written": [
+        "incident",
+        "notification",
+        "sla"
+      ],
+      "gold_actions": 6,
+      "content_sha256": "8a7fccae0103c0cd290c193e5da89e565ff6d9dde2fee7dab384b08ddaeceea3",
+      "source_sha256": "8a7fccae0103c0cd290c193e5da89e565ff6d9dde2fee7dab384b08ddaeceea3"
+    },
+    "itsmbench_single_009": {
+      "split": "dev",
+      "family": "incident_reassign_with_ci",
+      "business_type": "incident_lifecycle",
+      "source": "bench2",
+      "source_file": "bench2_tasks_json",
+      "added_in": "v1",
+      "tenancy": "single_tenant",
+      "seed_db": "single_tenant_db.json",
+      "org_slicing": true,
+      "objects_written": [
+        "cmdb",
+        "incident"
+      ],
+      "gold_actions": 8,
+      "content_sha256": "48b4bd86a664c649ad1abac7a972aafe9330cbbecaadc4d780a86a400667709e",
+      "source_sha256": "48b4bd86a664c649ad1abac7a972aafe9330cbbecaadc4d780a86a400667709e"
+    },
+    "itsmbench_single_010": {
+      "split": "dev",
+      "family": "incident_hold_and_notify",
+      "business_type": "incident_lifecycle",
+      "source": "bench2",
+      "source_file": "bench2_tasks_json",
+      "added_in": "v1",
+      "tenancy": "single_tenant",
+      "seed_db": "single_tenant_db.json",
+      "org_slicing": true,
+      "objects_written": [
+        "incident",
+        "sla"
+      ],
+      "gold_actions": 6,
+      "content_sha256": "06762691f4161b64693ff170768593cdb7d286b32d0548961f132a477629237c",
+      "source_sha256": "06762691f4161b64693ff170768593cdb7d286b32d0548961f132a477629237c"
+    },
+    "itsmbench_single_011": {
+      "split": "train",
+      "family": "onboarding_catalog_change_problem_kb_v3",
+      "business_type": "problem_change_lifecycle",
+      "source": "bench2",
+      "source_file": "bench2_tasks_json",
+      "added_in": "v1",
+      "tenancy": "single_tenant",
+      "seed_db": "single_tenant_db.json",
+      "org_slicing": true,
+      "objects_written": [
+        "change",
+        "knowledge",
+        "problem"
+      ],
+      "gold_actions": 11,
+      "content_sha256": "d2a2a79783cfb1d1a3e9dd082b5403919e6f5b27990a13675917d5b04fdaf458",
+      "source_sha256": "d2a2a79783cfb1d1a3e9dd082b5403919e6f5b27990a13675917d5b04fdaf458"
+    },
+    "itsmbench_single_012": {
+      "split": "heldout",
+      "family": "incident_handoff_with_child",
+      "business_type": "incident_lifecycle",
+      "source": "bench2",
+      "source_file": "bench2_tasks_json",
+      "added_in": "v1",
+      "tenancy": "single_tenant",
+      "seed_db": "single_tenant_db.json",
+      "org_slicing": true,
+      "objects_written": [
+        "incident",
+        "knowledge"
+      ],
+      "gold_actions": 10,
+      "content_sha256": "f1117033cd4ce4303bf02371f68a787809999758fc04dae266d46c491ffbb920",
+      "source_sha256": "f1117033cd4ce4303bf02371f68a787809999758fc04dae266d46c491ffbb920"
+    },
+    "itsmbench_single_013": {
+      "split": "heldout",
+      "family": "incident_handoff_with_child",
+      "business_type": "incident_lifecycle",
+      "source": "bench2",
+      "source_file": "bench2_tasks_json",
+      "added_in": "v1",
+      "tenancy": "single_tenant",
+      "seed_db": "single_tenant_db.json",
+      "org_slicing": true,
+      "objects_written": [
+        "incident",
+        "knowledge",
+        "notification"
+      ],
+      "gold_actions": 8,
+      "content_sha256": "1d2d24fdad2181c3f9713ae3eed2c112395ab1c027ac0858b6cf225434cad400",
+      "source_sha256": "1d2d24fdad2181c3f9713ae3eed2c112395ab1c027ac0858b6cf225434cad400"
+    },
+    "itsmbench_single_014": {
+      "split": "dev",
+      "family": "incident_hold_and_notify",
+      "business_type": "incident_lifecycle",
+      "source": "bench2",
+      "source_file": "bench2_tasks_json",
+      "added_in": "v1",
+      "tenancy": "single_tenant",
+      "seed_db": "single_tenant_db.json",
+      "org_slicing": true,
+      "objects_written": [
+        "incident",
+        "notification",
+        "sla"
+      ],
+      "gold_actions": 9,
+      "content_sha256": "43c053d88e9d9efc71810202452ee954b5dc3c3ea79a0a75fc5f1de3ef038d52",
+      "source_sha256": "43c053d88e9d9efc71810202452ee954b5dc3c3ea79a0a75fc5f1de3ef038d52"
+    },
+    "itsmbench_single_015": {
+      "split": "train",
+      "family": "onboarding_catalog_change_problem_kb_v3",
+      "business_type": "problem_change_lifecycle",
+      "source": "bench2",
+      "source_file": "bench2_tasks_json",
+      "added_in": "v1",
+      "tenancy": "single_tenant",
+      "seed_db": "single_tenant_db.json",
+      "org_slicing": true,
+      "objects_written": [
+        "change",
+        "knowledge",
+        "problem"
+      ],
+      "gold_actions": 11,
+      "content_sha256": "f129090661d31739c37c813a0e4af2759599b32edd80ea67daa9e0bed3dfa805",
+      "source_sha256": "f129090661d31739c37c813a0e4af2759599b32edd80ea67daa9e0bed3dfa805"
+    },
+    "itsmbench_single_016": {
+      "split": "heldout",
+      "family": "knowledge_update_and_notify",
+      "business_type": "knowledge",
+      "source": "bench2",
+      "source_file": "bench2_tasks_json",
+      "added_in": "v1",
+      "tenancy": "single_tenant",
+      "seed_db": "single_tenant_db.json",
+      "org_slicing": true,
+      "objects_written": [
+        "knowledge",
+        "notification"
+      ],
+      "gold_actions": 9,
+      "content_sha256": "38240acb4faa593498c1f5f38cba1bbcd875a928f969f8b546ad7308dbae78de",
+      "source_sha256": "38240acb4faa593498c1f5f38cba1bbcd875a928f969f8b546ad7308dbae78de"
+    },
+    "itsmbench_single_017": {
+      "split": "heldout",
+      "family": "problem_from_incident_and_change_mapping",
+      "business_type": "problem_change_lifecycle",
+      "source": "bench2",
+      "source_file": "bench2_tasks_json",
+      "added_in": "v1",
+      "tenancy": "single_tenant",
+      "seed_db": "single_tenant_db.json",
+      "org_slicing": true,
+      "objects_written": [
+        "change",
+        "problem"
+      ],
+      "gold_actions": 10,
+      "content_sha256": "fe9fe73072ddd2b00ec87af82b2722d4af359e5c52515ab10737dd3c9191eefc",
+      "source_sha256": "fe9fe73072ddd2b00ec87af82b2722d4af359e5c52515ab10737dd3c9191eefc"
+    },
+    "itsmbench_single_018": {
+      "split": "train",
+      "family": "ci_maintenance",
+      "business_type": "cmdb",
+      "source": "bench2",
+      "source_file": "bench2_tasks_json",
+      "added_in": "v1",
+      "tenancy": "single_tenant",
+      "seed_db": "single_tenant_db.json",
+      "org_slicing": true,
+      "objects_written": [
+        "cmdb"
+      ],
+      "gold_actions": 2,
+      "content_sha256": "1707898d52e9d33a7d77e82742f4caf30f7179c41b19bd92ccb685f751fccf1f",
+      "source_sha256": "1707898d52e9d33a7d77e82742f4caf30f7179c41b19bd92ccb685f751fccf1f"
+    },
+    "itsmbench_single_019": {
+      "split": "dev",
+      "family": "incident_hold_and_notify",
+      "business_type": "incident_lifecycle",
+      "source": "bench2",
+      "source_file": "bench2_tasks_json",
+      "added_in": "v1",
+      "tenancy": "single_tenant",
+      "seed_db": "single_tenant_db.json",
+      "org_slicing": true,
+      "objects_written": [
+        "incident",
+        "notification",
+        "sla"
+      ],
+      "gold_actions": 6,
+      "content_sha256": "88414be0c3ca259343dc1ffea4c5bc65f4e12293a037e5eeddce322144f10e2b",
+      "source_sha256": "88414be0c3ca259343dc1ffea4c5bc65f4e12293a037e5eeddce322144f10e2b"
+    },
+    "itsmbench_single_020": {
+      "split": "dev",
+      "family": "incident_hold_and_notify",
+      "business_type": "incident_lifecycle",
+      "source": "bench2",
+      "source_file": "bench2_tasks_json",
+      "added_in": "v1",
+      "tenancy": "single_tenant",
+      "seed_db": "single_tenant_db.json",
+      "org_slicing": true,
+      "objects_written": [
+        "incident",
+        "notification",
+        "sla"
+      ],
+      "gold_actions": 7,
+      "content_sha256": "db7c8569808bd5bfd873c8805524667fe2aa51ce1d83dc2b80d01926efc7dc66",
+      "source_sha256": "db7c8569808bd5bfd873c8805524667fe2aa51ce1d83dc2b80d01926efc7dc66"
+    },
+    "itsmbench_single_021": {
+      "split": "heldout",
+      "family": "problem_from_incident_and_change_mapping",
+      "business_type": "problem_change_lifecycle",
+      "source": "bench2",
+      "source_file": "bench2_tasks_json",
+      "added_in": "v1",
+      "tenancy": "single_tenant",
+      "seed_db": "single_tenant_db.json",
+      "org_slicing": true,
+      "objects_written": [
+        "change",
+        "knowledge",
+        "notification"
+      ],
+      "gold_actions": 9,
+      "content_sha256": "92a56412af1581741039535dae6aa8a147da1cd38f7f200b61eb68528e498272",
+      "source_sha256": "92a56412af1581741039535dae6aa8a147da1cd38f7f200b61eb68528e498272"
+    },
+    "itsmbench_single_022": {
+      "split": "heldout",
+      "family": "problem_from_incident_and_change_mapping",
+      "business_type": "problem_change_lifecycle",
+      "source": "bench2",
+      "source_file": "bench2_tasks_json",
+      "added_in": "v1",
+      "tenancy": "single_tenant",
+      "seed_db": "single_tenant_db.json",
+      "org_slicing": true,
+      "objects_written": [
+        "change",
+        "notification",
+        "problem"
+      ],
+      "gold_actions": 9,
+      "content_sha256": "a880cbb35e6617dd544d482c65279bb663957da3248459a3800da0d05c28efba",
+      "source_sha256": "a880cbb35e6617dd544d482c65279bb663957da3248459a3800da0d05c28efba"
+    }
+  },
+  "distribution": {
+    "train": {
+      "tasks": 37,
+      "source": {
+        "bench2": 29,
+        "enterpriseops_gym_derived": 8
+      },
+      "tenancy": {
+        "msp_provider_internal": 6,
+        "provider_client": 19,
+        "single_tenant": 12
+      },
+      "business_type": {
+        "cmdb": 3,
+        "incident_lifecycle": 3,
+        "knowledge": 1,
+        "problem_change_lifecycle": 18,
+        "service_catalog": 1,
+        "user_and_catalog_admin": 11
+      },
+      "family": {
+        "change_post_implementation_review": 1,
+        "ci_maintenance": 1,
+        "ci_retire_and_affected_link": 1,
+        "incident_intake_with_ci_update": 1,
+        "notification_queue_repair": 1,
+        "onboarding_catalog_change_problem_kb_v3": 32
+      },
+      "families": 6
+    },
+    "dev": {
+      "tasks": 13,
+      "source": {
+        "bench2": 13
+      },
+      "tenancy": {
+        "provider_client": 7,
+        "single_tenant": 6
+      },
+      "business_type": {
+        "incident_lifecycle": 13
+      },
+      "family": {
+        "incident_hold_and_notify": 12,
+        "incident_reassign_with_ci": 1
+      },
+      "families": 2
+    },
+    "heldout": {
+      "tasks": 12,
+      "source": {
+        "bench2": 11,
+        "enterpriseops_gym_derived": 1
+      },
+      "tenancy": {
+        "msp_multi_client": 1,
+        "provider_client": 5,
+        "single_tenant": 6
+      },
+      "business_type": {
+        "incident_lifecycle": 3,
+        "knowledge": 1,
+        "problem_change_lifecycle": 6,
+        "service_catalog": 2
+      },
+      "family": {
+        "change_with_ci_and_kb_links": 1,
+        "incident_handoff_with_child": 2,
+        "incident_resolve": 1,
+        "knowledge_update_and_notify": 1,
+        "problem_from_incident_and_change_mapping": 5,
+        "service_hold_instead_of_retirement": 1,
+        "service_retirement": 1
+      },
+      "families": 7
+    }
+  }
+}

@@ -42,7 +42,11 @@ def test_scope_is_the_eight_proposal_candidates_and_nothing_enters_a_split() -> 
     assert [e["candidate_item"] for e in DATA["tasks"]] == [2]
     assert not set(TASKS) & set(load_itsm_tasks())
     assert not set(TASKS) & set(load_manifest_v2()["tasks"])
-    assert not (REPO_ROOT / "configs" / "data" / "itsm_split_v3.json").exists()
+    # Accepted on 2026-10-31: the passing candidate is in v3 held-out, the isolated ones in no split.
+    v3 = json.loads((REPO_ROOT / "configs" / "data" / "itsm_split_v3.json").read_text(encoding="utf-8"))
+    assert set(TASKS) <= set(v3["splits"]["heldout"])
+    isolated_ids = {i["attempted_conversion"]["id"] for i in DATA["isolated"] if "attempted_conversion" in i}
+    assert not isolated_ids & set(v3["tasks"])
     for entry in DATA["tasks"]:
         assert entry["route"] == "faithful" and entry["intended_split"] == "heldout"
         assert entry["source"]["initial_state_vs_upstream"]["delta_size_after_bench2_delta"] == 0
