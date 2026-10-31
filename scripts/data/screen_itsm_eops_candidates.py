@@ -104,7 +104,7 @@ BATCH: dict[str, dict[str, Any]] = {
         "estimated_tool_calls": 5,
         "policy": [
             "§3.1/§4.3 priority matrix: tools do not derive priority, so the gold sets problem high x high = critical and incident high x medium = high explicitly.",
-            "§6 priority change -> reset/swap/cancel the incident_sla row: INC_061 has no incident_sla row and ORG_013 has no SLA definition, so no SLA action exists; recorded as a gold note.",
+            "§6 priority change -> reset/swap/cancel the incident_sla row: INC_061 has no incident_sla row. CORRECTED in 6D-2: client incidents use the provider's ORG_001 SLA definitions, so 'no SLA action' is only one reading; starting a high-priority SLA (SLA_003 or SLA_004) is another. The task was isolated in 6D-2 (ambiguous REQUIRED cascade).",
             "The only linked incident is PRB_009.original_task = INC_061 (no other incident references PRB_009).",
         ],
         "ambiguity": "none blocking. Scope is nonstandard: PRB_009 lives in ORG_006 and INC_061 in ORG_013, so a provider/client pair would drop one of them.",
@@ -275,7 +275,8 @@ PENDING_DECISIONS = [
         "question": "MSP incident creation: which incident_sla rows does the §3.1/§6 REQUIRED 'spawn an incident_sla row matched to priority' produce?",
         "evidence": "ORG_001 in msp_db.json has a response and a resolution SLA for every priority; seed incidents with SLA rows: 18 resolution-only, 3 response-only, 2 both; upstream 391f1eff_8cb006f5 expects both rows; other MSP orgs have no SLA definitions.",
         "options": ["keep excluding MSP incident creation (default)", "one row per active matching definition (response + resolution), as upstream 391f1eff_8cb006f5", "resolution only (seed majority)"],
-        "effect": "a fixed rule would unlock the 6 train-gate candidates whose caller is in ORG_001 (incl. the policy-refusal tasks c5ca08eb_3ce3c52f and d4a463c3_3f20bdca); the 4 whose org or priority has no SLA definition stay excluded either way",
+        "effect": "a fixed rule would unlock the train-gate candidates with two matching provider SLA definitions (incl. the policy-refusal tasks c5ca08eb_3ce3c52f and d4a463c3_3f20bdca); a planning-priority incident has no definition and stays excluded either way",
+        "decision": "2026-10-30: option 1 (no MSP SLA rule; MSP incident creation stays excluded)",
     },
     {
         "id": "D6D-2",
@@ -283,6 +284,7 @@ PENDING_DECISIONS = [
         "evidence": "No Bench2 tool writes user_role; 9 Bench2 tasks add users without it; 6B isolated offboarding (66392a82_fd509f97) partly because user_role removal is impossible.",
         "options": ["no (default; this batch selects no onboarding task)", "yes, with the gap recorded per task"],
         "effect": "would unlock 3 onboarding candidates, all close to train workflows",
+        "decision": "2026-10-30: option 1 (no user_role omission)",
     },
 ]
 
@@ -415,18 +417,24 @@ def policy_flags(task: dict[str, Any], seeds: dict[str, dict]) -> dict[str, Any]
         org = users.get(caller.upper(), {}).get("org_id") if caller else None
         if org is None and task["acting_user"]["user_id"]:
             org = users.get(task["acting_user"]["user_id"], {}).get("org_id")
-        impact = next(iter(incident.get("impact", set())), None)
-        urgency = next(iter(incident.get("urgency", set())), None)
-        verifier_priority = next(iter(incident.get("priority", set())), None)
+        # Sorted, not set order: conflicting verifiers can name several values, and set
+        # iteration order of strings changes between runs (hash randomisation).
+        impact = next(iter(sorted(incident.get("impact", set()))), None)
+        urgency = next(iter(sorted(incident.get("urgency", set()))), None)
+        verifier_priority = next(iter(sorted(incident.get("priority", set()))), None)
         matrix_priority = PRIORITY_MATRIX.get((impact, urgency)) if impact and urgency else None
         priority = matrix_priority or verifier_priority
+        # In the MSP seed the provider's (ORG_001) SLA definitions also serve client
+        # incidents (e.g. INC_049 in ORG_013 carries SLA_002), so they apply to every org.
+        sla_org = "ORG_001" if task["mapped_bench2_seed"] == "msp_db.json" else org
         slas = [
             s["sla_def_id"]
             for s in seed["sla_definition"].values()
-            if s["org_id"] == org and s["active"] and s["applies_to_priority"] == priority
+            if s["org_id"] == sla_org and s["active"] and s["applies_to_priority"] == priority
         ]
         kbs = [k["knowledge_id"] for k in seed["knowledge"].values() if k["org_id"] == org and k["state"] == "published"]
         flags["incident_creation"] = {
+            "verifier_values": {k: sorted(incident.get(k, set())) for k in ("impact", "urgency", "priority")},
             "incident_org": org,
             "impact": impact,
             "urgency": urgency,
@@ -563,7 +571,7 @@ def build(tokenizer_dir: Path) -> dict[str, Any]:
             verdict, reason = OTHER_GATE_PASSERS[suffix]
             manual = {"verdict": verdict, "reason": reason}
         elif not train_gate and flags.get("incident_creation", {}).get("sla_status") == "ambiguous" and task["mapped_bench2_seed"] == "msp_db.json":
-            manual = {"verdict": SLA_DECISION_TAG, "reason": "MSP incident creation with two matching SLA definitions; see D6D-1"}
+            manual = {"verdict": SLA_DECISION_TAG, "reason": "MSP incident creation with two matching provider SLA definitions; D6D-1 decided option 1, so it stays excluded"}
         elif not train_gate and flags.get("incident_creation", {}).get("sla_status") == "none":
             manual = {
                 "verdict": "excluded",
@@ -744,7 +752,7 @@ def build(tokenizer_dir: Path) -> dict[str, Any]:
             "tokenizer": {"repo": "Qwen/Qwen3-8B", "revision": TOKENIZER_REVISION},
         },
         "rules": {
-            "train_gate": "6A gate re-run against split v2: no dev/held-out family link (v2 families, oracle write tools), <= 1 write tool shared with any dev/held-out task, < 2 same-seed verifier entities with any dev/held-out task, not a near-duplicate, no conflicting/non-executable verifier",
+            "train_gate": "6A gate re-run against split v2: no dev/held-out family link (v2 families, oracle write tools), <= 1 write tool shared with any dev/held-out task, < 2 same-seed verifier entities with any dev/held-out task, not a near-duplicate, no conflicting/non-executable verifier. The entity check here sees only the IDs named in upstream verifiers; 6D-2 re-checks with the gold arguments (stricter), as step 6B did",
             "excluded_upfront": "the 8 6B pilot tasks (3 accepted, 5 isolated); isolated tasks are not reconsidered",
             "routes": {
                 "faithful": f"ID {FAITHFUL_PREFIX}<suffix>; 6B standard",

@@ -1,0 +1,897 @@
+{
+  "batch_version": "itsm_eops_batch2_v1",
+  "caveat": "Scripted gold episodes: tool calls are the gold actions, user turns are fixed text, one plan and one recap message are templated. Token figures are not a policy output distribution; timings are local CPU (WSL2). Bench2 scoring is full-DB fuzzy; upstream verifiers run on the same final DB exported to SQLite. Passing both does not make a converted task equivalent to the EnterpriseOps-Gym evaluation.",
+  "tokenizer": {
+    "revision": "b968826d9c46dd6066d109eabc6255188de91218",
+    "enable_thinking": false
+  },
+  "max_steps": 40,
+  "tasks": {
+    "itsmbench_eops_99ba2325_887f5580": {
+      "batch_item": 1,
+      "upstream_task_id": "task_20251219_081545_939_99ba2325_887f5580",
+      "org_ids": [
+        "ORG_001"
+      ],
+      "gold_actions": 6,
+      "bench2_gold_db_reward": 1.0,
+      "upstream_verifiers_on_gold": [
+        {
+          "name": "Verify Asset 1 retired",
+          "expected": 1,
+          "actual": 1,
+          "error": null,
+          "passed": true
+        },
+        {
+          "name": "Link Asset 2 to Incident",
+          "expected": 1,
+          "actual": 1,
+          "error": null,
+          "passed": true
+        },
+        {
+          "name": "Avoid Linking Asset 1 to incident",
+          "expected": 0,
+          "actual": 0,
+          "error": null,
+          "passed": true
+        }
+      ],
+      "upstream_verifiers_on_initial_state": [
+        {
+          "name": "Verify Asset 1 retired",
+          "expected": 1,
+          "actual": 0,
+          "error": null,
+          "passed": false
+        },
+        {
+          "name": "Link Asset 2 to Incident",
+          "expected": 1,
+          "actual": 0,
+          "error": null,
+          "passed": false
+        },
+        {
+          "name": "Avoid Linking Asset 1 to incident",
+          "expected": 0,
+          "actual": 0,
+          "error": null,
+          "passed": true
+        }
+      ],
+      "initial_pass_allowed": {
+        "Avoid Linking Asset 1 to incident": "absence constraint (CI_041 not linked to INC_026); true before any action and made discriminative by validation case retired_ci_also_linked"
+      },
+      "validation_cases": [
+        {
+          "name": "retired_ci_also_linked",
+          "reason": "§5.1 forbids linking a retired CI to an active incident",
+          "bench2_db_reward": 0.0,
+          "bench2_mismatches": [
+            "incident_affected_cis: unexpected ['TASKCI_016']"
+          ],
+          "expected_mismatch_found": true,
+          "upstream_all_pass": false,
+          "upstream_failed": [
+            "Avoid Linking Asset 1 to incident"
+          ],
+          "as_expected": true
+        },
+        {
+          "name": "ci_set_to_disposed",
+          "reason": "the operator asked for retired",
+          "bench2_db_reward": 0.0,
+          "bench2_mismatches": [
+            "configuration_item/CI_041 status: 'retired' != 'disposed'"
+          ],
+          "expected_mismatch_found": true,
+          "upstream_all_pass": false,
+          "upstream_failed": [
+            "Verify Asset 1 retired"
+          ],
+          "as_expected": true
+        },
+        {
+          "name": "printer_not_linked",
+          "reason": "the printer link is requested",
+          "bench2_db_reward": 0.0,
+          "bench2_mismatches": [
+            "incident_affected_cis: missing ['TASKCI_015']"
+          ],
+          "expected_mismatch_found": true,
+          "upstream_all_pass": false,
+          "upstream_failed": [
+            "Link Asset 2 to Incident"
+          ],
+          "as_expected": true
+        },
+        {
+          "name": "printer_set_as_primary_ci",
+          "reason": "an affected-CI link is requested, not a change of the incident's own CI",
+          "bench2_db_reward": 0.0,
+          "bench2_mismatches": [
+            "incident/INC_026 configuration_item: 'CI_021' != 'CI_096'",
+            "incident/INC_026 updated_at: '2025-12-03 09:15:00' != '2025-12-19 09:00:00'",
+            "incident_affected_cis: missing ['TASKCI_015']"
+          ],
+          "expected_mismatch_found": true,
+          "upstream_all_pass": false,
+          "upstream_failed": [
+            "Link Asset 2 to Incident"
+          ],
+          "as_expected": true
+        }
+      ],
+      "information_boundary": {
+        "private_texts_checked": 22,
+        "leaked": []
+      },
+      "measured_scripted_episode": {
+        "termination_reason": "agent_done",
+        "db_match": true,
+        "agent_turns": 9,
+        "step_count": 9,
+        "tool_calls": 6,
+        "initial_prompt_tokens": 28133,
+        "generated_tokens": 283,
+        "generated_tokens_max_action": 53,
+        "environment_tokens": 1399,
+        "environment_tokens_max_turn": 347,
+        "response_tokens": 1682,
+        "full_sequence_tokens": 29815,
+        "seconds": {
+          "env_build_and_reset": 0.0129,
+          "tool_calls_total": 0.0018,
+          "gold_replay_and_db_scoring": 0.023
+        }
+      },
+      "checks": {
+        "bench2_gold_db_1": true,
+        "repeat_replay_same_final_db": true,
+        "upstream_all_pass_on_gold": true,
+        "upstream_not_all_pass_on_initial": true,
+        "initial_passes_exactly_the_registered_ones": true,
+        "validation_cases_as_expected": true,
+        "no_private_text_visible_at_reset": true,
+        "scripted_episode_ends_with_db_match": true
+      },
+      "accepted": true
+    },
+    "itsmbench_eops_01395ded_eff85dae": {
+      "batch_item": 3,
+      "upstream_task_id": "task_20251223_064932_736_01395ded_eff85dae",
+      "org_ids": [
+        "ORG_001"
+      ],
+      "gold_actions": 11,
+      "bench2_gold_db_reward": 1.0,
+      "upstream_verifiers_on_gold": [
+        {
+          "name": "Queued Notifications Marked As Failed",
+          "expected": 1,
+          "actual": 1,
+          "error": null,
+          "passed": true
+        },
+        {
+          "name": "Caller Update Notification Sent",
+          "expected": 1,
+          "actual": 1,
+          "error": null,
+          "passed": true
+        },
+        {
+          "name": "Assigned Agent Reminder Notification Sent",
+          "expected": 1,
+          "actual": 1,
+          "error": null,
+          "passed": true
+        },
+        {
+          "name": "Manager Reminder Notification Sent",
+          "expected": 1,
+          "actual": 1,
+          "error": null,
+          "passed": true
+        }
+      ],
+      "upstream_verifiers_on_initial_state": [
+        {
+          "name": "Queued Notifications Marked As Failed",
+          "expected": 1,
+          "actual": 0,
+          "error": null,
+          "passed": false
+        },
+        {
+          "name": "Caller Update Notification Sent",
+          "expected": 1,
+          "actual": 0,
+          "error": null,
+          "passed": false
+        },
+        {
+          "name": "Assigned Agent Reminder Notification Sent",
+          "expected": 1,
+          "actual": 0,
+          "error": null,
+          "passed": false
+        },
+        {
+          "name": "Manager Reminder Notification Sent",
+          "expected": 1,
+          "actual": 0,
+          "error": null,
+          "passed": false
+        }
+      ],
+      "initial_pass_allowed": {},
+      "validation_cases": [
+        {
+          "name": "queued_left_queued",
+          "reason": "the queued notification must be marked failed",
+          "bench2_db_reward": 0.0,
+          "bench2_mismatches": [
+            "notification/NOTIF_003 status: 'failed' != 'queued'",
+            "notification/NOTIF_003 updated_on: '2025-12-23 09:00:00' != '2025-12-03 08:30:00'"
+          ],
+          "expected_mismatch_found": true,
+          "upstream_all_pass": false,
+          "upstream_failed": [
+            "Queued Notifications Marked As Failed"
+          ],
+          "as_expected": true
+        },
+        {
+          "name": "delivered_also_failed",
+          "reason": "only never-sent (queued) notifications change; upstream does not check NOTIF_002",
+          "bench2_db_reward": 0.0,
+          "bench2_mismatches": [
+            "notification/NOTIF_002 status: 'delivered' != 'failed'",
+            "notification/NOTIF_002 updated_on: '2025-12-03 08:01:05' != '2025-12-23 09:00:00'"
+          ],
+          "expected_mismatch_found": true,
+          "upstream_all_pass": true,
+          "upstream_failed": [],
+          "as_expected": true
+        },
+        {
+          "name": "caller_sent_reminder",
+          "reason": "the caller gets an update notification",
+          "bench2_db_reward": 0.0,
+          "bench2_mismatches": [
+            "notification/NOTIF_030 type: 'update' != 'reminder'"
+          ],
+          "expected_mismatch_found": true,
+          "upstream_all_pass": false,
+          "upstream_failed": [
+            "Caller Update Notification Sent"
+          ],
+          "as_expected": true
+        },
+        {
+          "name": "group_manager_skipped",
+          "reason": "the group's manager must be reminded",
+          "bench2_db_reward": 0.0,
+          "bench2_mismatches": [
+            "notification: missing ['NOTIF_032']"
+          ],
+          "expected_mismatch_found": true,
+          "upstream_all_pass": false,
+          "upstream_failed": [
+            "Manager Reminder Notification Sent"
+          ],
+          "as_expected": true
+        }
+      ],
+      "information_boundary": {
+        "private_texts_checked": 23,
+        "leaked": []
+      },
+      "measured_scripted_episode": {
+        "termination_reason": "agent_done",
+        "db_match": true,
+        "agent_turns": 14,
+        "step_count": 14,
+        "tool_calls": 11,
+        "initial_prompt_tokens": 28126,
+        "generated_tokens": 864,
+        "generated_tokens_max_action": 300,
+        "environment_tokens": 2738,
+        "environment_tokens_max_turn": 360,
+        "response_tokens": 3602,
+        "full_sequence_tokens": 31728,
+        "seconds": {
+          "env_build_and_reset": 0.0128,
+          "tool_calls_total": 0.002,
+          "gold_replay_and_db_scoring": 0.0234
+        }
+      },
+      "checks": {
+        "bench2_gold_db_1": true,
+        "repeat_replay_same_final_db": true,
+        "upstream_all_pass_on_gold": true,
+        "upstream_not_all_pass_on_initial": true,
+        "initial_passes_exactly_the_registered_ones": true,
+        "validation_cases_as_expected": true,
+        "no_private_text_visible_at_reset": true,
+        "scripted_episode_ends_with_db_match": true
+      },
+      "accepted": true
+    },
+    "itsmbench_eops_46ca2862_56a4f834": {
+      "batch_item": 6,
+      "upstream_task_id": "task_20260113_143610_437_46ca2862_56a4f834",
+      "org_ids": [
+        "ORG_001"
+      ],
+      "gold_actions": 8,
+      "bench2_gold_db_reward": 1.0,
+      "upstream_verifiers_on_gold": [
+        {
+          "name": "verify_mobile_email_access_offering_created",
+          "expected": 1,
+          "actual": 1,
+          "error": null,
+          "passed": true
+        },
+        {
+          "name": "verify_email_archiving_offering_created",
+          "expected": 1,
+          "actual": 1,
+          "error": null,
+          "passed": true
+        },
+        {
+          "name": "verify_email_security_offering_created",
+          "expected": 1,
+          "actual": 1,
+          "error": null,
+          "passed": true
+        },
+        {
+          "name": "verify_outlook_template_service_updated",
+          "expected": 1,
+          "actual": 1,
+          "error": null,
+          "passed": true
+        },
+        {
+          "name": "verify_outlook_template_service_offering_updated",
+          "expected": 1,
+          "actual": 1,
+          "error": null,
+          "passed": true
+        }
+      ],
+      "upstream_verifiers_on_initial_state": [
+        {
+          "name": "verify_mobile_email_access_offering_created",
+          "expected": 1,
+          "actual": 0,
+          "error": null,
+          "passed": false
+        },
+        {
+          "name": "verify_email_archiving_offering_created",
+          "expected": 1,
+          "actual": 0,
+          "error": null,
+          "passed": false
+        },
+        {
+          "name": "verify_email_security_offering_created",
+          "expected": 1,
+          "actual": 0,
+          "error": null,
+          "passed": false
+        },
+        {
+          "name": "verify_outlook_template_service_updated",
+          "expected": 1,
+          "actual": 1,
+          "error": null,
+          "passed": true
+        },
+        {
+          "name": "verify_outlook_template_service_offering_updated",
+          "expected": 1,
+          "actual": 0,
+          "error": null,
+          "passed": false
+        }
+      ],
+      "initial_pass_allowed": {
+        "verify_outlook_template_service_updated": "precondition already true in the seed (TMPL_004.service = SVC_001); the template's offering verifier discriminates"
+      },
+      "validation_cases": [
+        {
+          "name": "offering_under_wrong_service",
+          "reason": "all three belong to Enterprise Email; upstream does not check the parent",
+          "bench2_db_reward": 0.0,
+          "bench2_mismatches": [
+            "service_offering/SVCOFF_062 business_service: 'SVC_001' != 'SVC_002'"
+          ],
+          "expected_mismatch_found": true,
+          "upstream_all_pass": true,
+          "upstream_failed": [],
+          "as_expected": true
+        },
+        {
+          "name": "criticality_not_inherited",
+          "reason": "§5.2 inherit the parent's criticality (critical), as requested",
+          "bench2_db_reward": 0.0,
+          "bench2_mismatches": [
+            "service_offering/SVCOFF_063 business_criticality: 'critical' != 'somewhat-critical'"
+          ],
+          "expected_mismatch_found": true,
+          "upstream_all_pass": false,
+          "upstream_failed": [
+            "verify_email_security_offering_created"
+          ],
+          "as_expected": true
+        },
+        {
+          "name": "template_on_archiving_offering",
+          "reason": "the template goes to Mobile Email Access",
+          "bench2_db_reward": 0.0,
+          "bench2_mismatches": [
+            "incident_template/TMPL_004 service_offering: 'SVCOFF_061' != 'SVCOFF_062'"
+          ],
+          "expected_mismatch_found": true,
+          "upstream_all_pass": false,
+          "upstream_failed": [
+            "verify_outlook_template_service_offering_updated"
+          ],
+          "as_expected": true
+        },
+        {
+          "name": "one_offering_missing",
+          "reason": "all three offerings are requested",
+          "bench2_db_reward": 0.0,
+          "bench2_mismatches": [
+            "service_offering: missing ['SVCOFF_063']"
+          ],
+          "expected_mismatch_found": true,
+          "upstream_all_pass": false,
+          "upstream_failed": [
+            "verify_email_security_offering_created"
+          ],
+          "as_expected": true
+        }
+      ],
+      "information_boundary": {
+        "private_texts_checked": 24,
+        "leaked": []
+      },
+      "measured_scripted_episode": {
+        "termination_reason": "agent_done",
+        "db_match": true,
+        "agent_turns": 11,
+        "step_count": 11,
+        "tool_calls": 8,
+        "initial_prompt_tokens": 28122,
+        "generated_tokens": 690,
+        "generated_tokens_max_action": 221,
+        "environment_tokens": 4228,
+        "environment_tokens_max_turn": 2720,
+        "response_tokens": 4918,
+        "full_sequence_tokens": 33040,
+        "seconds": {
+          "env_build_and_reset": 0.013,
+          "tool_calls_total": 0.0018,
+          "gold_replay_and_db_scoring": 0.0236
+        }
+      },
+      "checks": {
+        "bench2_gold_db_1": true,
+        "repeat_replay_same_final_db": true,
+        "upstream_all_pass_on_gold": true,
+        "upstream_not_all_pass_on_initial": true,
+        "initial_passes_exactly_the_registered_ones": true,
+        "validation_cases_as_expected": true,
+        "no_private_text_visible_at_reset": true,
+        "scripted_episode_ends_with_db_match": true
+      },
+      "accepted": true
+    },
+    "itsmbench_eops_99ba2325_7915481a": {
+      "batch_item": 7,
+      "upstream_task_id": "task_20260114_174427_042_99ba2325_7915481a",
+      "org_ids": [
+        "ORG_001"
+      ],
+      "gold_actions": 6,
+      "bench2_gold_db_reward": 1.0,
+      "upstream_verifiers_on_gold": [
+        {
+          "name": "Verify Service Status Update to Operational",
+          "expected": 1,
+          "actual": 1,
+          "error": null,
+          "passed": true
+        },
+        {
+          "name": "Verify Configuration Item Serial Number Update",
+          "expected": 1,
+          "actual": 1,
+          "error": null,
+          "passed": true
+        },
+        {
+          "name": "Verify Knowledge Article Creation",
+          "expected": 1,
+          "actual": 1,
+          "error": null,
+          "passed": true
+        }
+      ],
+      "upstream_verifiers_on_initial_state": [
+        {
+          "name": "Verify Service Status Update to Operational",
+          "expected": 1,
+          "actual": 0,
+          "error": null,
+          "passed": false
+        },
+        {
+          "name": "Verify Configuration Item Serial Number Update",
+          "expected": 1,
+          "actual": 0,
+          "error": null,
+          "passed": false
+        },
+        {
+          "name": "Verify Knowledge Article Creation",
+          "expected": 1,
+          "actual": 0,
+          "error": null,
+          "passed": false
+        }
+      ],
+      "initial_pass_allowed": {},
+      "validation_cases": [
+        {
+          "name": "new_ci_registered",
+          "reason": "the operator asked to update the existing record",
+          "bench2_db_reward": 0.0,
+          "bench2_mismatches": [
+            "configuration_item: unexpected ['CI_101']"
+          ],
+          "expected_mismatch_found": true,
+          "upstream_all_pass": false,
+          "upstream_failed": [
+            "Verify Configuration Item Serial Number Update"
+          ],
+          "as_expected": true
+        },
+        {
+          "name": "article_left_draft_internal",
+          "reason": "the article is published and public",
+          "bench2_db_reward": 0.0,
+          "bench2_mismatches": [
+            "knowledge/KB_026 state: 'published' != 'draft'",
+            "knowledge/KB_026 visibility: 'external' != 'internal'"
+          ],
+          "expected_mismatch_found": true,
+          "upstream_all_pass": false,
+          "upstream_failed": [
+            "Verify Knowledge Article Creation"
+          ],
+          "as_expected": true
+        },
+        {
+          "name": "service_left_in_repair",
+          "reason": "the service is restored",
+          "bench2_db_reward": 0.0,
+          "bench2_mismatches": [
+            "service/SVC_007 status: 'operational' != 'repair_in_progress'",
+            "service/SVC_007 updated_on: '2026-01-14 09:00:00' != '2023-01-01 00:00:00'"
+          ],
+          "expected_mismatch_found": true,
+          "upstream_all_pass": false,
+          "upstream_failed": [
+            "Verify Service Status Update to Operational"
+          ],
+          "as_expected": true
+        },
+        {
+          "name": "serial_set_on_wrong_ci",
+          "reason": "the swapped hardware is the database CI (CI_001)",
+          "bench2_db_reward": 0.0,
+          "bench2_mismatches": [
+            "configuration_item/CI_001 serial_number: 'DB-2025-PROD-001' != 'SRV-ORC-9981'",
+            "configuration_item/CI_001 updated_on: '2026-01-14 09:00:00' != '2023-01-10 08:00:00'",
+            "configuration_item/CI_002 serial_number: 'SRV-LNX-4421' != 'DB-2025-PROD-001'",
+            "configuration_item/CI_002 updated_on: '2023-01-10 09:00:00' != '2026-01-14 09:00:00'"
+          ],
+          "expected_mismatch_found": true,
+          "upstream_all_pass": false,
+          "upstream_failed": [
+            "Verify Configuration Item Serial Number Update"
+          ],
+          "as_expected": true
+        }
+      ],
+      "information_boundary": {
+        "private_texts_checked": 21,
+        "leaked": []
+      },
+      "measured_scripted_episode": {
+        "termination_reason": "agent_done",
+        "db_match": true,
+        "agent_turns": 9,
+        "step_count": 9,
+        "tool_calls": 6,
+        "initial_prompt_tokens": 28145,
+        "generated_tokens": 903,
+        "generated_tokens_max_action": 362,
+        "environment_tokens": 1532,
+        "environment_tokens_max_turn": 447,
+        "response_tokens": 2435,
+        "full_sequence_tokens": 30580,
+        "seconds": {
+          "env_build_and_reset": 0.0132,
+          "tool_calls_total": 0.0011,
+          "gold_replay_and_db_scoring": 0.023
+        }
+      },
+      "checks": {
+        "bench2_gold_db_1": true,
+        "repeat_replay_same_final_db": true,
+        "upstream_all_pass_on_gold": true,
+        "upstream_not_all_pass_on_initial": true,
+        "initial_passes_exactly_the_registered_ones": true,
+        "validation_cases_as_expected": true,
+        "no_private_text_visible_at_reset": true,
+        "scripted_episode_ends_with_db_match": true
+      },
+      "accepted": true
+    }
+  },
+  "isolated": [
+    {
+      "upstream_task_id": "task_20251223_135402_072_c5ca08eb_67009578",
+      "batch_item": 2,
+      "reason": "ambiguous REQUIRED cascade"
+    },
+    {
+      "upstream_task_id": "task_20260114_081229_036_78a5b71e_a4fb07a9",
+      "batch_item": 4,
+      "reason": "core requirement not discriminated by Bench2 DB scoring"
+    },
+    {
+      "upstream_task_id": "task_20251218_063226_501_97d7df7d_8fd400d1",
+      "batch_item": 8,
+      "reason": "shares 2 same-seed entities with a held-out task"
+    }
+  ],
+  "isolation_evidence": {
+    "itsmbench_eops_78a5b71e_a4fb07a9": {
+      "batch_item": 4,
+      "reason": "core requirement not discriminated by Bench2 DB scoring",
+      "gold_db_reward": 1.0,
+      "validation_case_db_rewards": {
+        "change_closed": 0.0,
+        "left_in_implement": 0.0,
+        "configuration_item_overwritten": 0.0,
+        "server_named_in_description_only": 1.0
+      },
+      "undiscriminated_cases": [
+        "server_named_in_description_only"
+      ],
+      "dev_or_heldout_entity_overlap_ge2": []
+    },
+    "itsmbench_eops_97d7df7d_8fd400d1": {
+      "batch_item": 8,
+      "reason": "shares 2 same-seed entities with a held-out task",
+      "gold_db_reward": 1.0,
+      "validation_case_db_rewards": {
+        "alert_for_incident_after_cutoff": 0.0,
+        "priority_raised": 0.0,
+        "caller_alerted_instead_of_assignee": 0.0,
+        "notification_type_report": 0.0
+      },
+      "undiscriminated_cases": [],
+      "dev_or_heldout_entity_overlap_ge2": [
+        {
+          "task": "itsmbench_single_012",
+          "split": "heldout",
+          "same_seed_entities": [
+            "GROUP_001",
+            "INC_003"
+          ]
+        }
+      ]
+    }
+  },
+  "family_overlap_v2": {
+    "checks": {
+      "batch_components_touch_train_only": true,
+      "no_component_bridges_v2_splits": true,
+      "batch_shares_le_1_write_tool_with_dev_or_heldout": true,
+      "no_batch_task_shares_2plus_entities_with_dev_or_heldout": true,
+      "dev_and_heldout_families_unchanged": true
+    },
+    "batch_links": [
+      {
+        "a": "itsmbench_eops_1d219d93_d1ba6c2d",
+        "b": "itsmbench_eops_99ba2325_7915481a",
+        "write_jaccard": 0.333,
+        "shared_creation_tools": [
+          "create_knowledge_article"
+        ]
+      },
+      {
+        "a": "itsmbench_eops_46ca2862_56a4f834",
+        "b": "itsmbench_single_003",
+        "write_jaccard": 0.2,
+        "shared_creation_tools": [
+          "register_new_service_offering"
+        ]
+      },
+      {
+        "a": "itsmbench_eops_99ba2325_7915481a",
+        "b": "itsmbench_single_011",
+        "write_jaccard": 0.143,
+        "shared_creation_tools": [
+          "create_knowledge_article"
+        ]
+      },
+      {
+        "a": "itsmbench_eops_99ba2325_7915481a",
+        "b": "itsmbench_single_015",
+        "write_jaccard": 0.143,
+        "shared_creation_tools": [
+          "create_knowledge_article"
+        ]
+      }
+    ],
+    "bridged_v2_families": [],
+    "tasks": {
+      "itsmbench_eops_01395ded_eff85dae": {
+        "write_tools": [
+          "send_notification",
+          "update_notification"
+        ],
+        "component_v2_members": [],
+        "component_v2_splits": [],
+        "component_v2_families": [],
+        "component_batch_members": [
+          "itsmbench_eops_01395ded_eff85dae"
+        ],
+        "max_shared_write_tools_with_dev_or_heldout": {
+          "count": 1,
+          "task": "itsmbench_msp_019"
+        },
+        "dev_or_heldout_entity_overlap_ge2": []
+      },
+      "itsmbench_eops_46ca2862_56a4f834": {
+        "write_tools": [
+          "register_new_service_offering",
+          "update_incident_template"
+        ],
+        "component_v2_members": [
+          "itsmbench_eops_1d219d93_d1ba6c2d",
+          "itsmbench_eops_46ca2862_b6ef60ca",
+          "itsmbench_msp_001",
+          "itsmbench_msp_002",
+          "itsmbench_msp_003",
+          "itsmbench_msp_004",
+          "itsmbench_msp_005",
+          "itsmbench_msp_006",
+          "itsmbench_msp_007",
+          "itsmbench_msp_008",
+          "itsmbench_msp_009",
+          "itsmbench_msp_010",
+          "itsmbench_msp_011",
+          "itsmbench_msp_012",
+          "itsmbench_msp_013",
+          "itsmbench_msp_014",
+          "itsmbench_msp_015",
+          "itsmbench_msp_016",
+          "itsmbench_msp_017",
+          "itsmbench_msp_018",
+          "itsmbench_msp_031",
+          "itsmbench_single_001",
+          "itsmbench_single_002",
+          "itsmbench_single_003",
+          "itsmbench_single_004",
+          "itsmbench_single_005",
+          "itsmbench_single_006",
+          "itsmbench_single_007",
+          "itsmbench_single_011",
+          "itsmbench_single_015"
+        ],
+        "component_v2_splits": [
+          "train"
+        ],
+        "component_v2_families": [
+          "onboarding_catalog_and_change_problem_kb_merged"
+        ],
+        "component_batch_members": [
+          "itsmbench_eops_46ca2862_56a4f834",
+          "itsmbench_eops_99ba2325_7915481a"
+        ],
+        "max_shared_write_tools_with_dev_or_heldout": {
+          "count": 0,
+          "task": null
+        },
+        "dev_or_heldout_entity_overlap_ge2": []
+      },
+      "itsmbench_eops_99ba2325_7915481a": {
+        "write_tools": [
+          "create_knowledge_article",
+          "update_configuration_item",
+          "update_service"
+        ],
+        "component_v2_members": [
+          "itsmbench_eops_1d219d93_d1ba6c2d",
+          "itsmbench_eops_46ca2862_b6ef60ca",
+          "itsmbench_msp_001",
+          "itsmbench_msp_002",
+          "itsmbench_msp_003",
+          "itsmbench_msp_004",
+          "itsmbench_msp_005",
+          "itsmbench_msp_006",
+          "itsmbench_msp_007",
+          "itsmbench_msp_008",
+          "itsmbench_msp_009",
+          "itsmbench_msp_010",
+          "itsmbench_msp_011",
+          "itsmbench_msp_012",
+          "itsmbench_msp_013",
+          "itsmbench_msp_014",
+          "itsmbench_msp_015",
+          "itsmbench_msp_016",
+          "itsmbench_msp_017",
+          "itsmbench_msp_018",
+          "itsmbench_msp_031",
+          "itsmbench_single_001",
+          "itsmbench_single_002",
+          "itsmbench_single_003",
+          "itsmbench_single_004",
+          "itsmbench_single_005",
+          "itsmbench_single_006",
+          "itsmbench_single_007",
+          "itsmbench_single_011",
+          "itsmbench_single_015"
+        ],
+        "component_v2_splits": [
+          "train"
+        ],
+        "component_v2_families": [
+          "onboarding_catalog_and_change_problem_kb_merged"
+        ],
+        "component_batch_members": [
+          "itsmbench_eops_46ca2862_56a4f834",
+          "itsmbench_eops_99ba2325_7915481a"
+        ],
+        "max_shared_write_tools_with_dev_or_heldout": {
+          "count": 1,
+          "task": "itsmbench_msp_020"
+        },
+        "dev_or_heldout_entity_overlap_ge2": []
+      },
+      "itsmbench_eops_99ba2325_887f5580": {
+        "write_tools": [
+          "link_affected_ci_to_incident",
+          "update_configuration_item"
+        ],
+        "component_v2_members": [],
+        "component_v2_splits": [],
+        "component_v2_families": [],
+        "component_batch_members": [
+          "itsmbench_eops_99ba2325_887f5580"
+        ],
+        "max_shared_write_tools_with_dev_or_heldout": {
+          "count": 1,
+          "task": "itsmbench_msp_030"
+        },
+        "dev_or_heldout_entity_overlap_ge2": []
+      }
+    }
+  }
+}

@@ -17,7 +17,7 @@
 | 6B：EnterpriseOps-Gym ITSM 迁移试点 | 用户认可（3 题通过、5 题继续隔离） | 2026-10-30 用户原话：“第 6B 步验收通过。批准将以下三题纳入训练集 v2：itsmbench_eops_46ca2862_b6ef60ca、itsmbench_eops_66392a82_52c8290e、itsmbench_eops_1d219d93_d1ba6c2d。其余五题继续隔离……现在仅执行第 6C 步：数据与预算整合。” |
 | 6C：数据与预算整合 | 用户认可；预算选项 A（完整观察，超长时以 response_length 结束）；40,960 仍待验证 | 2026-10-30 先有用户原话：“第6C步验收结果保留，但暂不开始完整第7步。”随后用户原话：“第6C已验收通过，预算选项为A，40,960仍待验证。” |
 | 6D-1：EnterpriseOps-Gym 下一批候选筛选与规模方案 | 用户部分批准：第 1–4、6–8 题进入 6D-2 验证；第 5、9、10 题暂缓；D6D-1、D6D-2 均选 ①；门槛不放宽 | 2026-10-30 用户原话：“本轮仅批准第1–4、6–8题进入6D-2迁移验证，不保证最终全部纳入。第5、9、10题暂缓，不改政策、不制定MSP SLA全局规则，不沿用省略user_role的口径，不放宽共享写工具门槛。……提交6D-1报告及本条决定后，仅完成上述7题的6D-2验证，按既定逐题标准提交结果，失败则隔离。不为凑数放宽标准，不自动扩大规模或启动训练。”全文见 `docs/itsm_step6d/README.md` §6。 |
-| 6D-2：7 题迁移验证 | **进行中** | 授权同上。只处理 6D-1 的第 1–4、6–8 题；不通过的题隔离。 |
+| 6D-2：7 题迁移验证 | **待验收**（测试通过 ≠ 验收）：4 题通过（第 1、3、6、7 题），3 题隔离（第 2、4、8 题） | 未批准。授权同上一行。 |
 | 7 及以后 | 未开始 | — |
 
 ## 运行环境
@@ -332,4 +332,23 @@
 - 原话全文与逐项决定见 `docs/itsm_step6d/README.md` §6。要点：7 题进入 6D-2；第 5、9、10 题暂缓；不制定 MSP SLA 全局规则；不沿用省略 `user_role` 的口径；不放宽共享写工具门槛；继续准备 v3，两道服务目录题优先作为 held-out 候选，验证完成后再冻结，v1/v2 不改；当前以纯 GRPO 为首选，SFT 不在本轮授权范围；第 6C 步验收通过，预算选项 A，40,960 仍待验证。
 - 预算文件 `configs/itsm/budget_v1.yaml` 中 `basis.itsm_split_v2.status` 改为 `accepted_step6c_option_a`，数值不变；`test_itsm_budget_v2.py` 同步。
 - 更正：上一轮对话中说 AirlineRL 正式训练“约 4 个优化步”，有误。正式配置为每步 30 题 × G=4 = 120 条轨迹，目标 75 个 trainer 全局步（`run_formal_phase.sh`、`docs/experiment_plan.md`）；之前误用了性能测试配置 `pro6000_g4_tokens32k.yaml` 推算。
+
+## 第 6D-2 步证据
+
+- 产物与逐题结果：`docs/itsm_step6d2/README.md`；批次文件 `configs/data/itsm_eops_batch2_v1.json`；验证结果 `docs/itsm_step6d2/batch_validation.json`。
+- 改动：
+  - 新增 `src/agent_rl/data/itsm_eops_batch2.py`、`scripts/data/build_itsm_eops_batch2.py`、`scripts/data/validate_itsm_eops_batch2.py`、`tests/unit/test_itsm_eops_batch2.py`（27 项）。
+  - 6D-1 的更正：修改 `scripts/data/screen_itsm_eops_candidates.py`（MSP 的 SLA 定义对所有组织通用；实体门槛的局限写进规则；冲突取值改为确定），重新生成 `candidate_screening.json`，并在 `docs/itsm_step6d/README.md` 增加 §7。入选批次、人工结论和 v3 可用量都没有变化。
+  - Bench2、policy、评分、环境、v1/v2 manifest、预算数值、试点文件均未修改。
+- 结果：
+  - **通过 4 题**：第 1、3、6、7 题。这 4 题满足：gold DB=1 且重复回放结果一致；上游验证器在 gold 上全部通过，在初始状态下只有已登记的约束或前提通过；16 个反例全部 DB=0，mismatch 符合预期；信息边界没有泄漏；脚本化 episode 以 agent_done 结束；种子 + delta 与上游的差异为 0；按 v2 的家族复查 5/5 通过。
+  - **隔离 3 题**：
+    - 第 2 题：REQUIRED 的 SLA 连带操作结果不唯一。6D-1 的相关说法有误，已更正。
+    - 第 4 题：核心要求"记录 SRV-LNX-4421"在 Bench2 评分中体现不出来，反例的 DB = 1。
+    - 第 8 题：与 held-out 题 `itsmbench_single_012` 共享 GROUP_001 和 INC_003。
+  - 隔离证据由验证脚本和测试重新计算。
+- 运行（在 `code/main` 下，日志在 `/home/sar/work/EnterGym/output/itsm-step6d2/`）：
+  - 批次文件、试点文件、v1、v2、筛选结果的 `--check` 均为 up to date；
+  - `pytest tests/unit tests/remote -q`：695 passed（`pytest_full.log`），跑完没有残留子进程。
+- 没有把任何题并入划分，没有启动 GPU，没有加载权重，没有调用 LLM，没有处理暂缓的第 5、9、10 题，也没有开始 v3 的审读。
 

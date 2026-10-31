@@ -25,7 +25,7 @@
     }
   },
   "rules": {
-    "train_gate": "6A gate re-run against split v2: no dev/held-out family link (v2 families, oracle write tools), <= 1 write tool shared with any dev/held-out task, < 2 same-seed verifier entities with any dev/held-out task, not a near-duplicate, no conflicting/non-executable verifier",
+    "train_gate": "6A gate re-run against split v2: no dev/held-out family link (v2 families, oracle write tools), <= 1 write tool shared with any dev/held-out task, < 2 same-seed verifier entities with any dev/held-out task, not a near-duplicate, no conflicting/non-executable verifier. The entity check here sees only the IDs named in upstream verifiers; 6D-2 re-checks with the gold arguments (stricter), as step 6B did",
     "excluded_upfront": "the 8 6B pilot tasks (3 accepted, 5 isolated); isolated tasks are not reconsidered",
     "routes": {
       "faithful": "ID itsmbench_eops_<suffix>; 6B standard",
@@ -38,10 +38,10 @@
     "train_gate_passers": 34,
     "manual_verdicts": {
       "deferred": 4,
-      "excluded": 12,
+      "excluded": 9,
       "reserve": 2,
       "selected": 10,
-      "deferred_pending_D6D-1": 6
+      "deferred_pending_D6D-1": 9
     },
     "train_gate_failure_reasons": {
       "conflicting_verifiers": 2,
@@ -54,9 +54,9 @@
       "near_duplicate_of_bench2_task": 1
     },
     "automatic_policy_blockers": {
-      "incident_sla_ambiguous": 14,
+      "incident_sla_ambiguous": 18,
       "user_role_tool_gap": 8,
-      "incident_sla_none": 12,
+      "incident_sla_none": 8,
       "group_dissolution_check_needed": 2,
       "verifier_priority_contradicts_matrix": 1
     },
@@ -80,7 +80,8 @@
         "one row per active matching definition (response + resolution), as upstream 391f1eff_8cb006f5",
         "resolution only (seed majority)"
       ],
-      "effect": "a fixed rule would unlock the 6 train-gate candidates whose caller is in ORG_001 (incl. the policy-refusal tasks c5ca08eb_3ce3c52f and d4a463c3_3f20bdca); the 4 whose org or priority has no SLA definition stay excluded either way"
+      "effect": "a fixed rule would unlock the train-gate candidates with two matching provider SLA definitions (incl. the policy-refusal tasks c5ca08eb_3ce3c52f and d4a463c3_3f20bdca); a planning-priority incident has no definition and stays excluded either way",
+      "decision": "2026-10-30: option 1 (no MSP SLA rule; MSP incident creation stays excluded)"
     },
     {
       "id": "D6D-2",
@@ -90,7 +91,8 @@
         "no (default; this batch selects no onboarding task)",
         "yes, with the gap recorded per task"
       ],
-      "effect": "would unlock 3 onboarding candidates, all close to train workflows"
+      "effect": "would unlock 3 onboarding candidates, all close to train workflows",
+      "decision": "2026-10-30: option 1 (no user_role omission)"
     }
   ],
   "tokens_per_step": {
@@ -199,7 +201,7 @@
       "estimated_tool_calls": 5,
       "policy": [
         "§3.1/§4.3 priority matrix: tools do not derive priority, so the gold sets problem high x high = critical and incident high x medium = high explicitly.",
-        "§6 priority change -> reset/swap/cancel the incident_sla row: INC_061 has no incident_sla row and ORG_013 has no SLA definition, so no SLA action exists; recorded as a gold note.",
+        "§6 priority change -> reset/swap/cancel the incident_sla row: INC_061 has no incident_sla row. CORRECTED in 6D-2: client incidents use the provider's ORG_001 SLA definitions, so 'no SLA action' is only one reading; starting a high-priority SLA (SLA_003 or SLA_004) is another. The task was isolated in 6D-2 (ambiguous REQUIRED cascade).",
         "The only linked incident is PRB_009.original_task = INC_061 (no other incident references PRB_009)."
       ],
       "ambiguity": "none blocking. Scope is nonstandard: PRB_009 lives in ORG_006 and INC_061 in ORG_013, so a provider/client pair would drop one of them.",
@@ -1062,6 +1064,17 @@
       "entity_overlap_ge2": {},
       "policy_flags": {
         "incident_creation": {
+          "verifier_values": {
+            "impact": [
+              "low"
+            ],
+            "urgency": [
+              "high"
+            ],
+            "priority": [
+              "moderate"
+            ]
+          },
           "incident_org": "ORG_001",
           "impact": "low",
           "urgency": "high",
@@ -1186,6 +1199,18 @@
       "entity_overlap_ge2": {},
       "policy_flags": {
         "incident_creation": {
+          "verifier_values": {
+            "impact": [
+              "high"
+            ],
+            "urgency": [
+              "high"
+            ],
+            "priority": [
+              "critical",
+              "high"
+            ]
+          },
           "incident_org": "ORG_001",
           "impact": "high",
           "urgency": "high",
@@ -1331,6 +1356,17 @@
       "entity_overlap_ge2": {},
       "policy_flags": {
         "incident_creation": {
+          "verifier_values": {
+            "impact": [
+              "high"
+            ],
+            "urgency": [
+              "high"
+            ],
+            "priority": [
+              "critical"
+            ]
+          },
           "incident_org": "ORG_002",
           "impact": "high",
           "urgency": "high",
@@ -1511,6 +1547,15 @@
       "entity_overlap_ge2": {},
       "policy_flags": {
         "incident_creation": {
+          "verifier_values": {
+            "impact": [
+              "medium"
+            ],
+            "urgency": [
+              "low"
+            ],
+            "priority": []
+          },
           "incident_org": "ORG_001",
           "impact": "medium",
           "urgency": "low",
@@ -2234,6 +2279,15 @@
       "entity_overlap_ge2": {},
       "policy_flags": {
         "incident_creation": {
+          "verifier_values": {
+            "impact": [
+              "medium"
+            ],
+            "urgency": [
+              "low"
+            ],
+            "priority": []
+          },
           "incident_org": "ORG_001",
           "impact": "medium",
           "urgency": "low",
@@ -2519,6 +2573,11 @@
       "entity_overlap_ge2": {},
       "policy_flags": {
         "incident_creation": {
+          "verifier_values": {
+            "impact": [],
+            "urgency": [],
+            "priority": []
+          },
           "incident_org": "ORG_001",
           "impact": null,
           "urgency": null,
@@ -2608,6 +2667,17 @@
       "entity_overlap_ge2": {},
       "policy_flags": {
         "incident_creation": {
+          "verifier_values": {
+            "impact": [
+              "high"
+            ],
+            "urgency": [
+              "high"
+            ],
+            "priority": [
+              "critical"
+            ]
+          },
           "incident_org": "ORG_001",
           "impact": "high",
           "urgency": "high",
@@ -2768,6 +2838,17 @@
       "entity_overlap_ge2": {},
       "policy_flags": {
         "incident_creation": {
+          "verifier_values": {
+            "impact": [
+              "high"
+            ],
+            "urgency": [
+              "high"
+            ],
+            "priority": [
+              "critical"
+            ]
+          },
           "incident_org": "ORG_001",
           "impact": "high",
           "urgency": "high",
@@ -2811,7 +2892,7 @@
       "heldout_gate_failures": [],
       "manual": {
         "verdict": "deferred_pending_D6D-1",
-        "reason": "MSP incident creation with two matching SLA definitions; see D6D-1"
+        "reason": "MSP incident creation with two matching provider SLA definitions; D6D-1 decided option 1, so it stays excluded"
       }
     },
     "task_20251218_164829_676_97d7df7d_893f6b2c": {
@@ -2878,6 +2959,15 @@
       "entity_overlap_ge2": {},
       "policy_flags": {
         "incident_creation": {
+          "verifier_values": {
+            "impact": [
+              "low"
+            ],
+            "urgency": [
+              "low"
+            ],
+            "priority": []
+          },
           "incident_org": "ORG_001",
           "impact": "low",
           "urgency": "low",
@@ -2961,19 +3051,33 @@
       "entity_overlap_ge2": {},
       "policy_flags": {
         "incident_creation": {
+          "verifier_values": {
+            "impact": [
+              "medium"
+            ],
+            "urgency": [
+              "high"
+            ],
+            "priority": [
+              "high"
+            ]
+          },
           "incident_org": "ORG_002",
           "impact": "medium",
           "urgency": "high",
           "verifier_priority": "high",
           "matrix_priority": "high",
           "priority_matrix_conflict": false,
-          "sla_definitions_for_priority": [],
-          "sla_status": "none",
+          "sla_definitions_for_priority": [
+            "SLA_003",
+            "SLA_004"
+          ],
+          "sla_status": "ambiguous",
           "published_kb_in_org": []
         }
       },
       "automatic_policy_blockers": [
-        "incident_sla_none"
+        "incident_sla_ambiguous"
       ],
       "train_gate_failures": [
         "links_dev_or_heldout_family_v2",
@@ -3222,6 +3326,11 @@
       "entity_overlap_ge2": {},
       "policy_flags": {
         "incident_creation": {
+          "verifier_values": {
+            "impact": [],
+            "urgency": [],
+            "priority": []
+          },
           "incident_org": "ORG_001",
           "impact": null,
           "urgency": null,
@@ -3486,19 +3595,33 @@
       "entity_overlap_ge2": {},
       "policy_flags": {
         "incident_creation": {
+          "verifier_values": {
+            "impact": [
+              "high"
+            ],
+            "urgency": [
+              "high"
+            ],
+            "priority": [
+              "critical"
+            ]
+          },
           "incident_org": "ORG_005",
           "impact": "high",
           "urgency": "high",
           "verifier_priority": "critical",
           "matrix_priority": "critical",
           "priority_matrix_conflict": false,
-          "sla_definitions_for_priority": [],
-          "sla_status": "none",
+          "sla_definitions_for_priority": [
+            "SLA_001",
+            "SLA_002"
+          ],
+          "sla_status": "ambiguous",
           "published_kb_in_org": []
         }
       },
       "automatic_policy_blockers": [
-        "incident_sla_none"
+        "incident_sla_ambiguous"
       ],
       "train_gate_failures": [],
       "heldout_gate_failures": [
@@ -3506,8 +3629,8 @@
         "shares_2_write_tools_with_train_task"
       ],
       "manual": {
-        "verdict": "excluded",
-        "reason": "REQUIRED SLA spawn on creation is impossible: no SLA definition for the incident's org/priority (same treatment as 6B's impossible REQUIRED steps)"
+        "verdict": "deferred_pending_D6D-1",
+        "reason": "MSP incident creation with two matching provider SLA definitions; D6D-1 decided option 1, so it stays excluded"
       }
     },
     "task_20251218_234602_633_391f1eff_09a746e7": {
@@ -3554,6 +3677,17 @@
       "entity_overlap_ge2": {},
       "policy_flags": {
         "incident_creation": {
+          "verifier_values": {
+            "impact": [
+              "high"
+            ],
+            "urgency": [
+              "high"
+            ],
+            "priority": [
+              "critical"
+            ]
+          },
           "incident_org": "ORG_001",
           "impact": "high",
           "urgency": "high",
@@ -3597,7 +3731,7 @@
       "heldout_gate_failures": [],
       "manual": {
         "verdict": "deferred_pending_D6D-1",
-        "reason": "MSP incident creation with two matching SLA definitions; see D6D-1"
+        "reason": "MSP incident creation with two matching provider SLA definitions; D6D-1 decided option 1, so it stays excluded"
       }
     },
     "task_20251219_062202_346_66392a82_1d2065dd": {
@@ -3849,6 +3983,11 @@
       "entity_overlap_ge2": {},
       "policy_flags": {
         "incident_creation": {
+          "verifier_values": {
+            "impact": [],
+            "urgency": [],
+            "priority": []
+          },
           "incident_org": "ORG_001",
           "impact": null,
           "urgency": null,
@@ -4116,6 +4255,15 @@
       },
       "policy_flags": {
         "incident_creation": {
+          "verifier_values": {
+            "impact": [
+              "low"
+            ],
+            "urgency": [
+              "low"
+            ],
+            "priority": []
+          },
           "incident_org": "ORG_001",
           "impact": "low",
           "urgency": "low",
@@ -4455,6 +4603,17 @@
       "entity_overlap_ge2": {},
       "policy_flags": {
         "incident_creation": {
+          "verifier_values": {
+            "impact": [
+              "high"
+            ],
+            "urgency": [
+              "high"
+            ],
+            "priority": [
+              "high"
+            ]
+          },
           "incident_org": "ORG_001",
           "impact": "high",
           "urgency": "high",
@@ -5215,6 +5374,17 @@
       "entity_overlap_ge2": {},
       "policy_flags": {
         "incident_creation": {
+          "verifier_values": {
+            "impact": [
+              "medium"
+            ],
+            "urgency": [
+              "medium"
+            ],
+            "priority": [
+              "moderate"
+            ]
+          },
           "incident_org": "ORG_001",
           "impact": "medium",
           "urgency": "medium",
@@ -5432,6 +5602,17 @@
       "entity_overlap_ge2": {},
       "policy_flags": {
         "incident_creation": {
+          "verifier_values": {
+            "impact": [
+              "high"
+            ],
+            "urgency": [
+              "high"
+            ],
+            "priority": [
+              "critical"
+            ]
+          },
           "incident_org": "ORG_001",
           "impact": "high",
           "urgency": "high",
@@ -5653,27 +5834,41 @@
       "entity_overlap_ge2": {},
       "policy_flags": {
         "incident_creation": {
+          "verifier_values": {
+            "impact": [
+              "high"
+            ],
+            "urgency": [
+              "high"
+            ],
+            "priority": [
+              "critical"
+            ]
+          },
           "incident_org": "ORG_005",
           "impact": "high",
           "urgency": "high",
           "verifier_priority": "critical",
           "matrix_priority": "critical",
           "priority_matrix_conflict": false,
-          "sla_definitions_for_priority": [],
-          "sla_status": "none",
+          "sla_definitions_for_priority": [
+            "SLA_001",
+            "SLA_002"
+          ],
+          "sla_status": "ambiguous",
           "published_kb_in_org": []
         }
       },
       "automatic_policy_blockers": [
-        "incident_sla_none"
+        "incident_sla_ambiguous"
       ],
       "train_gate_failures": [],
       "heldout_gate_failures": [
         "shares_2_write_tools_with_train_task"
       ],
       "manual": {
-        "verdict": "excluded",
-        "reason": "REQUIRED SLA spawn on creation is impossible: no SLA definition for the incident's org/priority (same treatment as 6B's impossible REQUIRED steps)"
+        "verdict": "deferred_pending_D6D-1",
+        "reason": "MSP incident creation with two matching provider SLA definitions; D6D-1 decided option 1, so it stays excluded"
       }
     },
     "task_20251222_195853_743_0be70e35_0916fba8": {
@@ -6000,6 +6195,17 @@
       "entity_overlap_ge2": {},
       "policy_flags": {
         "incident_creation": {
+          "verifier_values": {
+            "impact": [
+              "high"
+            ],
+            "urgency": [
+              "high"
+            ],
+            "priority": [
+              "critical"
+            ]
+          },
           "incident_org": "ORG_001",
           "impact": "high",
           "urgency": "high",
@@ -6429,6 +6635,13 @@
       "entity_overlap_ge2": {},
       "policy_flags": {
         "incident_creation": {
+          "verifier_values": {
+            "impact": [],
+            "urgency": [],
+            "priority": [
+              "low"
+            ]
+          },
           "incident_org": "ORG_001",
           "impact": null,
           "urgency": null,
@@ -6742,6 +6955,17 @@
       "entity_overlap_ge2": {},
       "policy_flags": {
         "incident_creation": {
+          "verifier_values": {
+            "impact": [
+              "high"
+            ],
+            "urgency": [
+              "high"
+            ],
+            "priority": [
+              "critical"
+            ]
+          },
           "incident_org": "ORG_001",
           "impact": "high",
           "urgency": "high",
@@ -6852,6 +7076,17 @@
       "entity_overlap_ge2": {},
       "policy_flags": {
         "incident_creation": {
+          "verifier_values": {
+            "impact": [
+              "low"
+            ],
+            "urgency": [
+              "low"
+            ],
+            "priority": [
+              "planning"
+            ]
+          },
           "incident_org": "ORG_001",
           "impact": "low",
           "urgency": "low",
@@ -6963,6 +7198,17 @@
       "entity_overlap_ge2": {},
       "policy_flags": {
         "incident_creation": {
+          "verifier_values": {
+            "impact": [
+              "low"
+            ],
+            "urgency": [
+              "low"
+            ],
+            "priority": [
+              "planning"
+            ]
+          },
           "incident_org": "ORG_001",
           "impact": "low",
           "urgency": "low",
@@ -7094,6 +7340,17 @@
       "entity_overlap_ge2": {},
       "policy_flags": {
         "incident_creation": {
+          "verifier_values": {
+            "impact": [
+              "high"
+            ],
+            "urgency": [
+              "high"
+            ],
+            "priority": [
+              "critical"
+            ]
+          },
           "incident_org": "ORG_002",
           "impact": "high",
           "urgency": "high",
@@ -7215,6 +7472,17 @@
       "entity_overlap_ge2": {},
       "policy_flags": {
         "incident_creation": {
+          "verifier_values": {
+            "impact": [
+              "high"
+            ],
+            "urgency": [
+              "medium"
+            ],
+            "priority": [
+              "high"
+            ]
+          },
           "incident_org": "ORG_001",
           "impact": "high",
           "urgency": "medium",
@@ -7260,7 +7528,7 @@
       ],
       "manual": {
         "verdict": "deferred_pending_D6D-1",
-        "reason": "MSP incident creation with two matching SLA definitions; see D6D-1"
+        "reason": "MSP incident creation with two matching provider SLA definitions; D6D-1 decided option 1, so it stays excluded"
       }
     },
     "task_20260113_153008_006_46ca2862_c5083638": {
@@ -7302,6 +7570,17 @@
       "entity_overlap_ge2": {},
       "policy_flags": {
         "incident_creation": {
+          "verifier_values": {
+            "impact": [
+              "high"
+            ],
+            "urgency": [
+              "high"
+            ],
+            "priority": [
+              "critical"
+            ]
+          },
           "incident_org": "ORG_001",
           "impact": "high",
           "urgency": "high",
@@ -7345,7 +7624,7 @@
       "heldout_gate_failures": [],
       "manual": {
         "verdict": "deferred_pending_D6D-1",
-        "reason": "MSP incident creation with two matching SLA definitions; see D6D-1"
+        "reason": "MSP incident creation with two matching provider SLA definitions; D6D-1 decided option 1, so it stays excluded"
       }
     },
     "task_20260113_182216_716_a8eea1c0_7a0619e9": {
@@ -7389,6 +7668,17 @@
       "entity_overlap_ge2": {},
       "policy_flags": {
         "incident_creation": {
+          "verifier_values": {
+            "impact": [
+              "high"
+            ],
+            "urgency": [
+              "high"
+            ],
+            "priority": [
+              "critical"
+            ]
+          },
           "incident_org": "ORG_001",
           "impact": "high",
           "urgency": "high",
@@ -7432,7 +7722,7 @@
       "heldout_gate_failures": [],
       "manual": {
         "verdict": "deferred_pending_D6D-1",
-        "reason": "MSP incident creation with two matching SLA definitions; see D6D-1"
+        "reason": "MSP incident creation with two matching provider SLA definitions; D6D-1 decided option 1, so it stays excluded"
       }
     },
     "task_20260113_183935_893_e6427839_03a04c19": {
@@ -7837,19 +8127,29 @@
       "entity_overlap_ge2": {},
       "policy_flags": {
         "incident_creation": {
+          "verifier_values": {
+            "impact": [],
+            "urgency": [],
+            "priority": [
+              "low"
+            ]
+          },
           "incident_org": "ORG_002",
           "impact": null,
           "urgency": null,
           "verifier_priority": "low",
           "matrix_priority": null,
           "priority_matrix_conflict": false,
-          "sla_definitions_for_priority": [],
-          "sla_status": "none",
+          "sla_definitions_for_priority": [
+            "SLA_007",
+            "SLA_008"
+          ],
+          "sla_status": "ambiguous",
           "published_kb_in_org": []
         }
       },
       "automatic_policy_blockers": [
-        "incident_sla_none"
+        "incident_sla_ambiguous"
       ],
       "train_gate_failures": [],
       "heldout_gate_failures": [
@@ -7857,8 +8157,8 @@
         "shares_2_write_tools_with_train_task"
       ],
       "manual": {
-        "verdict": "excluded",
-        "reason": "REQUIRED SLA spawn on creation is impossible: no SLA definition for the incident's org/priority (same treatment as 6B's impossible REQUIRED steps)"
+        "verdict": "deferred_pending_D6D-1",
+        "reason": "MSP incident creation with two matching provider SLA definitions; D6D-1 decided option 1, so it stays excluded"
       }
     },
     "task_20260114_173716_566_46ca2862_301e0b47": {
@@ -8966,6 +9266,17 @@
       "entity_overlap_ge2": {},
       "policy_flags": {
         "incident_creation": {
+          "verifier_values": {
+            "impact": [
+              "high"
+            ],
+            "urgency": [
+              "high"
+            ],
+            "priority": [
+              "critical"
+            ]
+          },
           "incident_org": "ORG_001",
           "impact": "high",
           "urgency": "high",
@@ -9037,6 +9348,15 @@
       "entity_overlap_ge2": {},
       "policy_flags": {
         "incident_creation": {
+          "verifier_values": {
+            "impact": [
+              "medium"
+            ],
+            "urgency": [
+              "medium"
+            ],
+            "priority": []
+          },
           "incident_org": "ORG_001",
           "impact": "medium",
           "urgency": "medium",
@@ -9080,7 +9400,7 @@
       "heldout_gate_failures": [],
       "manual": {
         "verdict": "deferred_pending_D6D-1",
-        "reason": "MSP incident creation with two matching SLA definitions; see D6D-1"
+        "reason": "MSP incident creation with two matching provider SLA definitions; D6D-1 decided option 1, so it stays excluded"
       }
     },
     "task_20260116_101840_488_e6427839_81df8ba3": {
@@ -9147,6 +9467,15 @@
       },
       "policy_flags": {
         "incident_creation": {
+          "verifier_values": {
+            "impact": [],
+            "urgency": [
+              "medium"
+            ],
+            "priority": [
+              "high"
+            ]
+          },
           "incident_org": "ORG_001",
           "impact": null,
           "urgency": "medium",
@@ -9277,6 +9606,17 @@
       "entity_overlap_ge2": {},
       "policy_flags": {
         "incident_creation": {
+          "verifier_values": {
+            "impact": [
+              "medium"
+            ],
+            "urgency": [
+              "high"
+            ],
+            "priority": [
+              "high"
+            ]
+          },
           "incident_org": "ORG_001",
           "impact": "medium",
           "urgency": "high",
@@ -9514,6 +9854,15 @@
       "entity_overlap_ge2": {},
       "policy_flags": {
         "incident_creation": {
+          "verifier_values": {
+            "impact": [
+              "low"
+            ],
+            "urgency": [
+              "low"
+            ],
+            "priority": []
+          },
           "incident_org": "ORG_002",
           "impact": "low",
           "urgency": "low",
