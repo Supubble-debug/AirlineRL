@@ -207,7 +207,7 @@ class ItsmTransition:
 - 评分时的 `TaskDefinitionError` 或其他非基础设施异常直接转为 `failed`，不重试。
 - 任务时钟：执行工具和评分都在 `task_clock` 上下文里进行，正常、业务错误、工具内部异常、评分失败、预算截断、用户故障各条路径结束后，调用线程的时钟都恢复为进入前的值（第 5 步有测试）。
 
-预算（第 6 步提交，待验收）：`configs/itsm/budget_v1.yaml`，依据见 `docs/itsm_step6/README.md`。初版取 `max_steps=40`、`max_action_tokens=512`、`max_prompt_length=28672`、`max_response_length=12288`、`max_model_len=40960`（待验证候选，原生上下文为 32,768，不加 RoPE 扩展）；工具观察完整保留，放不下时以 `response_length` 结束；训练与评测使用同一套 episode 预算。数据划分见 `configs/data/itsm_split_v1.json`。
+预算（第 6 步提交，待验收）：`configs/itsm/budget_v1.yaml`，依据见 `docs/itsm_step6/README.md`。初版取 `max_steps=40`、`max_action_tokens=512`、`max_prompt_length=28672`、`max_response_length=12288`、`max_model_len=40960`（待验证候选，原生上下文为 32,768，不加 RoPE 扩展）；工具观察完整保留，放不下时以 `response_length` 结束；训练与评测使用同一套 episode 预算。数据划分见 `configs/data/itsm_split_v1.json`；第 6C 步生成 v2 `configs/data/itsm_split_v2.json`（v1 加 3 道 EnterpriseOps-Gym 派生训练题，待验收），任务按 `split_version` 显式解析（`agent_rl.data.itsm_task_sets`），不传时环境行为不变。
 
 ## 8. 错误分类
 

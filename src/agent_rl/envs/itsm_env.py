@@ -168,6 +168,10 @@ class ItsmEnvConfig:
     user_llm_timeout_s: float = DEFAULT_USER_LLM_TIMEOUT_S
     max_scoring_retries: int = DEFAULT_MAX_SCORING_RETRIES
     score_on_finish: bool = True
+    #: Resolve ``task_id`` through ``agent_rl.data.itsm_task_sets`` under this split
+    #: version (e.g. ``itsm_split_v2`` for the derived train tasks). ``None`` keeps
+    #: the original lookup in Bench2's ``tasks.json`` (the 53 v1 tasks).
+    split_version: str | None = None
 
     def __post_init__(self) -> None:
         if not self.task_id.strip():
@@ -307,8 +311,15 @@ class ItsmEnv:
         task: Task | None = None,
     ) -> None:
         """``task`` supplies a task outside Bench2's ``tasks.json`` (e.g. the step 6B
-        pilot); its id must equal ``config.task_id``."""
-        if task is None:
+        pilot); its id must equal ``config.task_id``. It cannot be combined with
+        ``config.split_version``, which resolves the task by version instead."""
+        if task is not None and config.split_version is not None:
+            raise ValueError("pass either task= or config.split_version, not both")
+        if config.split_version is not None:
+            from agent_rl.data.itsm_task_sets import resolve_task
+
+            task = resolve_task(config.task_id, split_version=config.split_version)
+        elif task is None:
             tasks = _tasks_by_id()
             if config.task_id not in tasks:
                 raise ValueError(f"unknown ITSM task_id {config.task_id!r}")

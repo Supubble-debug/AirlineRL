@@ -75,7 +75,9 @@ class ItsmEnvWorker:
     """One ``ItsmEnv`` episode in a child process, with killable bounded calls.
 
     ``user_factory`` and ``initializer`` run in the child and must be picklable
-    (module-level functions or ``functools.partial`` of them).
+    (module-level functions or ``functools.partial`` of them). The child resolves
+    the task itself from ``config`` (``config.split_version`` selects a versioned
+    task set, e.g. the v2 derived tasks), so no task object crosses the pipe.
     """
 
     def __init__(

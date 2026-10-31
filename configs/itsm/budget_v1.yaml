@@ -9,6 +9,29 @@
 # checked with real runs before they are relied on.
 
 version: itsm_budget_v1
+
+# Measurement basis per task set. Split v2 (step 6C) adds three
+# EnterpriseOps-Gym-derived train tasks whose seeds are NOT org-sliced. Re-measured
+# on its 45 train/dev tasks: every gold-replay maximum (prompt, response, full
+# sequence, tool call, observation, steps) is unchanged, so no value in this file
+# changes. Unfiltered reads did change: on the derived MSP task the whole 20-org
+# seed is loaded, and three no-argument reads each exceed max_response_length on
+# their own (listed below). Under the full-observation rule such a call ends the
+# episode with truncate("response_length"). Whether to keep this as is is open
+# for the step 6C acceptance (docs/itsm_step6c/README.md); nothing here is
+# declared verified.
+basis:
+  itsm_split_v1:
+    measurements: docs/itsm_step6/token_measurements.json
+  itsm_split_v2:
+    measurements: docs/itsm_step6c/token_measurements_v2.json
+    status: pending_step6c_acceptance
+    values_changed: false
+    # Raw tokens of one call with no arguments (largest per tool), above 12288.
+    unfiltered_reads_over_max_response_length:
+      - {tool: list_incidents, task_id: itsmbench_eops_1d219d93_d1ba6c2d, raw_tokens: 30041}
+      - {tool: get_incidents_assigned_to, task_id: itsmbench_eops_1d219d93_d1ba6c2d, raw_tokens: 30041}
+      - {tool: list_users, task_id: itsmbench_eops_1d219d93_d1ba6c2d, raw_tokens: 15137}
 tokenizer:
   repo: Qwen/Qwen3-8B
   revision: b968826d9c46dd6066d109eabc6255188de91218

@@ -1,13 +1,18 @@
 """Measure ITSM prompt, schema, observation and action token costs on CPU (step 6).
 
 Usage (from the repo root):
-    python scripts/data/measure_itsm_tokens.py --tokenizer-dir DIR [--out FILE]
+    python scripts/data/measure_itsm_tokens.py --tokenizer-dir DIR --split-version V [--out FILE]
 
 DIR holds the pinned Qwen3-8B tokenizer files only (no weights). Episodes are
 scripted gold replays of train/dev tasks through ``ItsmEnv``: they measure the
 environment's side and the length of *gold* tool calls, NOT the length
 distribution of real policy outputs, and user turns are fixed placeholders
 (the user simulator is not called). The held-out split is never read.
+
+``--split-version`` is required (no default): ``itsm_split_v1`` writes
+docs/itsm_step6/token_measurements.json, ``itsm_split_v2`` (adds the three
+EnterpriseOps-Gym-derived train tasks, whose seeds are not org-sliced) writes
+docs/itsm_step6c/token_measurements_v2.json.
 """
 
 from __future__ import annotations
@@ -33,18 +38,16 @@ from enterprise_worlds.environment.environment import _stringify
 from enterprise_worlds.evaluator.text_match_strategy import TextMatchConfig
 from enterprise_worlds.gym.gym_agent import DONE_TOOL_SCHEMA
 
-from agent_rl.data.itsm_split import load_manifest, split_task_ids
+from agent_rl.data.itsm_task_sets import SPLIT_VERSIONS, load_split_manifest, load_task_set, task_ids as split_task_ids
 from agent_rl.envs.itsm_env import ItsmAction, ItsmEnv, ItsmEnvConfig
-from agent_rl.envs.itsm_scoring import (
-    build_task_environment,
-    load_itsm_tasks,
-    score_final_db,
-    task_clock,
-)
+from agent_rl.envs.itsm_scoring import build_task_environment, score_final_db, task_clock
 from agent_rl.prompts.action_prompt import OBSERVATION_PROMPT, build_action_messages
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-DEFAULT_OUT = REPO_ROOT / "docs" / "itsm_step6" / "token_measurements.json"
+DEFAULT_OUT = {
+    "itsm_split_v1": REPO_ROOT / "docs" / "itsm_step6" / "token_measurements.json",
+    "itsm_split_v2": REPO_ROOT / "docs" / "itsm_step6c" / "token_measurements_v2.json",
+}
 TOKENIZER_FILES = (
     "tokenizer.json",
     "tokenizer_config.json",
@@ -150,9 +153,14 @@ def measure_static(renderer: Renderer, policy: str, tools: list[dict[str, Any]])
     }
 
 
-def measure_episode(renderer: Renderer, task_id: str, policy: str) -> dict[str, Any]:
-    task = load_itsm_tasks()[task_id]
-    config = ItsmEnvConfig(task_id=task_id, text_match=TextMatchConfig(strategy="fuzzy"), max_steps=MEASUREMENT_MAX_STEPS)
+def measure_episode(renderer: Renderer, task_id: str, policy: str, split_version: str) -> dict[str, Any]:
+    task = load_task_set(split_version=split_version)[task_id]
+    config = ItsmEnvConfig(
+        task_id=task_id,
+        text_match=TextMatchConfig(strategy="fuzzy"),
+        max_steps=MEASUREMENT_MAX_STEPS,
+        split_version=split_version,
+    )
     started = time.perf_counter()
     env = ItsmEnv(config, user=_PlaceholderUser(), episode_id=f"{task_id}:measure")
     reset = env.reset()
@@ -218,12 +226,18 @@ def measure_episode(renderer: Renderer, task_id: str, policy: str) -> dict[str, 
     }
 
 
-def measure_unfiltered_reads(renderer: Renderer, task_ids: list[str]) -> list[dict[str, Any]]:
-    """Worst-case observations: every read tool that needs no argument, on each
-    train/dev task's sliced DB (largest per tool kept)."""
-    tasks = load_itsm_tasks()
+def measure_unfiltered_reads(
+    renderer: Renderer, task_ids: list[str], split_version: str
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    """Worst-case observations: every read tool that needs no argument, called with
+    no arguments on each train/dev task's DB as that task loads it (org-sliced
+    for Bench2 tasks with ``org_ids``, the whole seed otherwise). Returns the
+    largest result per tool and, per task, its largest result."""
+    tasks = load_task_set(split_version=split_version)
     worst: dict[str, tuple[int, str]] = {}
+    per_task: list[dict[str, Any]] = []
     for task_id in task_ids:
+        largest = (0, "")
         task = tasks[task_id]
         with task_clock(task):
             environment = build_task_environment(task)
@@ -243,27 +257,42 @@ def measure_unfiltered_reads(renderer: Renderer, task_ids: list[str]) -> list[di
                 tokens = renderer.count(text)
                 if tokens > worst.get(name, (0, ""))[0]:
                     worst[name] = (tokens, task_id)
-    return [
+                largest = max(largest, (tokens, name))
+        per_task.append(
+            {
+                "task_id": task_id,
+                "seed_db": task.seed_db,
+                "org_sliced": task.org_ids is not None,
+                "max_raw_observation_tokens": largest[0],
+                "tool": largest[1],
+            }
+        )
+    by_tool = [
         {"tool": name, "max_raw_observation_tokens": tokens, "task_id": task_id}
         for name, (tokens, task_id) in sorted(worst.items(), key=lambda item: -item[1][0])
     ]
+    return by_tool, sorted(per_task, key=lambda item: -item["max_raw_observation_tokens"])
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--tokenizer-dir", type=Path, required=True)
-    parser.add_argument("--out", type=Path, default=DEFAULT_OUT)
+    parser.add_argument("--split-version", choices=SPLIT_VERSIONS, required=True)
+    parser.add_argument("--out", type=Path, default=None)
     args = parser.parse_args()
+    version = args.split_version
+    out = args.out or DEFAULT_OUT[version]
 
     tokenizer = AutoTokenizer.from_pretrained(str(args.tokenizer_dir), trust_remote_code=False)
-    task_ids = split_task_ids("train") + split_task_ids("dev")
-    environment = build_task_environment(load_itsm_tasks()[task_ids[0]])
+    task_ids = split_task_ids("train", split_version=version) + split_task_ids("dev", split_version=version)
+    environment = build_task_environment(load_task_set(split_version=version)[task_ids[0]])
     policy = environment.get_policy()
     tools = environment.get_tool_schemas() + [copy.deepcopy(DONE_TOOL_SCHEMA)]
     renderer = Renderer(tokenizer, tools)
-    manifest = load_manifest()
+    manifest = load_split_manifest(split_version=version)
 
-    episodes = [measure_episode(renderer, task_id, policy) for task_id in task_ids]
+    episodes = [measure_episode(renderer, task_id, policy, version) for task_id in task_ids]
+    unfiltered_by_tool, unfiltered_by_task = measure_unfiltered_reads(renderer, task_ids, version)
     tool_actions = [
         {**a, "task_id": e["task_id"]} for e in episodes for a in e["actions"] if a["kind"] == "tool_call"
     ]
@@ -297,7 +326,9 @@ def main() -> int:
         "observation_rule": "full_tool_results_no_truncation",
         "observation_rule_note": (
             "Every tool result is counted in full, as configs/itsm/budget_v1.yaml requires. "
-            "unfiltered_read_observations shows single results (up to ~10k tokens) that can "
+            "unfiltered_read_observations shows single results (largest: "
+            f"{unfiltered_by_tool[0]['max_raw_observation_tokens']} tokens, "
+            f"{unfiltered_by_tool[0]['tool']} on {unfiltered_by_tool[0]['task_id']}) that can "
             "exhaust the response budget; under this rule such an episode ends with "
             "truncate('response_length') and keeps the full observation in its trace."
         ),
@@ -305,6 +336,11 @@ def main() -> int:
             "split_version": manifest["version"],
             "tasks_measured": task_ids,
             "splits_measured": ["train", "dev"],
+            **(
+                {"derived_tasks_measured": sorted(t for t in task_ids if manifest["tasks"][t]["source"] != "bench2")}
+                if version != "itsm_split_v1"
+                else {}
+            ),
         },
         "machine": {"platform": platform.platform(), "python": sys.version.split()[0], "cpu_count": os.cpu_count()},
         "static": measure_static(renderer, policy, tools),
@@ -325,11 +361,12 @@ def main() -> int:
             "seconds_db_scoring_fuzzy": _summary([e["seconds"]["db_scoring_fuzzy"] for e in episodes]),
         },
         "longest_tool_calls": sorted(tool_actions, key=lambda a: -a["generated_tokens"])[:10],
-        "unfiltered_read_observations": measure_unfiltered_reads(renderer, task_ids),
+        "unfiltered_read_observations": unfiltered_by_tool,
+        **({"unfiltered_read_max_by_task": unfiltered_by_task} if version != "itsm_split_v1" else {}),
         "episodes": episodes,
     }
-    args.out.parent.mkdir(parents=True, exist_ok=True)
-    args.out.write_text(json.dumps(result, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(json.dumps(result, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     print(json.dumps(result["static"] | result["summary"], indent=1))
     return 0
 

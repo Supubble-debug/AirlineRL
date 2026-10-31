@@ -1,6 +1,6 @@
 {
   "version": "itsm_eops_pilot_v1",
-  "status": "pilot; not part of Bench2 tasks.json or of split v1; inclusion in a train split v2 awaits acceptance",
+  "status": "pilot; not part of Bench2 tasks.json or of split v1; the 3 tasks were accepted into train of split v2 on 2026-10-30 (configs/data/itsm_split_v2.json); the 5 isolated stay isolated",
   "source": {
     "repo": "https://github.com/ServiceNow/EnterpriseOps-Gym",
     "commit": "271f2c357f763376997dfd16807fcde2474ae41b",

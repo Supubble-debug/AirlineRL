@@ -152,8 +152,8 @@ def link_reason(a: TaskFeatures, b: TaskFeatures) -> str | None:
     return None
 
 
-def build_families(features: dict[str, TaskFeatures]) -> dict[str, tuple[str, ...]]:
-    """Connected components of the link graph, named via ``FAMILY_LABELS``."""
+def connected_components(features: dict[str, TaskFeatures]) -> list[tuple[str, ...]]:
+    """Connected components of the link graph, each sorted, ordered by first task ID."""
     parent = {task_id: task_id for task_id in features}
 
     def root(task_id: str) -> str:
@@ -168,12 +168,17 @@ def build_families(features: dict[str, TaskFeatures]) -> dict[str, tuple[str, ..
     components: dict[str, list[str]] = collections.defaultdict(list)
     for task_id in sorted(features):
         components[root(task_id)].append(task_id)
+    return sorted(tuple(members) for members in components.values())
+
+
+def build_families(features: dict[str, TaskFeatures]) -> dict[str, tuple[str, ...]]:
+    """Connected components of the link graph, named via ``FAMILY_LABELS``."""
     families = {}
-    for members in components.values():
+    for members in connected_components(features):
         anchor = members[0]
         if anchor not in FAMILY_LABELS:
-            raise ValueError(f"family anchored at {anchor} has no curated label: {members}")
-        families[FAMILY_LABELS[anchor][0]] = tuple(members)
+            raise ValueError(f"family anchored at {anchor} has no curated label: {list(members)}")
+        families[FAMILY_LABELS[anchor][0]] = members
     if set(FAMILY_LABELS) != {members[0] for members in families.values()}:
         raise ValueError("FAMILY_LABELS no longer matches the computed families")
     return dict(sorted(families.items()))
@@ -335,19 +340,75 @@ def build_manifest(seed: int = SPLIT_SEED) -> dict[str, Any]:
     }
 
 
-def validate_manifest(manifest: dict[str, Any]) -> None:
-    """Raise if the splits overlap, miss a task, split a family, or the data changed."""
-    all_ids = {task["id"] for task in load_raw_tasks()}
-    split_sets = {split: set(manifest["splits"][split]) for split in SPLITS}
-    for a, b in itertools.combinations(SPLITS, 2):
-        if split_sets[a] & split_sets[b]:
-            raise ValueError(f"splits {a} and {b} overlap")
-    if set().union(*split_sets.values()) != all_ids:
-        raise ValueError("splits do not cover exactly the task suite")
+def _duplicates(values: list[str]) -> list[str]:
+    return sorted(value for value, n in collections.Counter(values).items() if n > 1)
+
+
+def validate_split_structure(manifest: dict[str, Any], expected_ids: set[str]) -> None:
+    """Raise unless the split lists, the per-task map and the families agree.
+
+    Checked independently of each other, so a manifest edited in one place only
+    (e.g. two IDs swapped between split lists) is rejected: no duplicate or
+    missing ID in any list, lists pairwise disjoint and covering exactly
+    ``expected_ids``; the per-task map has exactly those IDs and each task's
+    ``split`` names the list holding it; every task is in exactly one family, whose
+    name its ``family`` field gives, and every family lies in the split it declares.
+    """
+    if set(manifest["splits"]) != set(SPLITS):
+        raise ValueError(f"split lists must be exactly {list(SPLITS)}")
+    home: dict[str, str] = {}
+    for split in SPLITS:
+        listed = list(manifest["splits"][split])
+        if duplicated := _duplicates(listed):
+            raise ValueError(f"split {split} lists {duplicated} more than once")
+        for task_id in listed:
+            if task_id in home:
+                raise ValueError(f"task {task_id} is in splits {home[task_id]} and {split}")
+            home[task_id] = split
+    if missing := sorted(expected_ids - set(home)):
+        raise ValueError(f"split lists omit {missing}")
+    if extra := sorted(set(home) - expected_ids):
+        raise ValueError(f"split lists contain unknown tasks {extra}")
+    tasks = manifest["tasks"]
+    if set(tasks) != expected_ids:
+        raise ValueError(
+            f"task map differs from the task suite: missing {sorted(expected_ids - set(tasks))}, "
+            f"unknown {sorted(set(tasks) - expected_ids)}"
+        )
+    for task_id, entry in tasks.items():
+        if entry["split"] != home[task_id]:
+            raise ValueError(
+                f"task {task_id}: map says {entry['split']} but it is listed in {home[task_id]}"
+            )
+    family_of: dict[str, str] = {}
     for family, entry in manifest["families"].items():
-        homes = {manifest["tasks"][t]["split"] for t in entry["tasks"]}
+        members = list(entry["tasks"])
+        if duplicated := _duplicates(members):
+            raise ValueError(f"family {family} lists {duplicated} more than once")
+        for task_id in members:
+            if task_id not in tasks:
+                raise ValueError(f"family {family} has unknown task {task_id}")
+            if task_id in family_of:
+                raise ValueError(f"task {task_id} is in families {family_of[task_id]} and {family}")
+            family_of[task_id] = family
+        homes = {tasks[t]["split"] for t in members}
         if homes != {entry["split"]}:
-            raise ValueError(f"family {family} straddles splits {sorted(homes)}")
+            raise ValueError(f"family {family} straddles splits {sorted(homes)} (declares {entry['split']})")
+    if missing := sorted(expected_ids - set(family_of)):
+        raise ValueError(f"tasks {missing} belong to no family")
+    for task_id, entry in tasks.items():
+        if entry["family"] != family_of[task_id]:
+            raise ValueError(
+                f"task {task_id}: map says family {entry['family']} but {family_of[task_id]} lists it"
+            )
+
+
+def validate_manifest(manifest: dict[str, Any]) -> None:
+    """Raise if the v1 manifest is inconsistent (see ``validate_split_structure``),
+    is not v1, or the Bench2 data changed."""
+    if manifest.get("version") != SPLIT_VERSION:
+        raise ValueError(f"expected {SPLIT_VERSION}, got {manifest.get('version')!r}")
+    validate_split_structure(manifest, {task["id"] for task in load_raw_tasks()})
     if manifest["data"] != data_version():
         raise ValueError("task data changed since the manifest was frozen")
 

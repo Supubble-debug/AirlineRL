@@ -420,7 +420,10 @@ def build(ref: Path) -> dict:
         isolated.append({**item, "upstream_user_prompt_sha256": _sha256(row["user_prompt"].encode("utf-8"))})
     return {
         "version": PILOT_VERSION,
-        "status": "pilot; not part of Bench2 tasks.json or of split v1; inclusion in a train split v2 awaits acceptance",
+        "status": (
+            "pilot; not part of Bench2 tasks.json or of split v1; the 3 tasks were accepted into "
+            "train of split v2 on 2026-10-30 (configs/data/itsm_split_v2.json); the 5 isolated stay isolated"
+        ),
         "source": SOURCE,
         "tasks": tasks,
         "isolated": isolated,

@@ -14,7 +14,8 @@
 | 5：生命周期与隔离 | 用户认可（含第 1 次补修，提交 `b067d90`） | 2026-10-30 用户原话：“第 5 步及补修 b067d90 验收通过。记录本条批准，现在仅执行第 6 步：数据划分与预算冻结。” |
 | 6：数据划分与预算冻结 | **收尾待验收**（划分已选 v1） | 未批准。2026-10-30 用户原话：“第 6 步划分选择 v1：train 29 / dev 13 / held-out 11。暂不最终验收，不进入第 7 步。仅完成以下收尾”（实验定位、checkpoint 规则、无损紧凑序列化对照、40,960 待验证、不裁剪观察）。 |
 | 6A：EnterpriseOps-Gym ITSM 扩展可行性审计 | **待验收** | 未批准。2026-10-30 用户原话：“暂不进入第 7 步，也不修改现有 v1 划分。现在仅执行新增的第 6A 步：EnterpriseOps-Gym ITSM 扩展可行性审计。……只提交审计报告和试点清单，等待我验收后再执行第 6B 步。” 第 6 步仍为收尾待验收。 |
-| 6B：EnterpriseOps-Gym ITSM 迁移试点 | **待确认**（3 题通过、5 题隔离） | 未批准。2026-10-30 用户原话：“规模决策：本轮仅做 6B，最多迁移推荐清单中的 8 题……完成后提交逐题验收结果，等待确认，不自动扩大规模。” 6A 视为随本条进入 6B；第 6 步仍为收尾待验收。 |
+| 6B：EnterpriseOps-Gym ITSM 迁移试点 | 用户认可（3 题通过、5 题继续隔离） | 2026-10-30 用户原话：“第 6B 步验收通过。批准将以下三题纳入训练集 v2：itsmbench_eops_46ca2862_b6ef60ca、itsmbench_eops_66392a82_52c8290e、itsmbench_eops_1d219d93_d1ba6c2d。其余五题继续隔离……现在仅执行第 6C 步：数据与预算整合。” |
+| 6C：数据与预算整合 | **待验收**（测试通过 ≠ 验收） | 未批准。2026-10-30 用户原话：“现在仅执行第 6C 步：数据与预算整合。……完成后提交v2、测量结果与验证证据，等待验收，不进入第7步。” |
 | 7 及以后 | 未开始 | — |
 
 ## 运行环境
@@ -295,3 +296,19 @@
 - 运行：`build_itsm_eops_pilot.py --check` 结果为 up to date；`validate_itsm_eops_pilot.py` 退出码 0；测试日志见 `/home/sar/work/EnterGym/output/itsm-step6b/`。
 - 没有启动 GPU，没有调用 LLM，没有扩大规模；纳入训练集 v2 待确认。
 
+## 第 6C 步证据
+
+- 说明：`docs/itsm_step6c/README.md`；v2 manifest：`configs/data/itsm_split_v2.json`（train 32 / dev 13 / held-out 11）；v1 manifest 保留未改（sha256 `77cc5519…`）。
+- 改动：
+  - 新增 `src/agent_rl/data/itsm_split_v2.py`、`src/agent_rl/data/itsm_task_sets.py`、`scripts/data/build_itsm_split_v2.py`；
+  - `itsm_split.py`：抽出 `connected_components`，新增共用的 `validate_split_structure`（v1 校验也一并收紧，v1 文件不变）；
+  - `ItsmEnvConfig.split_version`（默认 `None`，行为不变）；worker 子进程按 config 解析任务；
+  - `measure_itsm_tokens.py` 增加必填参数 `--split-version`，并按题记录未过滤读取上界；
+  - `budget_v1.yaml` 新增 `basis` 段，数值未改；试点文件 `status` 一行更新。
+  - Bench2、评分、业务工具、隔离的 5 题均未改动。
+- 结果：
+  - 家族重算后，两个 v1 train 家族合并（30 题），另新增 1 个家族，其余 9 个家族不变；
+  - gold 路径的 token 最大值全部不变；
+  - `1d219d93` 加载整个 MSP 种子，3 个未过滤读取单次超过 `max_response_length`（最大 30,041）。预算处理方案待验收（建议保持现状）。
+- 测试：新增 47 项；全量回归 655 passed。日志见 `/home/sar/work/EnterGym/output/itsm-step6c/`。
+- 没有启动 GPU，没有加载权重，没有调用真实 LLM，没有进入第 7 步。

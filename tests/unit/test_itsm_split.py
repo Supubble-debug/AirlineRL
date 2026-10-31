@@ -109,7 +109,10 @@ def test_manifest_records_data_checksums() -> None:
     assert files["tasks.json"].startswith("e82c54a25edf334e")
 
 
-@pytest.mark.parametrize("tamper", ["overlap", "missing", "family_split", "data"])
+@pytest.mark.parametrize(
+    "tamper",
+    ["overlap", "missing", "family_split", "data", "swap_lists_only", "duplicate_in_list", "family_field"],
+)
 def test_validation_rejects_a_tampered_manifest(tamper: str) -> None:
     manifest = copy.deepcopy(MANIFEST)
     task = MANIFEST["families"]["incident_hold_and_notify"]["tasks"][0]
@@ -119,6 +122,13 @@ def test_validation_rejects_a_tampered_manifest(tamper: str) -> None:
         manifest["splits"]["dev"].remove(task)
     elif tamper == "family_split":
         manifest["tasks"][task]["split"] = "train"
+    elif tamper == "swap_lists_only":
+        train, dev = manifest["splits"]["train"], manifest["splits"]["dev"]
+        train[0], dev[0] = dev[0], train[0]
+    elif tamper == "duplicate_in_list":
+        manifest["splits"]["dev"].append(task)
+    elif tamper == "family_field":
+        manifest["tasks"][task]["family"] = "incident_resolve"
     else:
         manifest["data"]["files_sha256"]["tasks.json"] = "0" * 64
 
