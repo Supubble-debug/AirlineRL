@@ -1,0 +1,59 @@
+# ITSM 划分 v3 提案（只是提案，未生成 manifest）
+
+状态：随第 6D-1 步提交，等待你决定。v1（`configs/data/itsm_split_v1.json`）和 v2（`configs/data/itsm_split_v2.json`）都不改；获批前不会生成 `itsm_split_v3.json`，任何代码也不会读取 v3。
+
+依据：`docs/itsm_step6d/candidate_screening.json` 的 `v3_inputs`，以及 README §4。
+
+## 1. 为什么需要 v3
+
+- **held-out 只有 11 题**：按任务计的标准误约 0.15（p = 0.5 时）。实验之间的差异如果小于这个量级，就无法区分。
+- **v2 只能扩充 train**：45 道上游题连着 dev/held-out 家族，进 train 会污染评测，进 dev/held-out 又等于修改评测集，所以必须新建一个版本。
+- **时机**：目前还没有任何模型在 dev 或 held-out 上运行过（第 7、8 步都没开始）。在 E0 基线之前按预先定好的规则冻结 held-out，可以确保选题不受模型结果影响。
+
+## 2. 原则
+
+1. **不移动已有任务**：v2 的 56 题保持原划分。v3 只**新增**任务，只增不移。
+2. **新增 held-out 题按结构规则整体选入**：凡是通过门槛（见下）、通过人工审读、并在 6D-2 式验收中 gold DB=1 的候选，全部进入，不按难度或"看起来合适"挑选。规则在任何模型运行之前固定。
+   - 门槛：对照 v2 train 加上获批批次，不连 train/dev 家族；与任何 train 任务共享写工具 ≤ 1、共享实体 < 2；不是近重复；验证器可用。
+3. **家族不跨划分**：新增题如果连到已有的 held-out 家族，就随该家族进入 held-out。一题连着多个 held-out 家族时，这些家族在 v3 中合并（仍全部在 held-out），合并情况要记录下来。
+4. **dev 不扩充同一工作流**：dev 现有 13 题里有 12 道是 `incident_hold_and_notify`。上游可用于 dev 的 18 题全部属于这个家族，不加入。dev 继续只用于调试和检查长度，不用来挑 checkpoint。
+5. **held-out 用途不变**：只用于最终的冻结评测，不用于调试、调参或挑 checkpoint。
+
+## 3. 可用量（自动门槛，尚未人工审读）
+
+| 去向 | 候选 | 题数 | 说明 |
+|---|---|---|---|
+| held-out：并入 `service_retirement`（目前 1 题） | `0be70e35_0916fba8`、`99ba2325_54f35603`、`99ba2325_ae6b0778`、`c5ca08eb_3c4271f0` | 4 | 服务和 offering 状态更新。可以补强目前最薄弱的 held-out 家族 |
+| held-out：并入 `problem_from_incident_and_change_mapping`（目前 5 题） | `66392a82_ccb66a9a`、`78a5b71e_cab5cc9f`、`97d7df7d_ece487bd`、`99ba2325_dd71c332` | 4 | 建问题单。`ece487bd` 同时连 `service_retirement`，会把两个 held-out 家族合并 |
+| dev | — | 0 | 见原则 4 |
+| 新的独立 held-out 家族 | — | 0 | 上游题库里没有，需要新写任务 |
+
+**规模**：held-out 最多从 11 题增加到 19 题，标准误降到约 0.11；held-out 家族数不变，如果 `ece487bd` 引起合并，还会少一个。8 题里有 6 题在 MSP 种子上，MSP 的切分范围和 delta 处理同第 6D 步。
+
+**冲突**：`99ba2325_ae6b0778` 和 `99ba2325_54f35603` 同时也是"放宽训练侧门槛"之后的 train 候选（README §4.1），只能二选一。建议放进 held-out，因为 `service_retirement` 只有 1 题。
+
+## 4. 新写 held-out 任务（可选，规模更大时需要）
+
+上游题库无法提供新的独立 held-out 家族。如果希望 held-out 覆盖更多工作流（例如账号锁定的 §10 身份核验流程、SLA 违约升级 §6），需要新写 Bench2 原生任务。做法建议：
+
+1. 先确定工作流清单，并确认它们与 train 家族不连边；
+2. 再写任务；
+3. 最后整体放入 held-out。
+
+写这些任务的人不应该参考任何模型在这些工作流上的表现。
+
+## 5. 如果获批，执行步骤
+
+1. 对第 3 节的 8 题做人工审读和转换，验收标准同 6D-2：gold DB=1、反例、信息边界。审读不通过的题隔离并写明原因，不替换成别的题。
+2. 生成 `itsm_split_v3.json`：
+   - v2 的 56 题加上获批的 train 批次，再加上新增的 held-out 题；
+   - 重算家族，dev 和原有 held-out 成员只能增加，不能减少或移动；
+   - 记录 v1、v2 manifest 的 sha256。
+3. 测量 token 时不读取 held-out，与 v1、v2 相同。
+4. 在第 8 步 E0 之前冻结 v3。冻结之后，held-out 的任何改动都要新建版本，并说明原因。
+
+## 6. 需要你决定
+
+- 是否建立 v3，以及 held-out 是否采用"按结构规则整体选入"的方式。
+- 两道有冲突的服务目录题放进 held-out（建议）还是 train。
+- 是否另立一步来新写 held-out 任务，以获得新的独立工作流家族。

@@ -15,7 +15,8 @@
 | 6：数据划分与预算冻结 | **收尾待验收**（划分已选 v1） | 未批准。2026-10-30 用户原话：“第 6 步划分选择 v1：train 29 / dev 13 / held-out 11。暂不最终验收，不进入第 7 步。仅完成以下收尾”（实验定位、checkpoint 规则、无损紧凑序列化对照、40,960 待验证、不裁剪观察）。 |
 | 6A：EnterpriseOps-Gym ITSM 扩展可行性审计 | **待验收** | 未批准。2026-10-30 用户原话：“暂不进入第 7 步，也不修改现有 v1 划分。现在仅执行新增的第 6A 步：EnterpriseOps-Gym ITSM 扩展可行性审计。……只提交审计报告和试点清单，等待我验收后再执行第 6B 步。” 第 6 步仍为收尾待验收。 |
 | 6B：EnterpriseOps-Gym ITSM 迁移试点 | 用户认可（3 题通过、5 题继续隔离） | 2026-10-30 用户原话：“第 6B 步验收通过。批准将以下三题纳入训练集 v2：itsmbench_eops_46ca2862_b6ef60ca、itsmbench_eops_66392a82_52c8290e、itsmbench_eops_1d219d93_d1ba6c2d。其余五题继续隔离……现在仅执行第 6C 步：数据与预算整合。” |
-| 6C：数据与预算整合 | **待验收**（测试通过 ≠ 验收） | 未批准。2026-10-30 用户原话：“现在仅执行第 6C 步：数据与预算整合。……完成后提交v2、测量结果与验证证据，等待验收，不进入第7步。” |
+| 6C：数据与预算整合 | **待验收**（测试通过 ≠ 验收） | 未批准。2026-10-30 用户原话：“现在仅执行第 6C 步：数据与预算整合。……完成后提交v2、测量结果与验证证据，等待验收，不进入第7步。” 2026-10-30 用户原话：“第6C步验收结果保留，但暂不开始完整第7步。”（原话未写“验收通过”；6C README §3.3 的预算选项 A–D 也未明确选择，状态按原话记录，不由 agent 推断。） |
+| 6D-1：EnterpriseOps-Gym 下一批候选筛选与规模方案 | **待验收**（测试通过 ≠ 验收） | 未批准。2026-10-30 用户原话：“新增第6D步：继续扩充正式实验数据。本轮先只做6D-1候选筛选，不直接迁移全部任务。……提交候选清单和规模方案后停止，等待验收。不自动改政策，不放行已隔离题，不启动正式评测或训练。”同条消息允许无法原生迁移的题作为“Bench2 改编任务候选”处理（新标识、记录每项改动原因、保留原题与验证器溯源、不宣称等价），并说明“具体怎么做交给你把关”。 |
 | 7 及以后 | 未开始 | — |
 
 ## 运行环境
@@ -312,3 +313,16 @@
   - `1d219d93` 加载整个 MSP 种子，3 个未过滤读取单次超过 `max_response_length`（最大 30,041）。预算处理方案待验收（建议保持现状）。
 - 测试：新增 47 项；全量回归 655 passed。日志见 `/home/sar/work/EnterGym/output/itsm-step6c/`。
 - 没有启动 GPU，没有加载权重，没有调用真实 LLM，没有进入第 7 步。
+
+## 第 6D-1 步证据
+
+- 产物与全部依据：`docs/itsm_step6d/README.md`；重划分提案 `docs/itsm_step6d/v3_proposal.md`（只是提案，未生成 manifest）。
+- 改动：新增 `scripts/data/screen_itsm_eops_candidates.py`、`docs/itsm_step6d/candidate_screening.json`、`tests/unit/test_itsm_eops_screening.py`（13 项）。Bench2、policy、评分、环境、v1/v2 manifest、试点文件均未修改；已隔离的 5 题不在候选范围内。
+- 结果：95 个候选中 34 题通过训练侧门槛（按 v2 重算），逐题人工审读后：入选 10（8 道忠实迁移、2 道 Bench2 改编，均只进训练侧）、备选 2、排除 12、暂缓 4、等待 D6D-1 决定 6。入选 10 题两两不连家族，新覆盖 `update_notification`、`remove_group_membership`。
+- 待决定：D6D-1（MSP 建事件单的 SLA 生成规则）、D6D-2（建用户类派生题是否沿用 Bench2 原题不写 `user_role` 的口径），以及 2 号、5 号题的非惯例切分范围。
+- 规模：只靠上游题库，train 现实上限约 50–55（需 D6D-1 与一次门槛放宽）；60–70 需新写任务。held-out 最多 11 → 19，只能扩充已有 held-out 家族。
+- 运行（在 `code/main` 下，日志在 `/home/sar/work/EnterGym/output/itsm-step6d/`）：
+  - `python scripts/data/screen_itsm_eops_candidates.py --tokenizer-dir ~/.cache/entergym/tokenizers/Qwen3-8B-b968826d --check`：up to date（`screen_check.log`）；
+  - `pytest tests/unit/test_itsm_eops_screening.py`：13 passed；`pytest tests/unit tests/remote -q`：668 passed（`pytest_full.log`）；v1、v2 的 `--check` 均为 up to date。
+- 没有转换任何题，没有启动 GPU，没有加载权重，没有调用 LLM，没有进入第 7 步或 6D-2。
+
