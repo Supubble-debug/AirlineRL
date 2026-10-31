@@ -1,6 +1,6 @@
 # ITSM 划分 v3 提案（只是提案，未生成 manifest）
 
-状态：随第 6D-1 步提交，等待你决定。v1（`configs/data/itsm_split_v1.json`）和 v2（`configs/data/itsm_split_v2.json`）都不改；获批前不会生成 `itsm_split_v3.json`，任何代码也不会读取 v3。
+状态：2026-10-30 用户同意继续准备 v3：两道服务目录题（`99ba2325_ae6b0778`、`99ba2325_54f35603`）优先作为 held-out 候选，验证完成后再冻结，v1/v2 不改（原话见 `README.md` §6）。本轮只做 6D-2 的 7 题，v3 的候选审读和 manifest 都还没有开始。v1（`configs/data/itsm_split_v1.json`）和 v2（`configs/data/itsm_split_v2.json`）都不改；获批前不会生成 `itsm_split_v3.json`，任何代码也不会读取 v3。
 
 依据：`docs/itsm_step6d/candidate_screening.json` 的 `v3_inputs`，以及 README §4。
 

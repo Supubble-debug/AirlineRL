@@ -41,7 +41,7 @@ def test_same_tokenizer_and_full_observation_rule() -> None:
 
 
 def test_budget_values_still_cover_the_v2_gold_path() -> None:
-    assert BASIS["values_changed"] is False and BASIS["status"] == "pending_step6c_acceptance"
+    assert BASIS["values_changed"] is False and BASIS["status"] == "accepted_step6c_option_a"
     assert TRAIN["max_prompt_length"] >= SUMMARY["initial_prompt_tokens"]["max"] + 256
     assert TRAIN["max_response_length"] >= 2 * SUMMARY["response_tokens_gold_replay"]["max"]
     assert TRAIN["max_action_tokens"] >= 2 * SUMMARY["generated_tokens_per_tool_call"]["max"]
