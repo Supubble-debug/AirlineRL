@@ -18,7 +18,7 @@
 | 6C：数据与预算整合 | 用户认可；预算选项 A（完整观察，超长时以 response_length 结束）；40,960 仍待验证 | 2026-10-30 先有用户原话：“第6C步验收结果保留，但暂不开始完整第7步。”随后用户原话：“第6C已验收通过，预算选项为A，40,960仍待验证。” |
 | 6D-1：EnterpriseOps-Gym 下一批候选筛选与规模方案 | 用户部分批准：第 1–4、6–8 题进入 6D-2 验证；第 5、9、10 题暂缓；D6D-1、D6D-2 均选 ①；门槛不放宽 | 2026-10-30 用户原话：“本轮仅批准第1–4、6–8题进入6D-2迁移验证，不保证最终全部纳入。第5、9、10题暂缓，不改政策、不制定MSP SLA全局规则，不沿用省略user_role的口径，不放宽共享写工具门槛。……提交6D-1报告及本条决定后，仅完成上述7题的6D-2验证，按既定逐题标准提交结果，失败则隔离。不为凑数放宽标准，不自动扩大规模或启动训练。”全文见 `docs/itsm_step6d/README.md` §6。 |
 | 6D-2：7 题迁移验证 | 用户认可：第 1、3、6、7 题作为 v3 新增训练题（train 目标 32 → 36）；第 2、4、8 题继续隔离；不授权重新设计第 4 题 | 2026-10-30 用户原话：“第 6D-2 验收通过。一、数据决定 1. 批准第 1、3、6、7 题作为 v3 新增训练题，训练集目标规模由 32 增至 36。2. v1/v2 不改；本次批准不等于 v3 最终验收或冻结。3. 第 2、4、8 题继续隔离。4. 暂不授权重新设计第 4 题，不修改 D8、fuzzy 阈值、policy 或评分。5. 第 5、9、10 题及其他备选题继续暂缓，不扩大训练候选范围。” |
-| 6D-3：v3 held-out 候选审读与迁移验证 | **进行中** | 2026-10-30 用户原话（同一条消息）：“二、只执行第 6D-3：v3 held-out 候选审读与迁移验证。范围限定为 docs/itsm_step6d/v3_proposal.md 已列出的 8 道候选。两道服务目录题继续优先保留给 held-out，不转入 train。……不通过的候选隔离并记录理由，不另找题替补，不放宽门槛。不运行模型，不用 held-out 调试长度、预算或模型配置。……本步先不生成正式 v3 manifest，不开始第 7 步，不启动 GPU、不调用真实 LLM、不做 SFT 或训练。完成后停止，等待我检验确认。” |
+| 6D-3：v3 held-out 候选审读与迁移验证 | **待验收**（测试通过 ≠ 验收）：1 题通过（`99ba2325_54f35603`），7 题隔离；held-out 预期 11 → 12 | 2026-10-30 用户原话（同一条消息）：“二、只执行第 6D-3：v3 held-out 候选审读与迁移验证。范围限定为 docs/itsm_step6d/v3_proposal.md 已列出的 8 道候选。两道服务目录题继续优先保留给 held-out，不转入 train。……不通过的候选隔离并记录理由，不另找题替补，不放宽门槛。不运行模型，不用 held-out 调试长度、预算或模型配置。……本步先不生成正式 v3 manifest，不开始第 7 步，不启动 GPU、不调用真实 LLM、不做 SFT 或训练。完成后停止，等待我检验确认。” |
 | 7 及以后 | 未开始 | — |
 
 ## 运行环境
@@ -352,4 +352,24 @@
   - 批次文件、试点文件、v1、v2、筛选结果的 `--check` 均为 up to date；
   - `pytest tests/unit tests/remote -q`：695 passed（`pytest_full.log`），跑完没有残留子进程。
 - 没有把任何题并入划分，没有启动 GPU，没有加载权重，没有调用 LLM，没有处理暂缓的第 5、9、10 题，也没有开始 v3 的审读。
+
+## 第 6D-3 步证据
+
+- 准入规则：转换之前写定并推送（`3c7e2b7`，`docs/itsm_step6d3/README.md` §1），之后没有改动。规则比 v3 提案更严：共享写工具和实体也对照 dev；实体按 gold 参数计；核心自由文本要求必须有"只改关键事实"的反例。
+- 产物与逐题结论：`docs/itsm_step6d3/README.md`；候选文件 `configs/data/itsm_eops_heldout_v3_candidates.json`；验证结果 `docs/itsm_step6d3/heldout_validation.json`。
+- 改动：新增 `src/agent_rl/data/itsm_eops_heldout_v3.py`、`scripts/data/build_itsm_eops_heldout_v3.py`、`scripts/data/validate_itsm_eops_heldout_v3.py`、`tests/unit/test_itsm_eops_heldout_v3.py`（17 项）。Bench2、policy、D8、fuzzy 阈值、评分、v1/v2 manifest、预算、已有批次文件均未修改。
+- 结果：
+  - **通过 1 题**：`99ba2325_54f35603`（SAP ERP：不退役，设为 non-operational）。全部检查通过：5 个核心反例 DB=0；判断量在切分范围内与不切分时都是 4；单独成为一个新的 held-out 家族。
+  - **转换后隔离 3 题**：第 1、5、7 题，核心自由文本要求的关键事实反例得到 DB=1（召回率 0.64–0.90，阈值 0.5）；第 7 题另与 train 共享 2 个 gold 实体。
+  - **转换前隔离 4 题**：
+    - 第 3 题：prompt 自相矛盾，事件单不唯一；
+    - 第 4 题：上游要求关闭 new 状态的事件单，违反 §3.3，也不是 prompt 的要求；
+    - 第 6 题：逐字消息与验证器不一致，验证器要求 sent 状态；
+    - 第 8 题：`$9,50` 有歧义。
+- v3 预期规模（如果你验收本步）：train 36、dev 13、held-out 12（7 个家族）。没有生成 v3 manifest。
+- 统计表述已更正（6D-1 README §4.2、`v3_proposal.md`）：撤回独立二项标准误和"小于标准误就无法区分"的说法。
+- 运行（在 `code/main` 下，日志在 `/home/sar/work/EnterGym/output/itsm-step6d3/`）：
+  - 候选文件、6D-2 批次、试点文件、v1、v2、筛选结果的 `--check` 均为 up to date；
+  - `pytest tests/unit tests/remote -q`：712 passed（`pytest_full.log`），跑完没有残留子进程。
+- 没有测量 held-out 候选的 token，没有运行模型，没有启动 GPU，没有调用 LLM，没有做 SFT 或训练，没有开始第 7 步。
 

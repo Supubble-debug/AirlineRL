@@ -1,0 +1,1305 @@
+{
+  "version": "itsm_eops_heldout_v3_candidates_v1",
+  "status": "step 6D-3 held-out candidates for split v3; not part of Bench2 tasks.json or of any split; no v3 manifest exists; inclusion needs the user's acceptance",
+  "source": {
+    "repo": "https://github.com/ServiceNow/EnterpriseOps-Gym",
+    "commit": "271f2c357f763376997dfd16807fcde2474ae41b",
+    "hf_dataset": "ServiceNow-AI/EnterpriseOps-Gym",
+    "hf_revision": "c8e538eae8a6205294f0a86675fefdc1fac408f6",
+    "license": "Apache-2.0",
+    "attribution": "Adapted from EnterpriseOps-Gym (ServiceNow), Apache-2.0; see Bench2/NOTICE",
+    "mode_used": "oracle"
+  },
+  "approval": {
+    "date": "2026-10-30",
+    "decision": "二、只执行第 6D-3：v3 held-out 候选审读与迁移验证。范围限定为 docs/itsm_step6d/v3_proposal.md 已列出的 8 道候选。……不通过的候选隔离并记录理由，不另找题替补，不放宽门槛。"
+  },
+  "tasks": [
+    {
+      "id": "itsmbench_eops_99ba2325_54f35603",
+      "scenario": {
+        "persona": {
+          "identity": {
+            "user_id": "USER_039",
+            "first_name": "Karen",
+            "last_name": "Watkins",
+            "email": "karen.watkins@servicenow.com",
+            "role": "admin"
+          },
+          "personality": "Careful about retirements; wants the condition checked before anything changes.",
+          "role_description": "ITSM administrator, ServiceNow (provider, ORG_001)",
+          "known_info": {
+            "requester_name": "Karen Watkins",
+            "service": "SAP ERP",
+            "plan": "retire SAP ERP next quarter",
+            "condition": "if more than three incidents on SAP ERP are still ongoing (not resolved or closed), do not retire; set SAP ERP to non-operational instead",
+            "offerings": "all offerings of SAP ERP get the same status as the service"
+          }
+        },
+        "task_description": "You are Karen Watkins, ITSM administrator. You plan to retire the SAP ERP service next quarter. First check whether incidents associated with it are still active. If more than three are ongoing, do not retire it; set the service to non-operational instead and give all of its offerings the same status.",
+        "simulator_guidance": "Open with the retirement plan and the rule: more than three ongoing incidents means no retirement, set non-operational instead, and the same status for all SAP ERP offerings. If asked what counts as ongoing, say any incident that is not resolved or closed, including on-hold ones. Do not ask to touch the incidents. Confirm the agent's plan otherwise. End once the changes are confirmed."
+      },
+      "evaluation_criteria": {
+        "actions": [
+          {
+            "name": "get_user_using_name",
+            "arguments": {
+              "first_name": "Karen",
+              "last_name": "Watkins"
+            }
+          },
+          {
+            "name": "find_service_by_name",
+            "arguments": {
+              "name": "SAP ERP"
+            }
+          },
+          {
+            "name": "list_incidents",
+            "arguments": {
+              "service": "SVC_017"
+            }
+          },
+          {
+            "name": "find_service_offerings",
+            "arguments": {
+              "name": "SAP ERP"
+            }
+          },
+          {
+            "name": "update_service",
+            "arguments": {
+              "service_id": "SVC_017",
+              "status": "non-operational"
+            }
+          },
+          {
+            "name": "update_service_offering",
+            "arguments": {
+              "service_offering_id": "SVCOFF_021",
+              "status": "non-operational"
+            }
+          },
+          {
+            "name": "update_service_offering",
+            "arguments": {
+              "service_offering_id": "SVCOFF_022",
+              "status": "non-operational"
+            }
+          },
+          {
+            "name": "update_service_offering",
+            "arguments": {
+              "service_offering_id": "SVCOFF_038",
+              "status": "non-operational"
+            }
+          }
+        ],
+        "nl_assertions": [
+          "The assistant verifies the operator's identity before making any change.",
+          "The assistant finds four ongoing SAP ERP incidents (INC_001 in progress; INC_044, INC_069, INC_082 on hold) and therefore does not retire the service.",
+          "SAP ERP (SVC_017) is set to non-operational.",
+          "All three SAP ERP offerings (Financials, HR, Logistics) are set to non-operational.",
+          "No incident is changed."
+        ]
+      },
+      "initial_state_delta": {
+        "change_request_mapping": {
+          "CRM_017": {
+            "delete": true
+          }
+        },
+        "problem": {
+          "PRB_011": {
+            "delete": true
+          }
+        },
+        "change": {
+          "CHG_017": {
+            "set": {
+              "status": "scheduled"
+            }
+          }
+        }
+      },
+      "current_time": "2026-01-13T09:00:00",
+      "org_ids": [
+        "ORG_001",
+        "ORG_007",
+        "ORG_016"
+      ],
+      "seed_db": "msp_db.json",
+      "tenancy": {
+        "model": "msp_multi_client"
+      },
+      "route": "faithful",
+      "intended_split": "heldout",
+      "candidate_item": 2,
+      "source": {
+        "repo": "https://github.com/ServiceNow/EnterpriseOps-Gym",
+        "commit": "271f2c357f763376997dfd16807fcde2474ae41b",
+        "hf_dataset": "ServiceNow-AI/EnterpriseOps-Gym",
+        "hf_revision": "c8e538eae8a6205294f0a86675fefdc1fac408f6",
+        "license": "Apache-2.0",
+        "attribution": "Adapted from EnterpriseOps-Gym (ServiceNow), Apache-2.0; see Bench2/NOTICE",
+        "mode_used": "oracle",
+        "upstream_task_id": "task_20260113_031046_703_99ba2325_54f35603",
+        "upstream_user_prompt_sha256": "467d71399617256b83d766d9a9993297958f9e2fd85994c0de3795e7ddab6c04",
+        "upstream_system_prompt_sha256": "e2891a7b98b63800c16bd1bc1219f66d9d7f52ab6e86a0c702d99e3890e87c4f",
+        "upstream_seed": "db_1765893060767_9rwtfbbp7.sql",
+        "upstream_seed_sha256": "65e917166cba0d30d5c2fba2765f266361173af9ee51e31498a0f83dbdc14c2f",
+        "upstream_acting_user": {
+          "user_id": "USER_039",
+          "name": "Karen Watkins",
+          "email": "karen.watkins@servicenow.com"
+        },
+        "upstream_verifiers_raw": 4,
+        "initial_state_vs_upstream": {
+          "compared": "unsliced Bench2 seed + delta vs whole upstream seed (timestamps ignored)",
+          "delta_size_after_bench2_delta": 0,
+          "renamed_ids_same_content": []
+        }
+      },
+      "upstream_verifiers": [
+        {
+          "name": "Verify Service Status",
+          "query": "SELECT COUNT(*) FROM service WHERE service_id = \"SVC_017\" AND status = \"non-operational\";",
+          "expected_value": 1
+        },
+        {
+          "name": "Verify Service Offering Status 1",
+          "query": "SELECT COUNT(*) FROM service_offering WHERE service_offering_id = \"SVCOFF_021\" AND status = \"non-operational\"",
+          "expected_value": 1
+        },
+        {
+          "name": "Verify Service Offering Status 2",
+          "query": "SELECT COUNT(*) FROM service_offering WHERE service_offering_id = \"SVCOFF_022\" AND status = \"non-operational\"",
+          "expected_value": 1
+        },
+        {
+          "name": "Verify Service Offering Status 3",
+          "query": "SELECT COUNT(*) FROM service_offering WHERE service_offering_id = \"SVCOFF_038\" AND status = \"non-operational\"",
+          "expected_value": 1
+        }
+      ],
+      "initial_pass_allowed": {},
+      "core_requirements": [
+        {
+          "id": "no_retirement_when_more_than_three_ongoing",
+          "free_text": false,
+          "negatives": [
+            "retired_instead",
+            "on_hold_not_counted"
+          ]
+        },
+        {
+          "id": "service_non_operational",
+          "free_text": false,
+          "negatives": [
+            "service_not_updated"
+          ]
+        },
+        {
+          "id": "every_offering_same_status",
+          "free_text": false,
+          "negatives": [
+            "one_offering_missed",
+            "offerings_wrong_status"
+          ]
+        }
+      ],
+      "decision_check": {
+        "kind": "active_incidents_for_service",
+        "service": "SVC_017",
+        "expected": 4,
+        "threshold_more_than": 3
+      },
+      "conversion_notes": [
+        "Held-out candidate for split v3; faithful route only. Not part of any split until the user accepts v3.",
+        "Upstream single-turn instruction rewritten as a multi-turn conversation: the operator states the request and reveals facts from known_info when asked; simulator_guidance fixes the answers to clarifications and cascades.",
+        "The agent sees Bench2's task-invariant policy.md, not the upstream per-task system prompt (sha256 recorded in source).",
+        "current_time is 09:00 on the date in the upstream task_id.",
+        "Free text the policy leaves to the operator is given verbatim by the operator in known_info.",
+        "Scoring is Bench2's full-DB comparison; free-text fields use the fuzzy rule (gold content-token recall >= 0.5) and D8. Not equivalent to the EnterpriseOps-Gym evaluation.",
+        "Scope ORG_001 + ORG_007 + ORG_016: the decisive count needs the client incidents INC_044 (ORG_007) and INC_082 (ORG_016). Provider-only scope would show 2 ongoing incidents and flip the decision; the validator checks the count is 4 both in this scope and in the unsliced DB.",
+        "'Ongoing' = state not in {resolved, closed}, as the policy uses 'active' throughout (§3.2, §5.1); on_hold incidents count. The operator confirms this when asked.",
+        "No policy cascade applies to non-operational states; the §5.2 retirement cascades do not apply because the service is not retired."
+      ],
+      "information_boundary": {
+        "policy_visible": [
+          "Bench2 policy.md and the 94 tool schemas (task-invariant)",
+          "fixed greeting",
+          "user simulator messages (known_info facts are revealed only when the user states them)",
+          "real tool results and errors"
+        ],
+        "private": [
+          "scenario.task_description, simulator_guidance, persona.known_info (until stated)",
+          "evaluation_criteria.actions (gold) and nl_assertions",
+          "initial_state_delta, seed_db, current_time, org scope",
+          "upstream task_id, prompt, system prompt and verifiers",
+          "validation_cases"
+        ]
+      },
+      "validation_cases": [
+        {
+          "name": "retired_instead",
+          "kind": "core",
+          "edit": {
+            "set": {
+              "4": {
+                "status": "retired"
+              },
+              "5": {
+                "status": "retired"
+              },
+              "6": {
+                "status": "retired"
+              },
+              "7": {
+                "status": "retired"
+              }
+            }
+          },
+          "bench2_mismatch": "service/SVC_017 status",
+          "upstream_all_pass": false,
+          "reason": "four ongoing incidents block the retirement"
+        },
+        {
+          "name": "on_hold_not_counted",
+          "kind": "core",
+          "edit": {
+            "set": {
+              "4": {
+                "status": "retired"
+              }
+            },
+            "drop": [
+              5,
+              6,
+              7
+            ]
+          },
+          "bench2_mismatch": "service/SVC_017 status",
+          "upstream_all_pass": false,
+          "reason": "counting only in-progress incidents (1) would wrongly allow retiring the service"
+        },
+        {
+          "name": "service_not_updated",
+          "kind": "core",
+          "edit": {
+            "drop": [
+              4
+            ]
+          },
+          "bench2_mismatch": "service/SVC_017 status",
+          "upstream_all_pass": false,
+          "reason": "the service must become non-operational"
+        },
+        {
+          "name": "one_offering_missed",
+          "kind": "core",
+          "edit": {
+            "drop": [
+              7
+            ]
+          },
+          "bench2_mismatch": "service_offering/SVCOFF_038 status",
+          "upstream_all_pass": false,
+          "reason": "all three offerings follow the service"
+        },
+        {
+          "name": "offerings_wrong_status",
+          "kind": "core",
+          "edit": {
+            "set": {
+              "5": {
+                "status": "repair_in_progress"
+              }
+            }
+          },
+          "bench2_mismatch": "service_offering/SVCOFF_021 status",
+          "upstream_all_pass": false,
+          "reason": "offerings take the same status as the service"
+        }
+      ],
+      "approval": {
+        "date": "2026-10-30",
+        "decision": "二、只执行第 6D-3：v3 held-out 候选审读与迁移验证。范围限定为 docs/itsm_step6d/v3_proposal.md 已列出的 8 道候选。……不通过的候选隔离并记录理由，不另找题替补，不放宽门槛。"
+      }
+    }
+  ],
+  "isolated": [
+    {
+      "upstream_task_id": "task_20251222_195853_743_0be70e35_0916fba8",
+      "candidate_item": 1,
+      "reason": "core free-text requirement not discriminated by Bench2 DB scoring",
+      "detail": "Core requirement: the note on INC_006 states the issue is service-wide, recurring and under investigation. Both key-fact negatives score Bench2 DB = 1: the same note calling the issue 'isolated and one-off' (fuzzy recall 0.90) and the note without the investigation sentence (recall 0.70); the threshold is 0.5. The other three core requirements (service and offering status, which incident) are discriminated. D8, the fuzzy threshold and scoring are not changed (user decision).",
+      "upstream_user_prompt_sha256": "c3c28791479bee0a7ff103ab348e19302100b08542eb05394b16f08ce1702452",
+      "attempted_conversion": {
+        "id": "itsmbench_eops_0be70e35_0916fba8",
+        "scenario": {
+          "persona": {
+            "identity": {
+              "user_id": "USER_007",
+              "first_name": "Raj",
+              "last_name": "Patel",
+              "email": "raj.patel@acme.com",
+              "role": "admin"
+            },
+            "personality": "Calm, gives facts when asked, wants clear visibility for support teams.",
+            "role_description": "Administrator (admin role), single-tenant ITSM world",
+            "known_info": {
+              "requester_name": "Raj Patel",
+              "service": "the Email Service",
+              "symptom": "intermittent email delivery delays and failures when accessing shared mailboxes, reported by multiple users",
+              "service_status": "non-operational",
+              "offering_status": "non-operational (that is what 'reduced availability' means here)",
+              "incident_to_note": "the existing 'Critical system outage' incident on the Email Service",
+              "worknote": "Issue confirmed as service-wide and recurring: multiple users report email delivery delays and shared mailbox failures. Root cause investigation is active and the service is under monitoring."
+            }
+          },
+          "task_description": "You are Raj Patel, an administrator. Users report intermittent email delivery delays and failures when accessing shared mailboxes; it is a service-level issue. You want the Email Service's state checked, the impacted offering identified, the Email Service set to non-operational, the impacted offering set to non-operational (reduced availability), and the existing 'Critical system outage' incident on the Email Service updated with your work note.",
+          "simulator_guidance": "Open with the email delivery problem and ask for the Email Service and its impacted offering to be updated and an existing incident noted. If asked which status 'reduced availability' means, say non-operational. If asked which incident, say the 'Critical system outage' incident on the Email Service. Give the work note verbatim from known_info when asked. Do not ask for other changes. Confirm the agent's plan otherwise. End once the changes are confirmed."
+        },
+        "evaluation_criteria": {
+          "actions": [
+            {
+              "name": "get_user_using_name",
+              "arguments": {
+                "first_name": "Raj",
+                "last_name": "Patel"
+              }
+            },
+            {
+              "name": "find_service_by_name",
+              "arguments": {
+                "name": "Email Service"
+              }
+            },
+            {
+              "name": "find_service_offerings",
+              "arguments": {}
+            },
+            {
+              "name": "list_incidents",
+              "arguments": {
+                "service": "SVC_001"
+              }
+            },
+            {
+              "name": "update_service",
+              "arguments": {
+                "service_id": "SVC_001",
+                "status": "non-operational"
+              }
+            },
+            {
+              "name": "update_service_offering",
+              "arguments": {
+                "service_offering_id": "SVCOFF_001",
+                "status": "non-operational"
+              }
+            },
+            {
+              "name": "update_incident",
+              "arguments": {
+                "incident_id": "INC_006",
+                "worknotes": "Issue confirmed as service-wide and recurring: multiple users report email delivery delays and shared mailbox failures. Root cause investigation is active and the service is under monitoring."
+              }
+            }
+          ],
+          "nl_assertions": [
+            "The assistant verifies the operator's identity before making any change.",
+            "The Email Service (SVC_001) is set to non-operational.",
+            "Its offering Outlook Email Access (SVCOFF_001) is set to non-operational.",
+            "The 'Critical system outage' incident (INC_006) gets the operator's work note stating the issue is service-wide, recurring and under investigation."
+          ]
+        },
+        "initial_state_delta": null,
+        "current_time": "2025-12-22T09:00:00",
+        "org_ids": [
+          "ORG_001",
+          "ORG_002"
+        ],
+        "seed_db": "single_tenant_db.json",
+        "tenancy": {
+          "model": "single_tenant"
+        },
+        "route": "faithful",
+        "intended_split": "heldout",
+        "candidate_item": 1,
+        "source": {
+          "repo": "https://github.com/ServiceNow/EnterpriseOps-Gym",
+          "commit": "271f2c357f763376997dfd16807fcde2474ae41b",
+          "hf_dataset": "ServiceNow-AI/EnterpriseOps-Gym",
+          "hf_revision": "c8e538eae8a6205294f0a86675fefdc1fac408f6",
+          "license": "Apache-2.0",
+          "attribution": "Adapted from EnterpriseOps-Gym (ServiceNow), Apache-2.0; see Bench2/NOTICE",
+          "mode_used": "oracle",
+          "upstream_task_id": "task_20251222_195853_743_0be70e35_0916fba8",
+          "upstream_user_prompt_sha256": "c3c28791479bee0a7ff103ab348e19302100b08542eb05394b16f08ce1702452",
+          "upstream_system_prompt_sha256": "e2891a7b98b63800c16bd1bc1219f66d9d7f52ab6e86a0c702d99e3890e87c4f",
+          "upstream_seed": "db_1765301900121_3mwjj54xy.sql",
+          "upstream_seed_sha256": "99f193904ef9c1f06c3ecff48000697653f178d6300c70e86d34d5a17081e3a4",
+          "upstream_acting_user": {
+            "user_id": "USER_007",
+            "name": "Raj Patel",
+            "email": "raj.patel@acme.com"
+          },
+          "upstream_verifiers_raw": 4,
+          "initial_state_vs_upstream": {
+            "compared": "unsliced Bench2 seed + delta vs whole upstream seed (timestamps ignored)",
+            "delta_size_after_bench2_delta": 0,
+            "renamed_ids_same_content": [
+              "user_group_member/MEMBER_001->MEM_001",
+              "user_group_member/MEMBER_002->MEM_002",
+              "user_group_member/MEMBER_003->MEM_003",
+              "user_group_member/MEMBER_004->MEM_004",
+              "user_group_member/MEMBER_005->MEM_005"
+            ]
+          }
+        },
+        "upstream_verifiers": [
+          {
+            "name": "Verify Service Status",
+            "query": "SELECT COUNT(*) FROM service WHERE service_id = 'SVC_001' AND status = 'non-operational';",
+            "expected_value": 1
+          },
+          {
+            "name": "Verify Service Offering Status",
+            "query": "SELECT COUNT(*) FROM service_offering WHERE service_offering_id = 'SVCOFF_001' AND status = 'non-operational';",
+            "expected_value": 1
+          },
+          {
+            "name": "Verify Incident Status",
+            "query": "SELECT COUNT(*) FROM incident WHERE incident_id = 'INC_006' AND status = 'in_progress';",
+            "expected_value": 1
+          },
+          {
+            "name": "Verify Incident Worknotes",
+            "query": "SELECT COUNT(*) FROM incident WHERE incident_id = 'INC_006' AND LOWER(worknotes) LIKE '%issue%' AND LOWER(worknotes) LIKE '%confirmed%' AND LOWER(worknotes) LIKE '%service-wide%' AND LOWER(worknotes) LIKE '%multiple%' AND LOWER(worknotes) LIKE '%users%' AND LOWER(worknotes) LIKE '%root%' AND LOWER(worknotes) LIKE '%investigation%' AND LOWER(worknotes) LIKE '%active%' AND LOWER(worknotes) LIKE '%monitoring%';",
+            "expected_value": 1
+          }
+        ],
+        "initial_pass_allowed": {
+          "Verify Incident Status": "precondition already true in the seed (INC_006 is in_progress); the work-note verifier discriminates"
+        },
+        "core_requirements": [
+          {
+            "id": "service_non_operational",
+            "free_text": false,
+            "negatives": [
+              "service_left_operational"
+            ]
+          },
+          {
+            "id": "offering_non_operational",
+            "free_text": false,
+            "negatives": [
+              "offering_repair_in_progress"
+            ]
+          },
+          {
+            "id": "note_on_outage_incident",
+            "free_text": false,
+            "negatives": [
+              "note_on_wrong_incident"
+            ]
+          },
+          {
+            "id": "note_states_service_wide_recurring_investigating",
+            "free_text": true,
+            "negatives": [
+              "note_scope_wrong",
+              "note_omits_investigation"
+            ]
+          }
+        ],
+        "decision_check": null,
+        "conversion_notes": [
+          "Held-out candidate for split v3; faithful route only. Not part of any split until the user accepts v3.",
+          "Upstream single-turn instruction rewritten as a multi-turn conversation: the operator states the request and reveals facts from known_info when asked; simulator_guidance fixes the answers to clarifications and cascades.",
+          "The agent sees Bench2's task-invariant policy.md, not the upstream per-task system prompt (sha256 recorded in source).",
+          "current_time is 09:00 on the date in the upstream task_id.",
+          "Free text the policy leaves to the operator is given verbatim by the operator in known_info.",
+          "Scoring is Bench2's full-DB comparison; free-text fields use the fuzzy rule (gold content-token recall >= 0.5) and D8. Not equivalent to the EnterpriseOps-Gym evaluation.",
+          "Scope ORG_001 + ORG_002 (the whole single-tenant world): the upstream operator Raj Patel is an admin of ORG_002 while every record touched is in ORG_001; §2 gives admins CRUD on all tables.",
+          "Operator clarifications, neither contradicted by the upstream verifiers: 'reduced availability' = non-operational; the incident to note is 'Critical system outage' (INC_006), one of five active Email Service incidents.",
+          "No policy cascade applies to non-operational service/offering states. INC_006 is already in_progress (upstream 'Verify Incident Status' passes before any action)."
+        ],
+        "information_boundary": {
+          "policy_visible": [
+            "Bench2 policy.md and the 94 tool schemas (task-invariant)",
+            "fixed greeting",
+            "user simulator messages (known_info facts are revealed only when the user states them)",
+            "real tool results and errors"
+          ],
+          "private": [
+            "scenario.task_description, simulator_guidance, persona.known_info (until stated)",
+            "evaluation_criteria.actions (gold) and nl_assertions",
+            "initial_state_delta, seed_db, current_time, org scope",
+            "upstream task_id, prompt, system prompt and verifiers",
+            "validation_cases"
+          ]
+        },
+        "validation_cases": [
+          {
+            "name": "service_left_operational",
+            "kind": "core",
+            "edit": {
+              "drop": [
+                4
+              ]
+            },
+            "bench2_mismatch": "service/SVC_001 status",
+            "upstream_all_pass": false,
+            "reason": "the Email Service must become non-operational"
+          },
+          {
+            "name": "offering_repair_in_progress",
+            "kind": "core",
+            "edit": {
+              "set": {
+                "5": {
+                  "status": "repair_in_progress"
+                }
+              }
+            },
+            "bench2_mismatch": "service_offering/SVCOFF_001 status",
+            "upstream_all_pass": false,
+            "reason": "the operator defined reduced availability as non-operational"
+          },
+          {
+            "name": "note_on_wrong_incident",
+            "kind": "core",
+            "edit": {
+              "set": {
+                "6": {
+                  "incident_id": "INC_004"
+                }
+              }
+            },
+            "bench2_mismatch": "incident/INC_00",
+            "upstream_all_pass": false,
+            "reason": "the note belongs on the outage incident INC_006"
+          },
+          {
+            "name": "note_scope_wrong",
+            "kind": "key_fact",
+            "edit": {
+              "set": {
+                "6": {
+                  "worknotes": "Issue confirmed as isolated and one-off: multiple users report email delivery delays and shared mailbox failures. Root cause investigation is active and the service is under monitoring."
+                }
+              }
+            },
+            "bench2_mismatch": "incident/INC_006 worknotes",
+            "upstream_all_pass": false,
+            "reason": "rest of the note correct, but the issue is called isolated and one-off instead of service-wide and recurring"
+          },
+          {
+            "name": "note_omits_investigation",
+            "kind": "key_fact",
+            "edit": {
+              "set": {
+                "6": {
+                  "worknotes": "Issue confirmed as service-wide and recurring: multiple users report email delivery delays and shared mailbox failures."
+                }
+              }
+            },
+            "bench2_mismatch": "incident/INC_006 worknotes",
+            "upstream_all_pass": false,
+            "reason": "rest of the note correct, but it no longer says the issue is under investigation"
+          }
+        ],
+        "approval": {
+          "date": "2026-10-30",
+          "decision": "二、只执行第 6D-3：v3 held-out 候选审读与迁移验证。范围限定为 docs/itsm_step6d/v3_proposal.md 已列出的 8 道候选。……不通过的候选隔离并记录理由，不另找题替补，不放宽门槛。"
+        }
+      }
+    },
+    {
+      "upstream_task_id": "task_20251222_072805_599_99ba2325_ae6b0778",
+      "candidate_item": 3,
+      "reason": "prompt contradicts itself and the expected incident is not unique",
+      "detail": "The prompt asks to set Office Printing to repair in progress when more than three incidents are ongoing, and then to 'treat this situation as resolved from a service perspective ... even if some incident details are still pending'. The upstream verifier keeps repair_in_progress, i.e. picks one reading; adopting it means using the verifier to rewrite the prompt (6B rule), and resolving incidents with details pending would breach §3.3 (resolution_code and notes required). The owner alert must be attached to one incident, 'referencing the high priority nature': the count needs all orgs (9 ongoing Office Printing incidents), where two ongoing high-priority incidents exist (INC_026 in ORG_001, INC_068 in ORG_007); the verifier expects INC_026 without a stated criterion. The required reference to the high priority is free text, which Bench2's fuzzy rule would not discriminate.",
+      "prompt_phrases": [
+        "update the service status to repair in progress",
+        "treat this situation as resolved from a service perspective",
+        "even if some incident details are still pending",
+        "referencing the high priority nature"
+      ],
+      "verifier_phrases": [
+        "incident_id = \"INC_026\"",
+        "status = \"repair_in_progress\""
+      ],
+      "seed_facts": {
+        "service": "SVC_041",
+        "ongoing_incident_count_all_orgs": 9,
+        "ongoing_high_priority_incidents": [
+          "INC_026",
+          "INC_068"
+        ]
+      },
+      "upstream_user_prompt_sha256": "e6ce80091bee39733a962a1e057a405157801b51e8097ffbf0c5bb65f10013d8"
+    },
+    {
+      "upstream_task_id": "task_20251222_140957_029_c5ca08eb_3c4271f0",
+      "candidate_item": 4,
+      "reason": "upstream expected state conflicts with mandatory policy and is not requested",
+      "detail": "The prompt only says Office Printing is being retired and its offerings are no longer supported. The upstream verifiers additionally require INC_015 and INC_064 (both in state new) to be closed with close notes. That is not asked for; new -> closed is not a valid transition (§3.3: new -> in_progress/on_hold/resolved; closed only from resolved), manual closure is permitted only to a Manager (Karen Watkins is admin), and the other seven ongoing Office Printing incidents are left untouched without a stated criterion. The §5.2 retirement cascades are PROPOSED and there is no successor service record.",
+      "prompt_phrases": [
+        "Office Printing service is being retired",
+        "no longer supported"
+      ],
+      "verifier_phrases": [
+        "incident_id=\"INC_015\" AND status=\"closed\"",
+        "incident_id=\"INC_064\" AND status=\"closed\""
+      ],
+      "seed_facts": {
+        "closed_incidents_expected": {
+          "INC_015": "new",
+          "INC_064": "new"
+        },
+        "operator_role": "admin"
+      },
+      "upstream_user_prompt_sha256": "f7c093d0dacc13be815d2be3343d716f631975dc92dee9da2d749667babb4a87"
+    },
+    {
+      "upstream_task_id": "task_20260116_235649_372_66392a82_ccb66a9a",
+      "candidate_item": 5,
+      "reason": "core free-text requirements not discriminated by Bench2 DB scoring",
+      "detail": "The agent's key decision, which article to point the team to, exists only in the notification text. The message naming the wrong article ('Desktop Boot Failure Troubleshooting') scores Bench2 DB = 1 (fuzzy recall 0.64), and so does the problem statement 'Outlook sync failure' instead of 'Outlook connectivity failure' (recall 0.67). Severity, offering, recipient/type and the no-new-article rule are discriminated.",
+      "upstream_user_prompt_sha256": "55297365e66ac7cf59dbc7dba2130e548a82202ccda330f373bfeea4a655e5be",
+      "attempted_conversion": {
+        "id": "itsmbench_eops_66392a82_ccb66a9a",
+        "scenario": {
+          "persona": {
+            "identity": {
+              "user_id": "USER_001",
+              "first_name": "Marcus",
+              "last_name": "Thompson",
+              "email": "marcus.thompson@techcorp.com",
+              "role": "admin"
+            },
+            "personality": "Wants the problem logged and the team pointed at existing documentation.",
+            "role_description": "IT administrator, TechCorp (ORG_001)",
+            "known_info": {
+              "requester_name": "Marcus Thompson",
+              "reports": "Outlook email access failures disrupting development",
+              "existing_incident": "Cannot access email account",
+              "problem": "high impact, high urgency, statement 'Outlook connectivity failure', on the Email Service and its Outlook Email Access offering, raised from that incident",
+              "documentation_check": "any article about troubleshooting or configuring Outlook email",
+              "if_found": "alert Priya Sharma (priya.sharma@techcorp.com) on that incident with: Please ask your team to try the steps in '<title of the article found>' for resolving the issue",
+              "if_not_found": "create an internal knowledge article titled 'Outlook Access Troubleshooting'"
+            }
+          },
+          "task_description": "You are Marcus Thompson, IT administrator. You receive reports of Outlook email access failures; an incident 'Cannot access email account' already exists. You want a high-impact, high-urgency problem 'Outlook connectivity failure' on the Email Service's Outlook Email Access offering, raised from that incident. Then check for an article about troubleshooting or configuring Outlook email: if there is one, alert Priya Sharma on that incident with your message naming the article; if not, create an internal article 'Outlook Access Troubleshooting'.",
+          "simulator_guidance": "Open with the Outlook reports and the existing incident. Give the problem details from known_info when asked. Give the message template; the agent fills in the article it found. Do not name the article yourself. Do not ask for other changes. Confirm the agent's plan otherwise. End once the work is confirmed."
+        },
+        "evaluation_criteria": {
+          "actions": [
+            {
+              "name": "get_user_using_name",
+              "arguments": {
+                "first_name": "Marcus",
+                "last_name": "Thompson"
+              }
+            },
+            {
+              "name": "list_incidents",
+              "arguments": {
+                "short_description": "Cannot access email account"
+              }
+            },
+            {
+              "name": "find_service_offering_by_name",
+              "arguments": {
+                "name": "Outlook Email Access"
+              }
+            },
+            {
+              "name": "create_problem",
+              "arguments": {
+                "problem_statement": "Outlook connectivity failure",
+                "status": "new",
+                "impact": "high",
+                "urgency": "high",
+                "priority": "critical",
+                "service": "SVC_001",
+                "service_offering": "SVCOFF_001",
+                "original_task": "INC_001"
+              }
+            },
+            {
+              "name": "retrieve_knowledge_articles",
+              "arguments": {
+                "body": "Outlook"
+              }
+            },
+            {
+              "name": "send_notification",
+              "arguments": {
+                "incident_id": "INC_001",
+                "email": "priya.sharma@techcorp.com",
+                "type": "alert",
+                "message": "Please ask your team to try the steps in 'Email Client Configuration Guide' for resolving the issue"
+              }
+            }
+          ],
+          "nl_assertions": [
+            "The assistant verifies the operator's identity before making any change.",
+            "A problem 'Outlook connectivity failure' is created: high impact, high urgency, critical priority, state new, Email Service / Outlook Email Access, raised from INC_001.",
+            "The assistant finds 'Email Client Configuration Guide' as the Outlook troubleshooting/configuration article.",
+            "Priya Sharma receives an alert on INC_001 naming 'Email Client Configuration Guide'.",
+            "No new knowledge article is created."
+          ]
+        },
+        "initial_state_delta": null,
+        "current_time": "2026-01-16T09:00:00",
+        "org_ids": [
+          "ORG_001"
+        ],
+        "seed_db": "single_tenant_db.json",
+        "tenancy": {
+          "model": "single_tenant"
+        },
+        "route": "faithful",
+        "intended_split": "heldout",
+        "candidate_item": 5,
+        "source": {
+          "repo": "https://github.com/ServiceNow/EnterpriseOps-Gym",
+          "commit": "271f2c357f763376997dfd16807fcde2474ae41b",
+          "hf_dataset": "ServiceNow-AI/EnterpriseOps-Gym",
+          "hf_revision": "c8e538eae8a6205294f0a86675fefdc1fac408f6",
+          "license": "Apache-2.0",
+          "attribution": "Adapted from EnterpriseOps-Gym (ServiceNow), Apache-2.0; see Bench2/NOTICE",
+          "mode_used": "oracle",
+          "upstream_task_id": "task_20260116_235649_372_66392a82_ccb66a9a",
+          "upstream_user_prompt_sha256": "55297365e66ac7cf59dbc7dba2130e548a82202ccda330f373bfeea4a655e5be",
+          "upstream_system_prompt_sha256": "7bb25d850cf76193c25ecb1480ff66187fdbc51841ae589a87f52307fe568a0b",
+          "upstream_seed": "db_1765301900121_3mwjj54xy.sql",
+          "upstream_seed_sha256": "99f193904ef9c1f06c3ecff48000697653f178d6300c70e86d34d5a17081e3a4",
+          "upstream_acting_user": {
+            "user_id": "USER_001",
+            "name": "Marcus Thompson",
+            "email": "marcus.thompson@techcorp.com"
+          },
+          "upstream_verifiers_raw": 2,
+          "initial_state_vs_upstream": {
+            "compared": "unsliced Bench2 seed + delta vs whole upstream seed (timestamps ignored)",
+            "delta_size_after_bench2_delta": 0,
+            "renamed_ids_same_content": [
+              "user_group_member/MEMBER_001->MEM_001",
+              "user_group_member/MEMBER_002->MEM_002",
+              "user_group_member/MEMBER_003->MEM_003",
+              "user_group_member/MEMBER_004->MEM_004",
+              "user_group_member/MEMBER_005->MEM_005"
+            ]
+          }
+        },
+        "upstream_verifiers": [
+          {
+            "name": "Creating problem",
+            "query": "select count() from problem where problem_statement = 'Outlook connectivity failure' and status = 'new' and urgency = 'high' and impact = 'high' and priority = 'critical' and service_offering = 'SVCOFF_001'",
+            "expected_value": 1
+          },
+          {
+            "name": "Sending notification",
+            "query": "select count() from notification where incident_id = 'INC_001' and email = 'priya.sharma@techcorp.com' and type = 'alert' and message = \"Please ask your team to try the steps in 'Email Client Configuration Guide' for resolving the issue\"",
+            "expected_value": 1
+          }
+        ],
+        "initial_pass_allowed": {},
+        "core_requirements": [
+          {
+            "id": "problem_severity_and_offering",
+            "free_text": false,
+            "negatives": [
+              "problem_priority_high",
+              "problem_on_wrong_offering"
+            ]
+          },
+          {
+            "id": "problem_statement_connectivity_failure",
+            "free_text": true,
+            "negatives": [
+              "statement_key_fact_wrong"
+            ]
+          },
+          {
+            "id": "message_names_the_found_article",
+            "free_text": true,
+            "negatives": [
+              "wrong_article_named"
+            ]
+          },
+          {
+            "id": "alert_to_priya_on_incident",
+            "free_text": false,
+            "negatives": [
+              "notification_type_update"
+            ]
+          },
+          {
+            "id": "no_article_created_when_one_exists",
+            "free_text": false,
+            "negatives": [
+              "article_created_anyway"
+            ]
+          }
+        ],
+        "decision_check": null,
+        "conversion_notes": [
+          "Held-out candidate for split v3; faithful route only. Not part of any split until the user accepts v3.",
+          "Upstream single-turn instruction rewritten as a multi-turn conversation: the operator states the request and reveals facts from known_info when asked; simulator_guidance fixes the answers to clarifications and cascades.",
+          "The agent sees Bench2's task-invariant policy.md, not the upstream per-task system prompt (sha256 recorded in source).",
+          "current_time is 09:00 on the date in the upstream task_id.",
+          "Free text the policy leaves to the operator is given verbatim by the operator in known_info.",
+          "Scoring is Bench2's full-DB comparison; free-text fields use the fuzzy rule (gold content-token recall >= 0.5) and D8. Not equivalent to the EnterpriseOps-Gym evaluation.",
+          "Problem linked to its incident via original_task, as Bench2's own problem tasks do (msp_027, msp_028, single_017); INC_001 is also PRB_001's original_task, and the operator explicitly asks for a new problem.",
+          "KB_002 'Email Client Configuration Guide' (how to configure Outlook, includes troubleshooting) is the only ORG_001 article about Outlook; KB_003 is about desktop boot failures."
+        ],
+        "information_boundary": {
+          "policy_visible": [
+            "Bench2 policy.md and the 94 tool schemas (task-invariant)",
+            "fixed greeting",
+            "user simulator messages (known_info facts are revealed only when the user states them)",
+            "real tool results and errors"
+          ],
+          "private": [
+            "scenario.task_description, simulator_guidance, persona.known_info (until stated)",
+            "evaluation_criteria.actions (gold) and nl_assertions",
+            "initial_state_delta, seed_db, current_time, org scope",
+            "upstream task_id, prompt, system prompt and verifiers",
+            "validation_cases"
+          ]
+        },
+        "validation_cases": [
+          {
+            "name": "problem_priority_high",
+            "kind": "core",
+            "edit": {
+              "set": {
+                "3": {
+                  "priority": "high"
+                }
+              }
+            },
+            "bench2_mismatch": "priority",
+            "upstream_all_pass": false,
+            "reason": "high x high is critical"
+          },
+          {
+            "name": "problem_on_wrong_offering",
+            "kind": "core",
+            "edit": {
+              "set": {
+                "3": {
+                  "service_offering": "SVCOFF_002",
+                  "service": "SVC_002"
+                }
+              }
+            },
+            "bench2_mismatch": "service_offering",
+            "upstream_all_pass": false,
+            "reason": "the problem belongs to Outlook Email Access"
+          },
+          {
+            "name": "statement_key_fact_wrong",
+            "kind": "key_fact",
+            "edit": {
+              "set": {
+                "3": {
+                  "problem_statement": "Outlook sync failure"
+                }
+              }
+            },
+            "bench2_mismatch": "problem_statement",
+            "upstream_all_pass": false,
+            "reason": "rest correct, but the statement says sync instead of connectivity"
+          },
+          {
+            "name": "wrong_article_named",
+            "kind": "key_fact",
+            "edit": {
+              "set": {
+                "5": {
+                  "message": "Please ask your team to try the steps in 'Desktop Boot Failure Troubleshooting' for resolving the issue"
+                }
+              }
+            },
+            "bench2_mismatch": "message",
+            "upstream_all_pass": false,
+            "reason": "rest of the message correct, but it names the wrong article"
+          },
+          {
+            "name": "notification_type_update",
+            "kind": "core",
+            "edit": {
+              "set": {
+                "5": {
+                  "type": "update"
+                }
+              }
+            },
+            "bench2_mismatch": "type",
+            "upstream_all_pass": false,
+            "reason": "the operator asked for an alert"
+          },
+          {
+            "name": "article_created_anyway",
+            "kind": "core",
+            "edit": {
+              "extra": [
+                {
+                  "name": "create_knowledge_article",
+                  "arguments": {
+                    "title": "Outlook Access Troubleshooting",
+                    "owner_id": "USER_001",
+                    "visibility": "internal"
+                  }
+                }
+              ]
+            },
+            "bench2_mismatch": "knowledge",
+            "upstream_all_pass": true,
+            "reason": "an article exists, so none is created"
+          }
+        ],
+        "approval": {
+          "date": "2026-10-30",
+          "decision": "二、只执行第 6D-3：v3 held-out 候选审读与迁移验证。范围限定为 docs/itsm_step6d/v3_proposal.md 已列出的 8 道候选。……不通过的候选隔离并记录理由，不另找题替补，不放宽门槛。"
+        }
+      }
+    },
+    {
+      "upstream_task_id": "task_20260114_073658_459_78a5b71e_cab5cc9f",
+      "candidate_item": 6,
+      "reason": "prompt and verifier contradict each other",
+      "detail": "The verbatim message in the prompt says 'customer-facing systems'; the upstream verifier compares the message for exact equality with 'customer facing systems'. Passing it means changing the operator's text to the verifier's (same class as 6B's '$64,00' vs 6400). The verifier also requires status = 'sent' for a notification that send_notification creates as 'queued' (6D-2 probe); writing 'sent' would assert a delivery outcome the system did not report (§1.3).",
+      "prompt_phrases": [
+        "customer-facing systems"
+      ],
+      "verifier_phrases": [
+        "customer facing systems",
+        "status='sent'"
+      ],
+      "seed_facts": {
+        "incident": "INC_021",
+        "assignee": "USER_008"
+      },
+      "upstream_user_prompt_sha256": "33c97b5cb85c04d5e5834ca941d8b9b3371b5be5fb731f68c214228f595a522f"
+    },
+    {
+      "upstream_task_id": "task_20251218_143555_095_97d7df7d_ece487bd",
+      "candidate_item": 7,
+      "reason": "core free-text requirements not discriminated, and 2 gold entities shared with train tasks",
+      "detail": "The service description no longer calling it the primary authentication interface (fuzzy recall 0.80) and the problem statement calling authentication 'intermittently slow' instead of 'fully blocked' (recall 0.86) both score Bench2 DB = 1. Independently, the gold shares two same-seed entities with train tasks: LOC_003 and USER_002 with itsmbench_single_003, LOC_001 and USER_002 with itsmbench_single_005 (rule 3: < 2). It would also have merged the two held-out families.",
+      "upstream_user_prompt_sha256": "929d0f259f884f0cf33130ad5ab0e3f754d6c3cf8255e8cb8bec05190708eebb",
+      "attempted_conversion": {
+        "id": "itsmbench_eops_97d7df7d_ece487bd",
+        "scenario": {
+          "persona": {
+            "identity": {
+              "user_id": "USER_001",
+              "first_name": "Marcus",
+              "last_name": "Thompson",
+              "email": "marcus.thompson@techcorp.com",
+              "role": "admin"
+            },
+            "personality": "Precise about the new service's attributes; urgent about the outage.",
+            "role_description": "IT administrator, TechCorp (ORG_001)",
+            "known_info": {
+              "requester_name": "Marcus Thompson",
+              "service": "User App: production, operational, application service, critical, owned by Priya Sharma",
+              "service_description": "Primary interface through which users authenticate and access core business functionality.",
+              "problem_item": "the configuration item located in the USA with a cost below 1000",
+              "problem_statement": "User authentication through User App is fully blocked; no operational work can continue until restoration is achieved.",
+              "problem_severity": "highest impact, urgency and priority"
+            }
+          },
+          "task_description": "You are Marcus Thompson, IT administrator. You want a new application service 'User App' (production, operational, critical, owned by Priya Sharma) with your description, and a problem logged against it on the configuration item located in the USA that costs less than 1000, where user authentication is fully blocked. The problem gets the highest impact, urgency and priority and your problem statement.",
+          "simulator_guidance": "Open with the new service and the problem. Give the description and the problem statement verbatim from known_info when asked. Describe the item only as located in the USA with a cost below 1000; do not name it. Do not ask for other changes. Confirm the agent's plan otherwise. End once both records are confirmed."
+        },
+        "evaluation_criteria": {
+          "actions": [
+            {
+              "name": "get_user_using_name",
+              "arguments": {
+                "first_name": "Marcus",
+                "last_name": "Thompson"
+              }
+            },
+            {
+              "name": "get_user_using_name",
+              "arguments": {
+                "first_name": "Priya",
+                "last_name": "Sharma"
+              }
+            },
+            {
+              "name": "add_new_service",
+              "arguments": {
+                "name": "User App",
+                "owned_by": "USER_002",
+                "used_for": "production",
+                "status": "operational",
+                "service_classification": "application",
+                "business_criticality": "critical",
+                "description": "Primary interface through which users authenticate and access core business functionality."
+              }
+            },
+            {
+              "name": "find_locations",
+              "arguments": {
+                "country": "USA"
+              }
+            },
+            {
+              "name": "find_configuration_items",
+              "arguments": {
+                "location_id": "LOC_001"
+              }
+            },
+            {
+              "name": "find_configuration_items",
+              "arguments": {
+                "location_id": "LOC_003"
+              }
+            },
+            {
+              "name": "create_problem",
+              "arguments": {
+                "problem_statement": "User authentication through User App is fully blocked; no operational work can continue until restoration is achieved.",
+                "status": "new",
+                "impact": "high",
+                "urgency": "high",
+                "priority": "critical",
+                "service": "SVC_005",
+                "configuration_item": "CI_002"
+              }
+            }
+          ],
+          "nl_assertions": [
+            "The assistant verifies the operator's identity before making any change.",
+            "Service 'User App' (SVC_005) is created: owned by Priya Sharma, production, operational, application, critical, with the operator's description.",
+            "The assistant identifies Aisha Desktop (CI_002, USA, cost 800) as the only USA configuration item costing less than 1000.",
+            "A problem with the operator's statement is created on SVC_005 and CI_002 with high impact, high urgency, critical priority, state new."
+          ]
+        },
+        "initial_state_delta": null,
+        "current_time": "2025-12-18T09:00:00",
+        "org_ids": null,
+        "seed_db": "single_tenant_db.json",
+        "tenancy": {
+          "model": "single_tenant"
+        },
+        "route": "faithful",
+        "intended_split": "heldout",
+        "candidate_item": 7,
+        "source": {
+          "repo": "https://github.com/ServiceNow/EnterpriseOps-Gym",
+          "commit": "271f2c357f763376997dfd16807fcde2474ae41b",
+          "hf_dataset": "ServiceNow-AI/EnterpriseOps-Gym",
+          "hf_revision": "c8e538eae8a6205294f0a86675fefdc1fac408f6",
+          "license": "Apache-2.0",
+          "attribution": "Adapted from EnterpriseOps-Gym (ServiceNow), Apache-2.0; see Bench2/NOTICE",
+          "mode_used": "oracle",
+          "upstream_task_id": "task_20251218_143555_095_97d7df7d_ece487bd",
+          "upstream_user_prompt_sha256": "929d0f259f884f0cf33130ad5ab0e3f754d6c3cf8255e8cb8bec05190708eebb",
+          "upstream_system_prompt_sha256": "933219af019101128c8ea93bd4af697b88fc412ec49d1c553a16092575d84f4a",
+          "upstream_seed": "db_1765301900121_3mwjj54xy.sql",
+          "upstream_seed_sha256": "99f193904ef9c1f06c3ecff48000697653f178d6300c70e86d34d5a17081e3a4",
+          "upstream_acting_user": {
+            "user_id": "USER_001",
+            "name": "Marcus Thompson",
+            "email": "marcus.thompson@techcorp.com"
+          },
+          "upstream_verifiers_raw": 2,
+          "initial_state_vs_upstream": {
+            "compared": "unsliced Bench2 seed + delta vs whole upstream seed (timestamps ignored)",
+            "delta_size_after_bench2_delta": 0,
+            "renamed_ids_same_content": [
+              "user_group_member/MEMBER_001->MEM_001",
+              "user_group_member/MEMBER_002->MEM_002",
+              "user_group_member/MEMBER_003->MEM_003",
+              "user_group_member/MEMBER_004->MEM_004",
+              "user_group_member/MEMBER_005->MEM_005"
+            ]
+          }
+        },
+        "upstream_verifiers": [
+          {
+            "name": "verify_service_created",
+            "query": "SELECT COUNT(*) FROM service WHERE name = 'User App' AND owned_by = 'USER_002' AND used_for = 'production' AND status = 'operational' AND service_classification = 'application' AND business_criticality = 'critical' AND LOWER(description) LIKE '%primary%' AND LOWER(description) LIKE '%authenticat%' AND LOWER(description) LIKE '%access%' AND LOWER(description) LIKE '%function%'",
+            "expected_value": 1
+          },
+          {
+            "name": "verify_problem_created",
+            "query": "SELECT COUNT(*) FROM problem WHERE service = 'SVC_005' AND configuration_item = 'CI_002' AND impact = 'high' AND urgency = 'high' AND priority = 'critical' AND status = 'new' AND LOWER(problem_statement) LIKE '%block%' AND LOWER(problem_statement) LIKE '%restorat%' AND LOWER(problem_statement) LIKE '%authenticat%' AND LOWER(problem_statement) LIKE '%work%' AND LOWER(problem_statement) LIKE '%achieve%'",
+            "expected_value": 1
+          }
+        ],
+        "initial_pass_allowed": {},
+        "core_requirements": [
+          {
+            "id": "service_attributes",
+            "free_text": false,
+            "negatives": [
+              "service_owner_wrong"
+            ]
+          },
+          {
+            "id": "service_description_primary_auth_interface",
+            "free_text": true,
+            "negatives": [
+              "description_key_fact_wrong"
+            ]
+          },
+          {
+            "id": "problem_on_usa_ci_below_1000",
+            "free_text": false,
+            "negatives": [
+              "problem_on_wrong_ci"
+            ]
+          },
+          {
+            "id": "problem_severity_and_service",
+            "free_text": false,
+            "negatives": [
+              "problem_priority_high"
+            ]
+          },
+          {
+            "id": "statement_authentication_fully_blocked",
+            "free_text": true,
+            "negatives": [
+              "statement_key_fact_wrong"
+            ]
+          }
+        ],
+        "decision_check": null,
+        "conversion_notes": [
+          "Held-out candidate for split v3; faithful route only. Not part of any split until the user accepts v3.",
+          "Upstream single-turn instruction rewritten as a multi-turn conversation: the operator states the request and reveals facts from known_info when asked; simulator_guidance fixes the answers to clarifications and cascades.",
+          "The agent sees Bench2's task-invariant policy.md, not the upstream per-task system prompt (sha256 recorded in source).",
+          "current_time is 09:00 on the date in the upstream task_id.",
+          "Free text the policy leaves to the operator is given verbatim by the operator in known_info.",
+          "Scoring is Bench2's full-DB comparison; free-text fields use the fuzzy rule (gold content-token recall >= 0.5) and D8. Not equivalent to the EnterpriseOps-Gym evaluation.",
+          "Not org-sliced: the upstream verifier pins the new service ID SVC_005, which only results from the whole single-tenant service table (SVC_001-004).",
+          "USA locations: LOC_001 (ORG_001) and LOC_003 (ORG_002); CIs costing < 1000 there: CI_002 only (800).",
+          "§4.3 'link all affected incidents': no existing incident is about authentication being blocked, so none is linked."
+        ],
+        "information_boundary": {
+          "policy_visible": [
+            "Bench2 policy.md and the 94 tool schemas (task-invariant)",
+            "fixed greeting",
+            "user simulator messages (known_info facts are revealed only when the user states them)",
+            "real tool results and errors"
+          ],
+          "private": [
+            "scenario.task_description, simulator_guidance, persona.known_info (until stated)",
+            "evaluation_criteria.actions (gold) and nl_assertions",
+            "initial_state_delta, seed_db, current_time, org scope",
+            "upstream task_id, prompt, system prompt and verifiers",
+            "validation_cases"
+          ]
+        },
+        "validation_cases": [
+          {
+            "name": "service_owner_wrong",
+            "kind": "core",
+            "edit": {
+              "set": {
+                "2": {
+                  "owned_by": "USER_001"
+                }
+              }
+            },
+            "bench2_mismatch": "owned_by",
+            "upstream_all_pass": false,
+            "reason": "Priya owns the service"
+          },
+          {
+            "name": "description_key_fact_wrong",
+            "kind": "key_fact",
+            "edit": {
+              "set": {
+                "2": {
+                  "description": "Secondary reporting interface through which users access core business functionality."
+                }
+              }
+            },
+            "bench2_mismatch": "description",
+            "upstream_all_pass": false,
+            "reason": "rest of the description correct, but it is no longer the primary authentication interface"
+          },
+          {
+            "name": "problem_on_wrong_ci",
+            "kind": "core",
+            "edit": {
+              "set": {
+                "6": {
+                  "configuration_item": "CI_001"
+                }
+              }
+            },
+            "bench2_mismatch": "configuration_item",
+            "upstream_all_pass": false,
+            "reason": "CI_001 costs 1200"
+          },
+          {
+            "name": "problem_priority_high",
+            "kind": "core",
+            "edit": {
+              "set": {
+                "6": {
+                  "priority": "high"
+                }
+              }
+            },
+            "bench2_mismatch": "priority",
+            "upstream_all_pass": false,
+            "reason": "highest levels: critical"
+          },
+          {
+            "name": "statement_key_fact_wrong",
+            "kind": "key_fact",
+            "edit": {
+              "set": {
+                "6": {
+                  "problem_statement": "User authentication through User App is intermittently slow; no operational work can continue until restoration is achieved."
+                }
+              }
+            },
+            "bench2_mismatch": "problem_statement",
+            "upstream_all_pass": false,
+            "reason": "rest of the statement correct, but authentication is called intermittently slow instead of fully blocked"
+          }
+        ],
+        "approval": {
+          "date": "2026-10-30",
+          "decision": "二、只执行第 6D-3：v3 held-out 候选审读与迁移验证。范围限定为 docs/itsm_step6d/v3_proposal.md 已列出的 8 道候选。……不通过的候选隔离并记录理由，不另找题替补，不放宽门槛。"
+        }
+      }
+    },
+    {
+      "upstream_task_id": "task_20251218_183819_272_99ba2325_dd71c332",
+      "candidate_item": 8,
+      "reason": "ambiguous number in the prompt resolved only by the verifier",
+      "detail": "The prompt sets the device cost to '$9,50', readable as 9.50 or 950; the upstream verifier requires 950 (seed value 800). Choosing 950 uses the verifier to rewrite the prompt (same class as 6B's isolated 66392a82_74b17170, '$64,00' vs 6400). The problem record must also 'clearly document' the call drops and audio issues, a free-text requirement Bench2's fuzzy rule would not discriminate.",
+      "prompt_phrases": [
+        "$9,50"
+      ],
+      "verifier_phrases": [
+        "cost = 950"
+      ],
+      "seed_facts": {
+        "configuration_item": "CI_092",
+        "seed_cost": 800.0
+      },
+      "upstream_user_prompt_sha256": "2fae435c14dfdf030cfda544c3896379bc096f3455a1440228eb9c6e6b9cc2f5"
+    }
+  ]
+}

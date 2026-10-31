@@ -1,0 +1,1267 @@
+{
+  "version": "itsm_eops_heldout_v3_candidates_v1",
+  "caveat": "Bench2 scoring is full-DB fuzzy (gold content-token recall >= 0.5 for free text) with D8; upstream verifiers run on the same final DB exported to SQLite. Scripted episodes replay gold calls with fixed user replies; no token measurement is made on held-out candidates. Passing does not make a task equivalent to EnterpriseOps-Gym.",
+  "tasks": {
+    "itsmbench_eops_99ba2325_54f35603": {
+      "candidate_item": 2,
+      "upstream_task_id": "task_20260113_031046_703_99ba2325_54f35603",
+      "org_ids": [
+        "ORG_001",
+        "ORG_007",
+        "ORG_016"
+      ],
+      "gold_actions": 8,
+      "bench2_gold_db_reward": 1.0,
+      "upstream_verifiers_on_gold": [
+        {
+          "name": "Verify Service Status",
+          "expected": 1,
+          "actual": 1,
+          "error": null,
+          "passed": true
+        },
+        {
+          "name": "Verify Service Offering Status 1",
+          "expected": 1,
+          "actual": 1,
+          "error": null,
+          "passed": true
+        },
+        {
+          "name": "Verify Service Offering Status 2",
+          "expected": 1,
+          "actual": 1,
+          "error": null,
+          "passed": true
+        },
+        {
+          "name": "Verify Service Offering Status 3",
+          "expected": 1,
+          "actual": 1,
+          "error": null,
+          "passed": true
+        }
+      ],
+      "upstream_verifiers_on_initial_state": [
+        {
+          "name": "Verify Service Status",
+          "expected": 1,
+          "actual": 0,
+          "error": null,
+          "passed": false
+        },
+        {
+          "name": "Verify Service Offering Status 1",
+          "expected": 1,
+          "actual": 0,
+          "error": null,
+          "passed": false
+        },
+        {
+          "name": "Verify Service Offering Status 2",
+          "expected": 1,
+          "actual": 0,
+          "error": null,
+          "passed": false
+        },
+        {
+          "name": "Verify Service Offering Status 3",
+          "expected": 1,
+          "actual": 0,
+          "error": null,
+          "passed": false
+        }
+      ],
+      "initial_pass_allowed": {},
+      "core_requirements": [
+        {
+          "id": "no_retirement_when_more_than_three_ongoing",
+          "free_text": false,
+          "negatives": [
+            "retired_instead",
+            "on_hold_not_counted"
+          ],
+          "discriminated": true,
+          "undiscriminated_negatives": []
+        },
+        {
+          "id": "service_non_operational",
+          "free_text": false,
+          "negatives": [
+            "service_not_updated"
+          ],
+          "discriminated": true,
+          "undiscriminated_negatives": []
+        },
+        {
+          "id": "every_offering_same_status",
+          "free_text": false,
+          "negatives": [
+            "one_offering_missed",
+            "offerings_wrong_status"
+          ],
+          "discriminated": true,
+          "undiscriminated_negatives": []
+        }
+      ],
+      "validation_cases": [
+        {
+          "name": "retired_instead",
+          "kind": "core",
+          "reason": "four ongoing incidents block the retirement",
+          "bench2_db_reward": 0.0,
+          "bench2_mismatches": [
+            "service/SVC_017 status: 'non-operational' != 'retired'",
+            "service_offering/SVCOFF_021 status: 'non-operational' != 'retired'",
+            "service_offering/SVCOFF_022 status: 'non-operational' != 'retired'",
+            "service_offering/SVCOFF_038 status: 'non-operational' != 'retired'"
+          ],
+          "expected_mismatch_found": true,
+          "upstream_all_pass": false,
+          "upstream_failed": [
+            "Verify Service Status",
+            "Verify Service Offering Status 1",
+            "Verify Service Offering Status 2",
+            "Verify Service Offering Status 3"
+          ],
+          "as_expected": true
+        },
+        {
+          "name": "on_hold_not_counted",
+          "kind": "core",
+          "reason": "counting only in-progress incidents (1) would wrongly allow retiring the service",
+          "bench2_db_reward": 0.0,
+          "bench2_mismatches": [
+            "service/SVC_017 status: 'non-operational' != 'retired'",
+            "service_offering/SVCOFF_021 status: 'non-operational' != 'operational'",
+            "service_offering/SVCOFF_021 updated_on: '2026-01-13 09:00:00' != '2023-01-01 00:00:00'",
+            "service_offering/SVCOFF_022 status: 'non-operational' != 'operational'",
+            "service_offering/SVCOFF_022 updated_on: '2026-01-13 09:00:00' != '2023-01-01 00:00:00'",
+            "service_offering/SVCOFF_038 status: 'non-operational' != 'operational'",
+            "service_offering/SVCOFF_038 updated_on: '2026-01-13 09:00:00' != '2023-01-01 00:00:00'"
+          ],
+          "expected_mismatch_found": true,
+          "upstream_all_pass": false,
+          "upstream_failed": [
+            "Verify Service Status",
+            "Verify Service Offering Status 1",
+            "Verify Service Offering Status 2",
+            "Verify Service Offering Status 3"
+          ],
+          "as_expected": true
+        },
+        {
+          "name": "service_not_updated",
+          "kind": "core",
+          "reason": "the service must become non-operational",
+          "bench2_db_reward": 0.0,
+          "bench2_mismatches": [
+            "service/SVC_017 status: 'non-operational' != 'operational'",
+            "service/SVC_017 updated_on: '2026-01-13 09:00:00' != '2023-01-01 00:00:00'"
+          ],
+          "expected_mismatch_found": true,
+          "upstream_all_pass": false,
+          "upstream_failed": [
+            "Verify Service Status"
+          ],
+          "as_expected": true
+        },
+        {
+          "name": "one_offering_missed",
+          "kind": "core",
+          "reason": "all three offerings follow the service",
+          "bench2_db_reward": 0.0,
+          "bench2_mismatches": [
+            "service_offering/SVCOFF_038 status: 'non-operational' != 'operational'",
+            "service_offering/SVCOFF_038 updated_on: '2026-01-13 09:00:00' != '2023-01-01 00:00:00'"
+          ],
+          "expected_mismatch_found": true,
+          "upstream_all_pass": false,
+          "upstream_failed": [
+            "Verify Service Offering Status 3"
+          ],
+          "as_expected": true
+        },
+        {
+          "name": "offerings_wrong_status",
+          "kind": "core",
+          "reason": "offerings take the same status as the service",
+          "bench2_db_reward": 0.0,
+          "bench2_mismatches": [
+            "service_offering/SVCOFF_021 status: 'non-operational' != 'repair_in_progress'"
+          ],
+          "expected_mismatch_found": true,
+          "upstream_all_pass": false,
+          "upstream_failed": [
+            "Verify Service Offering Status 1"
+          ],
+          "as_expected": true
+        }
+      ],
+      "decision_check": {
+        "kind": "active_incidents_for_service",
+        "service": "SVC_017",
+        "expected": 4,
+        "threshold_more_than": 3,
+        "in_scope": 4,
+        "unsliced": 4,
+        "ok": true
+      },
+      "scripted_episode": {
+        "termination_reason": "agent_done",
+        "db_match": true,
+        "step_count": 11
+      },
+      "checks": {
+        "bench2_gold_db_1": true,
+        "repeat_replay_same_final_db": true,
+        "upstream_all_pass_on_gold": true,
+        "upstream_not_all_pass_on_initial": true,
+        "initial_passes_exactly_the_registered_ones": true,
+        "every_core_requirement_discriminated": true,
+        "validation_cases_as_expected": true,
+        "decision_quantity_same_in_scope_and_unsliced": true,
+        "no_private_text_visible_at_reset": true,
+        "scripted_episode_ends_with_db_match": true,
+        "heldout_gate": true
+      },
+      "accepted": true
+    }
+  },
+  "attempted_conversions_isolated": {
+    "itsmbench_eops_0be70e35_0916fba8": {
+      "candidate_item": 1,
+      "upstream_task_id": "task_20251222_195853_743_0be70e35_0916fba8",
+      "org_ids": [
+        "ORG_001",
+        "ORG_002"
+      ],
+      "gold_actions": 7,
+      "bench2_gold_db_reward": 1.0,
+      "upstream_verifiers_on_gold": [
+        {
+          "name": "Verify Service Status",
+          "expected": 1,
+          "actual": 1,
+          "error": null,
+          "passed": true
+        },
+        {
+          "name": "Verify Service Offering Status",
+          "expected": 1,
+          "actual": 1,
+          "error": null,
+          "passed": true
+        },
+        {
+          "name": "Verify Incident Status",
+          "expected": 1,
+          "actual": 1,
+          "error": null,
+          "passed": true
+        },
+        {
+          "name": "Verify Incident Worknotes",
+          "expected": 1,
+          "actual": 1,
+          "error": null,
+          "passed": true
+        }
+      ],
+      "upstream_verifiers_on_initial_state": [
+        {
+          "name": "Verify Service Status",
+          "expected": 1,
+          "actual": 0,
+          "error": null,
+          "passed": false
+        },
+        {
+          "name": "Verify Service Offering Status",
+          "expected": 1,
+          "actual": 0,
+          "error": null,
+          "passed": false
+        },
+        {
+          "name": "Verify Incident Status",
+          "expected": 1,
+          "actual": 1,
+          "error": null,
+          "passed": true
+        },
+        {
+          "name": "Verify Incident Worknotes",
+          "expected": 1,
+          "actual": 0,
+          "error": null,
+          "passed": false
+        }
+      ],
+      "initial_pass_allowed": {
+        "Verify Incident Status": "precondition already true in the seed (INC_006 is in_progress); the work-note verifier discriminates"
+      },
+      "core_requirements": [
+        {
+          "id": "service_non_operational",
+          "free_text": false,
+          "negatives": [
+            "service_left_operational"
+          ],
+          "discriminated": true,
+          "undiscriminated_negatives": []
+        },
+        {
+          "id": "offering_non_operational",
+          "free_text": false,
+          "negatives": [
+            "offering_repair_in_progress"
+          ],
+          "discriminated": true,
+          "undiscriminated_negatives": []
+        },
+        {
+          "id": "note_on_outage_incident",
+          "free_text": false,
+          "negatives": [
+            "note_on_wrong_incident"
+          ],
+          "discriminated": true,
+          "undiscriminated_negatives": []
+        },
+        {
+          "id": "note_states_service_wide_recurring_investigating",
+          "free_text": true,
+          "negatives": [
+            "note_scope_wrong",
+            "note_omits_investigation"
+          ],
+          "discriminated": false,
+          "undiscriminated_negatives": [
+            "note_scope_wrong",
+            "note_omits_investigation"
+          ]
+        }
+      ],
+      "validation_cases": [
+        {
+          "name": "service_left_operational",
+          "kind": "core",
+          "reason": "the Email Service must become non-operational",
+          "bench2_db_reward": 0.0,
+          "bench2_mismatches": [
+            "service/SVC_001 status: 'non-operational' != 'operational'",
+            "service/SVC_001 updated_on: '2025-12-22 09:00:00' != '2024-01-08T09:00:00'"
+          ],
+          "expected_mismatch_found": true,
+          "upstream_all_pass": false,
+          "upstream_failed": [
+            "Verify Service Status"
+          ],
+          "as_expected": true
+        },
+        {
+          "name": "offering_repair_in_progress",
+          "kind": "core",
+          "reason": "the operator defined reduced availability as non-operational",
+          "bench2_db_reward": 0.0,
+          "bench2_mismatches": [
+            "service_offering/SVCOFF_001 status: 'non-operational' != 'repair_in_progress'"
+          ],
+          "expected_mismatch_found": true,
+          "upstream_all_pass": false,
+          "upstream_failed": [
+            "Verify Service Offering Status"
+          ],
+          "as_expected": true
+        },
+        {
+          "name": "note_on_wrong_incident",
+          "kind": "core",
+          "reason": "the note belongs on the outage incident INC_006",
+          "bench2_db_reward": 0.0,
+          "bench2_mismatches": [
+            "incident/INC_004 updated_at: '2024-02-18T09:30:00' != '2025-12-22 09:00:00'",
+            "incident/INC_006 updated_at: '2025-12-22 09:00:00' != '2024-02-21T08:45:00'",
+            "incident/INC_006 worknotes: 'Issue confirmed as service-wide and recurring: multiple users report email delivery delays and shared mailbox failures. Root cause investigation is active and the service is under monitoring.' !~ 'Server restart attempted, investigating database corruption'"
+          ],
+          "expected_mismatch_found": true,
+          "upstream_all_pass": false,
+          "upstream_failed": [
+            "Verify Incident Worknotes"
+          ],
+          "as_expected": true
+        },
+        {
+          "name": "note_scope_wrong",
+          "kind": "key_fact",
+          "reason": "rest of the note correct, but the issue is called isolated and one-off instead of service-wide and recurring",
+          "bench2_db_reward": 1.0,
+          "bench2_mismatches": [],
+          "expected_mismatch_found": false,
+          "upstream_all_pass": false,
+          "upstream_failed": [
+            "Verify Incident Worknotes"
+          ],
+          "as_expected": false
+        },
+        {
+          "name": "note_omits_investigation",
+          "kind": "key_fact",
+          "reason": "rest of the note correct, but it no longer says the issue is under investigation",
+          "bench2_db_reward": 1.0,
+          "bench2_mismatches": [],
+          "expected_mismatch_found": false,
+          "upstream_all_pass": false,
+          "upstream_failed": [
+            "Verify Incident Worknotes"
+          ],
+          "as_expected": false
+        }
+      ],
+      "decision_check": null,
+      "scripted_episode": {
+        "termination_reason": "agent_done",
+        "db_match": true,
+        "step_count": 10
+      },
+      "checks": {
+        "bench2_gold_db_1": true,
+        "repeat_replay_same_final_db": true,
+        "upstream_all_pass_on_gold": true,
+        "upstream_not_all_pass_on_initial": true,
+        "initial_passes_exactly_the_registered_ones": true,
+        "every_core_requirement_discriminated": false,
+        "validation_cases_as_expected": false,
+        "decision_quantity_same_in_scope_and_unsliced": true,
+        "no_private_text_visible_at_reset": true,
+        "scripted_episode_ends_with_db_match": true
+      },
+      "accepted": false
+    },
+    "itsmbench_eops_66392a82_ccb66a9a": {
+      "candidate_item": 5,
+      "upstream_task_id": "task_20260116_235649_372_66392a82_ccb66a9a",
+      "org_ids": [
+        "ORG_001"
+      ],
+      "gold_actions": 6,
+      "bench2_gold_db_reward": 1.0,
+      "upstream_verifiers_on_gold": [
+        {
+          "name": "Creating problem",
+          "expected": 1,
+          "actual": 1,
+          "error": null,
+          "passed": true
+        },
+        {
+          "name": "Sending notification",
+          "expected": 1,
+          "actual": 1,
+          "error": null,
+          "passed": true
+        }
+      ],
+      "upstream_verifiers_on_initial_state": [
+        {
+          "name": "Creating problem",
+          "expected": 1,
+          "actual": 0,
+          "error": null,
+          "passed": false
+        },
+        {
+          "name": "Sending notification",
+          "expected": 1,
+          "actual": 0,
+          "error": null,
+          "passed": false
+        }
+      ],
+      "initial_pass_allowed": {},
+      "core_requirements": [
+        {
+          "id": "problem_severity_and_offering",
+          "free_text": false,
+          "negatives": [
+            "problem_priority_high",
+            "problem_on_wrong_offering"
+          ],
+          "discriminated": true,
+          "undiscriminated_negatives": []
+        },
+        {
+          "id": "problem_statement_connectivity_failure",
+          "free_text": true,
+          "negatives": [
+            "statement_key_fact_wrong"
+          ],
+          "discriminated": false,
+          "undiscriminated_negatives": [
+            "statement_key_fact_wrong"
+          ]
+        },
+        {
+          "id": "message_names_the_found_article",
+          "free_text": true,
+          "negatives": [
+            "wrong_article_named"
+          ],
+          "discriminated": false,
+          "undiscriminated_negatives": [
+            "wrong_article_named"
+          ]
+        },
+        {
+          "id": "alert_to_priya_on_incident",
+          "free_text": false,
+          "negatives": [
+            "notification_type_update"
+          ],
+          "discriminated": true,
+          "undiscriminated_negatives": []
+        },
+        {
+          "id": "no_article_created_when_one_exists",
+          "free_text": false,
+          "negatives": [
+            "article_created_anyway"
+          ],
+          "discriminated": true,
+          "undiscriminated_negatives": []
+        }
+      ],
+      "validation_cases": [
+        {
+          "name": "problem_priority_high",
+          "kind": "core",
+          "reason": "high x high is critical",
+          "bench2_db_reward": 0.0,
+          "bench2_mismatches": [
+            "problem/PRB_002 priority: 'critical' != 'high'"
+          ],
+          "expected_mismatch_found": true,
+          "upstream_all_pass": false,
+          "upstream_failed": [
+            "Creating problem"
+          ],
+          "as_expected": true
+        },
+        {
+          "name": "problem_on_wrong_offering",
+          "kind": "core",
+          "reason": "the problem belongs to Outlook Email Access",
+          "bench2_db_reward": 0.0,
+          "bench2_mismatches": [
+            "problem/PRB_002 service: 'SVC_001' != 'SVC_002'",
+            "problem/PRB_002 service_offering: 'SVCOFF_001' != 'SVCOFF_002'"
+          ],
+          "expected_mismatch_found": true,
+          "upstream_all_pass": false,
+          "upstream_failed": [
+            "Creating problem"
+          ],
+          "as_expected": true
+        },
+        {
+          "name": "statement_key_fact_wrong",
+          "kind": "key_fact",
+          "reason": "rest correct, but the statement says sync instead of connectivity",
+          "bench2_db_reward": 1.0,
+          "bench2_mismatches": [],
+          "expected_mismatch_found": false,
+          "upstream_all_pass": false,
+          "upstream_failed": [
+            "Creating problem"
+          ],
+          "as_expected": false
+        },
+        {
+          "name": "wrong_article_named",
+          "kind": "key_fact",
+          "reason": "rest of the message correct, but it names the wrong article",
+          "bench2_db_reward": 1.0,
+          "bench2_mismatches": [],
+          "expected_mismatch_found": false,
+          "upstream_all_pass": false,
+          "upstream_failed": [
+            "Sending notification"
+          ],
+          "as_expected": false
+        },
+        {
+          "name": "notification_type_update",
+          "kind": "core",
+          "reason": "the operator asked for an alert",
+          "bench2_db_reward": 0.0,
+          "bench2_mismatches": [
+            "notification/NOTIF_005 type: 'alert' != 'update'"
+          ],
+          "expected_mismatch_found": true,
+          "upstream_all_pass": false,
+          "upstream_failed": [
+            "Sending notification"
+          ],
+          "as_expected": true
+        },
+        {
+          "name": "article_created_anyway",
+          "kind": "core",
+          "reason": "an article exists, so none is created",
+          "bench2_db_reward": 0.0,
+          "bench2_mismatches": [
+            "knowledge: unexpected ['KB_004']"
+          ],
+          "expected_mismatch_found": true,
+          "upstream_all_pass": true,
+          "upstream_failed": [],
+          "as_expected": true
+        }
+      ],
+      "decision_check": null,
+      "scripted_episode": {
+        "termination_reason": "agent_done",
+        "db_match": true,
+        "step_count": 9
+      },
+      "checks": {
+        "bench2_gold_db_1": true,
+        "repeat_replay_same_final_db": true,
+        "upstream_all_pass_on_gold": true,
+        "upstream_not_all_pass_on_initial": true,
+        "initial_passes_exactly_the_registered_ones": true,
+        "every_core_requirement_discriminated": false,
+        "validation_cases_as_expected": false,
+        "decision_quantity_same_in_scope_and_unsliced": true,
+        "no_private_text_visible_at_reset": true,
+        "scripted_episode_ends_with_db_match": true
+      },
+      "accepted": false
+    },
+    "itsmbench_eops_97d7df7d_ece487bd": {
+      "candidate_item": 7,
+      "upstream_task_id": "task_20251218_143555_095_97d7df7d_ece487bd",
+      "org_ids": null,
+      "gold_actions": 7,
+      "bench2_gold_db_reward": 1.0,
+      "upstream_verifiers_on_gold": [
+        {
+          "name": "verify_service_created",
+          "expected": 1,
+          "actual": 1,
+          "error": null,
+          "passed": true
+        },
+        {
+          "name": "verify_problem_created",
+          "expected": 1,
+          "actual": 1,
+          "error": null,
+          "passed": true
+        }
+      ],
+      "upstream_verifiers_on_initial_state": [
+        {
+          "name": "verify_service_created",
+          "expected": 1,
+          "actual": 0,
+          "error": null,
+          "passed": false
+        },
+        {
+          "name": "verify_problem_created",
+          "expected": 1,
+          "actual": 0,
+          "error": null,
+          "passed": false
+        }
+      ],
+      "initial_pass_allowed": {},
+      "core_requirements": [
+        {
+          "id": "service_attributes",
+          "free_text": false,
+          "negatives": [
+            "service_owner_wrong"
+          ],
+          "discriminated": true,
+          "undiscriminated_negatives": []
+        },
+        {
+          "id": "service_description_primary_auth_interface",
+          "free_text": true,
+          "negatives": [
+            "description_key_fact_wrong"
+          ],
+          "discriminated": false,
+          "undiscriminated_negatives": [
+            "description_key_fact_wrong"
+          ]
+        },
+        {
+          "id": "problem_on_usa_ci_below_1000",
+          "free_text": false,
+          "negatives": [
+            "problem_on_wrong_ci"
+          ],
+          "discriminated": true,
+          "undiscriminated_negatives": []
+        },
+        {
+          "id": "problem_severity_and_service",
+          "free_text": false,
+          "negatives": [
+            "problem_priority_high"
+          ],
+          "discriminated": true,
+          "undiscriminated_negatives": []
+        },
+        {
+          "id": "statement_authentication_fully_blocked",
+          "free_text": true,
+          "negatives": [
+            "statement_key_fact_wrong"
+          ],
+          "discriminated": false,
+          "undiscriminated_negatives": [
+            "statement_key_fact_wrong"
+          ]
+        }
+      ],
+      "validation_cases": [
+        {
+          "name": "service_owner_wrong",
+          "kind": "core",
+          "reason": "Priya owns the service",
+          "bench2_db_reward": 0.0,
+          "bench2_mismatches": [
+            "service/SVC_005 owned_by: 'USER_002' != 'USER_001'"
+          ],
+          "expected_mismatch_found": true,
+          "upstream_all_pass": false,
+          "upstream_failed": [
+            "verify_service_created"
+          ],
+          "as_expected": true
+        },
+        {
+          "name": "description_key_fact_wrong",
+          "kind": "key_fact",
+          "reason": "rest of the description correct, but it is no longer the primary authentication interface",
+          "bench2_db_reward": 1.0,
+          "bench2_mismatches": [],
+          "expected_mismatch_found": false,
+          "upstream_all_pass": false,
+          "upstream_failed": [
+            "verify_service_created"
+          ],
+          "as_expected": false
+        },
+        {
+          "name": "problem_on_wrong_ci",
+          "kind": "core",
+          "reason": "CI_001 costs 1200",
+          "bench2_db_reward": 0.0,
+          "bench2_mismatches": [
+            "problem/PRB_003 configuration_item: 'CI_002' != 'CI_001'"
+          ],
+          "expected_mismatch_found": true,
+          "upstream_all_pass": false,
+          "upstream_failed": [
+            "verify_problem_created"
+          ],
+          "as_expected": true
+        },
+        {
+          "name": "problem_priority_high",
+          "kind": "core",
+          "reason": "highest levels: critical",
+          "bench2_db_reward": 0.0,
+          "bench2_mismatches": [
+            "problem/PRB_003 priority: 'critical' != 'high'"
+          ],
+          "expected_mismatch_found": true,
+          "upstream_all_pass": false,
+          "upstream_failed": [
+            "verify_problem_created"
+          ],
+          "as_expected": true
+        },
+        {
+          "name": "statement_key_fact_wrong",
+          "kind": "key_fact",
+          "reason": "rest of the statement correct, but authentication is called intermittently slow instead of fully blocked",
+          "bench2_db_reward": 1.0,
+          "bench2_mismatches": [],
+          "expected_mismatch_found": false,
+          "upstream_all_pass": false,
+          "upstream_failed": [
+            "verify_problem_created"
+          ],
+          "as_expected": false
+        }
+      ],
+      "decision_check": null,
+      "scripted_episode": {
+        "termination_reason": "agent_done",
+        "db_match": true,
+        "step_count": 10
+      },
+      "checks": {
+        "bench2_gold_db_1": true,
+        "repeat_replay_same_final_db": true,
+        "upstream_all_pass_on_gold": true,
+        "upstream_not_all_pass_on_initial": true,
+        "initial_passes_exactly_the_registered_ones": true,
+        "every_core_requirement_discriminated": false,
+        "validation_cases_as_expected": false,
+        "decision_quantity_same_in_scope_and_unsliced": true,
+        "no_private_text_visible_at_reset": true,
+        "scripted_episode_ends_with_db_match": true
+      },
+      "accepted": false
+    }
+  },
+  "isolated_before_conversion_seed_facts": {
+    "3": {
+      "recorded": {
+        "service": "SVC_041",
+        "ongoing_incident_count_all_orgs": 9,
+        "ongoing_high_priority_incidents": [
+          "INC_026",
+          "INC_068"
+        ]
+      },
+      "observed": {
+        "ongoing_incident_count_all_orgs": 9,
+        "ongoing_high_priority_incidents": [
+          "INC_026",
+          "INC_068"
+        ],
+        "service": "SVC_041"
+      },
+      "holds": true
+    },
+    "4": {
+      "recorded": {
+        "closed_incidents_expected": {
+          "INC_015": "new",
+          "INC_064": "new"
+        },
+        "operator_role": "admin"
+      },
+      "observed": {
+        "closed_incidents_expected": {
+          "INC_015": "new",
+          "INC_064": "new"
+        },
+        "operator_role": "admin"
+      },
+      "holds": true
+    },
+    "6": {
+      "recorded": {
+        "incident": "INC_021",
+        "assignee": "USER_008"
+      },
+      "observed": {
+        "incident": "INC_021",
+        "assignee": "USER_008"
+      },
+      "holds": true
+    },
+    "8": {
+      "recorded": {
+        "configuration_item": "CI_092",
+        "seed_cost": 800.0
+      },
+      "observed": {
+        "configuration_item": "CI_092",
+        "seed_cost": 800.0
+      },
+      "holds": true
+    }
+  },
+  "heldout_gate_accepted_only": {
+    "reference": {
+      "split_v2": "itsm_split_v2.json",
+      "accepted_v3_train_additions": [
+        "itsmbench_eops_99ba2325_887f5580",
+        "itsmbench_eops_01395ded_eff85dae",
+        "itsmbench_eops_46ca2862_56a4f834",
+        "itsmbench_eops_99ba2325_7915481a"
+      ],
+      "sizes": {
+        "train": 36,
+        "dev": 13,
+        "heldout": 11
+      }
+    },
+    "candidate_links": [],
+    "tasks": {
+      "itsmbench_eops_99ba2325_54f35603": {
+        "write_tools": [
+          "update_service",
+          "update_service_offering"
+        ],
+        "gold_entities": [
+          "SVCOFF_021",
+          "SVCOFF_022",
+          "SVCOFF_038",
+          "SVC_017"
+        ],
+        "component_reference_members": [],
+        "component_splits": [],
+        "component_heldout_families": [],
+        "component_candidates": [
+          "itsmbench_eops_99ba2325_54f35603"
+        ],
+        "merges_heldout_families": false,
+        "max_shared_write_tools": {
+          "train": {
+            "count": 1,
+            "task": "itsmbench_eops_99ba2325_7915481a"
+          },
+          "dev": {
+            "count": 0,
+            "task": null
+          }
+        },
+        "entity_overlap_ge2": [],
+        "near_duplicates": [],
+        "checks": {
+          "component_has_no_train_or_dev_member": true,
+          "shares_le_1_write_tool_with_train_and_dev": true,
+          "shares_lt_2_entities_with_train_and_dev": true,
+          "not_a_near_duplicate": true
+        },
+        "gate_ok": true
+      }
+    }
+  },
+  "heldout_gate_all_converted": {
+    "reference": {
+      "split_v2": "itsm_split_v2.json",
+      "accepted_v3_train_additions": [
+        "itsmbench_eops_99ba2325_887f5580",
+        "itsmbench_eops_01395ded_eff85dae",
+        "itsmbench_eops_46ca2862_56a4f834",
+        "itsmbench_eops_99ba2325_7915481a"
+      ],
+      "sizes": {
+        "train": 36,
+        "dev": 13,
+        "heldout": 11
+      }
+    },
+    "candidate_links": [
+      {
+        "a": "itsmbench_eops_0be70e35_0916fba8",
+        "b": "itsmbench_eops_99ba2325_54f35603",
+        "write_jaccard": 0.667,
+        "shared_creation_tools": []
+      },
+      {
+        "a": "itsmbench_eops_0be70e35_0916fba8",
+        "b": "itsmbench_msp_020",
+        "write_jaccard": 0.75,
+        "shared_creation_tools": []
+      },
+      {
+        "a": "itsmbench_eops_66392a82_ccb66a9a",
+        "b": "itsmbench_eops_97d7df7d_ece487bd",
+        "write_jaccard": 0.333,
+        "shared_creation_tools": [
+          "create_problem"
+        ]
+      },
+      {
+        "a": "itsmbench_eops_66392a82_ccb66a9a",
+        "b": "itsmbench_msp_027",
+        "write_jaccard": 0.5,
+        "shared_creation_tools": [
+          "create_problem"
+        ]
+      },
+      {
+        "a": "itsmbench_eops_66392a82_ccb66a9a",
+        "b": "itsmbench_msp_028",
+        "write_jaccard": 0.5,
+        "shared_creation_tools": [
+          "create_problem"
+        ]
+      },
+      {
+        "a": "itsmbench_eops_66392a82_ccb66a9a",
+        "b": "itsmbench_single_017",
+        "write_jaccard": 0.2,
+        "shared_creation_tools": [
+          "create_problem"
+        ]
+      },
+      {
+        "a": "itsmbench_eops_97d7df7d_ece487bd",
+        "b": "itsmbench_msp_020",
+        "write_jaccard": 0.2,
+        "shared_creation_tools": [
+          "add_new_service"
+        ]
+      },
+      {
+        "a": "itsmbench_eops_97d7df7d_ece487bd",
+        "b": "itsmbench_msp_027",
+        "write_jaccard": 0.5,
+        "shared_creation_tools": [
+          "create_problem"
+        ]
+      },
+      {
+        "a": "itsmbench_eops_97d7df7d_ece487bd",
+        "b": "itsmbench_msp_028",
+        "write_jaccard": 0.5,
+        "shared_creation_tools": [
+          "create_problem"
+        ]
+      },
+      {
+        "a": "itsmbench_eops_97d7df7d_ece487bd",
+        "b": "itsmbench_single_017",
+        "write_jaccard": 0.2,
+        "shared_creation_tools": [
+          "create_problem"
+        ]
+      }
+    ],
+    "tasks": {
+      "itsmbench_eops_0be70e35_0916fba8": {
+        "write_tools": [
+          "update_incident",
+          "update_service",
+          "update_service_offering"
+        ],
+        "gold_entities": [
+          "INC_006",
+          "SVCOFF_001",
+          "SVC_001"
+        ],
+        "component_reference_members": [
+          "itsmbench_msp_020",
+          "itsmbench_msp_027",
+          "itsmbench_msp_028",
+          "itsmbench_single_017",
+          "itsmbench_single_021",
+          "itsmbench_single_022"
+        ],
+        "component_splits": [
+          "heldout"
+        ],
+        "component_heldout_families": [
+          "problem_from_incident_and_change_mapping",
+          "service_retirement"
+        ],
+        "component_candidates": [
+          "itsmbench_eops_0be70e35_0916fba8",
+          "itsmbench_eops_66392a82_ccb66a9a",
+          "itsmbench_eops_97d7df7d_ece487bd",
+          "itsmbench_eops_99ba2325_54f35603"
+        ],
+        "merges_heldout_families": true,
+        "max_shared_write_tools": {
+          "train": {
+            "count": 1,
+            "task": "itsmbench_eops_99ba2325_7915481a"
+          },
+          "dev": {
+            "count": 1,
+            "task": "itsmbench_msp_019"
+          }
+        },
+        "entity_overlap_ge2": [],
+        "near_duplicates": [],
+        "checks": {
+          "component_has_no_train_or_dev_member": true,
+          "shares_le_1_write_tool_with_train_and_dev": true,
+          "shares_lt_2_entities_with_train_and_dev": true,
+          "not_a_near_duplicate": true
+        },
+        "gate_ok": true
+      },
+      "itsmbench_eops_66392a82_ccb66a9a": {
+        "write_tools": [
+          "create_problem",
+          "send_notification"
+        ],
+        "gold_entities": [
+          "INC_001",
+          "SVCOFF_001",
+          "SVC_001"
+        ],
+        "component_reference_members": [
+          "itsmbench_msp_020",
+          "itsmbench_msp_027",
+          "itsmbench_msp_028",
+          "itsmbench_single_017",
+          "itsmbench_single_021",
+          "itsmbench_single_022"
+        ],
+        "component_splits": [
+          "heldout"
+        ],
+        "component_heldout_families": [
+          "problem_from_incident_and_change_mapping",
+          "service_retirement"
+        ],
+        "component_candidates": [
+          "itsmbench_eops_0be70e35_0916fba8",
+          "itsmbench_eops_66392a82_ccb66a9a",
+          "itsmbench_eops_97d7df7d_ece487bd",
+          "itsmbench_eops_99ba2325_54f35603"
+        ],
+        "merges_heldout_families": true,
+        "max_shared_write_tools": {
+          "train": {
+            "count": 1,
+            "task": "itsmbench_eops_01395ded_eff85dae"
+          },
+          "dev": {
+            "count": 1,
+            "task": "itsmbench_msp_019"
+          }
+        },
+        "entity_overlap_ge2": [],
+        "near_duplicates": [],
+        "checks": {
+          "component_has_no_train_or_dev_member": true,
+          "shares_le_1_write_tool_with_train_and_dev": true,
+          "shares_lt_2_entities_with_train_and_dev": true,
+          "not_a_near_duplicate": true
+        },
+        "gate_ok": true
+      },
+      "itsmbench_eops_97d7df7d_ece487bd": {
+        "write_tools": [
+          "add_new_service",
+          "create_problem"
+        ],
+        "gold_entities": [
+          "CI_002",
+          "LOC_001",
+          "LOC_003",
+          "USER_002"
+        ],
+        "component_reference_members": [
+          "itsmbench_msp_020",
+          "itsmbench_msp_027",
+          "itsmbench_msp_028",
+          "itsmbench_single_017",
+          "itsmbench_single_021",
+          "itsmbench_single_022"
+        ],
+        "component_splits": [
+          "heldout"
+        ],
+        "component_heldout_families": [
+          "problem_from_incident_and_change_mapping",
+          "service_retirement"
+        ],
+        "component_candidates": [
+          "itsmbench_eops_0be70e35_0916fba8",
+          "itsmbench_eops_66392a82_ccb66a9a",
+          "itsmbench_eops_97d7df7d_ece487bd",
+          "itsmbench_eops_99ba2325_54f35603"
+        ],
+        "merges_heldout_families": true,
+        "max_shared_write_tools": {
+          "train": {
+            "count": 0,
+            "task": null
+          },
+          "dev": {
+            "count": 0,
+            "task": null
+          }
+        },
+        "entity_overlap_ge2": [
+          {
+            "task": "itsmbench_single_003",
+            "split": "train",
+            "same_seed_entities": [
+              "LOC_003",
+              "USER_002"
+            ]
+          },
+          {
+            "task": "itsmbench_single_005",
+            "split": "train",
+            "same_seed_entities": [
+              "LOC_001",
+              "USER_002"
+            ]
+          }
+        ],
+        "near_duplicates": [],
+        "checks": {
+          "component_has_no_train_or_dev_member": true,
+          "shares_le_1_write_tool_with_train_and_dev": true,
+          "shares_lt_2_entities_with_train_and_dev": false,
+          "not_a_near_duplicate": true
+        },
+        "gate_ok": false
+      },
+      "itsmbench_eops_99ba2325_54f35603": {
+        "write_tools": [
+          "update_service",
+          "update_service_offering"
+        ],
+        "gold_entities": [
+          "SVCOFF_021",
+          "SVCOFF_022",
+          "SVCOFF_038",
+          "SVC_017"
+        ],
+        "component_reference_members": [
+          "itsmbench_msp_020",
+          "itsmbench_msp_027",
+          "itsmbench_msp_028",
+          "itsmbench_single_017",
+          "itsmbench_single_021",
+          "itsmbench_single_022"
+        ],
+        "component_splits": [
+          "heldout"
+        ],
+        "component_heldout_families": [
+          "problem_from_incident_and_change_mapping",
+          "service_retirement"
+        ],
+        "component_candidates": [
+          "itsmbench_eops_0be70e35_0916fba8",
+          "itsmbench_eops_66392a82_ccb66a9a",
+          "itsmbench_eops_97d7df7d_ece487bd",
+          "itsmbench_eops_99ba2325_54f35603"
+        ],
+        "merges_heldout_families": true,
+        "max_shared_write_tools": {
+          "train": {
+            "count": 1,
+            "task": "itsmbench_eops_99ba2325_7915481a"
+          },
+          "dev": {
+            "count": 0,
+            "task": null
+          }
+        },
+        "entity_overlap_ge2": [],
+        "near_duplicates": [],
+        "checks": {
+          "component_has_no_train_or_dev_member": true,
+          "shares_le_1_write_tool_with_train_and_dev": true,
+          "shares_lt_2_entities_with_train_and_dev": true,
+          "not_a_near_duplicate": true
+        },
+        "gate_ok": true
+      }
+    }
+  }
+}
