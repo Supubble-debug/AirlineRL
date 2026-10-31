@@ -1,0 +1,819 @@
+{
+  "version": "itsm_eops_pilot_v1",
+  "status": "pilot; not part of Bench2 tasks.json or of split v1; inclusion in a train split v2 awaits acceptance",
+  "source": {
+    "repo": "https://github.com/ServiceNow/EnterpriseOps-Gym",
+    "commit": "271f2c357f763376997dfd16807fcde2474ae41b",
+    "hf_dataset": "ServiceNow-AI/EnterpriseOps-Gym",
+    "hf_revision": "c8e538eae8a6205294f0a86675fefdc1fac408f6",
+    "license": "Apache-2.0",
+    "attribution": "Adapted from EnterpriseOps-Gym (ServiceNow), Apache-2.0; see Bench2/NOTICE",
+    "mode_used": "oracle"
+  },
+  "tasks": [
+    {
+      "id": "itsmbench_eops_46ca2862_b6ef60ca",
+      "scenario": {
+        "persona": {
+          "identity": {
+            "user_id": "USER_001",
+            "first_name": "Marcus",
+            "last_name": "Thompson",
+            "email": "marcus.thompson@techcorp.com",
+            "role": "admin"
+          },
+          "personality": "Brisk and practical. Answers questions directly and does not volunteer extra detail.",
+          "role_description": "IT administrator, TechCorp (ORG_001)",
+          "known_info": {
+            "requester_name": "Marcus Thompson",
+            "asset_owner": "Benjamin Chen",
+            "asset_name": "Benjamin Chen Laptop",
+            "serial_number": "LAPTOP-UK-229",
+            "cost": "92500",
+            "location": "TechCorp NYC Headquarters (the New York office)",
+            "asset_status": "in_use",
+            "hardware": "Intel i7, 16GB RAM, 512GB SSD, upgraded wireless",
+            "incident_caller": "Benjamin Chen",
+            "incident_short_description": "Software installation",
+            "incident_category": "software",
+            "incident_impact": "medium",
+            "incident_urgency": "medium"
+          }
+        },
+        "task_description": "You are Marcus Thompson, IT administrator at TechCorp. Benjamin Chen was issued a new corporate laptop (serial LAPTOP-UK-229, about 92,500 rupees, Intel i7 / 16GB RAM / 512GB SSD) in the Q1 hardware refresh. He uses it at the New York office (TechCorp NYC Headquarters) and it is in use. You want it registered in the asset records under the name 'Benjamin Chen Laptop', owned by Benjamin, and an incident opened for Benjamin about software installation on that laptop with medium impact and medium urgency.",
+        "simulator_guidance": "Open by asking to add Benjamin's new laptop to the asset records and to open an incident for him. Give serial number, cost (92500), location and status when asked; if asked for an asset name, say 'Benjamin Chen Laptop'. For the incident: Benjamin is the caller, it is about software installation on that laptop, category software, medium impact, medium urgency. If asked for a support group, say there is none to record. If the agent proposes sending Benjamin a report notification about the new incident, decline (you will tell him yourself). Confirm the agent's plan otherwise. End once both records are confirmed."
+      },
+      "evaluation_criteria": {
+        "actions": [
+          {
+            "name": "get_user_using_name",
+            "arguments": {
+              "first_name": "Marcus",
+              "last_name": "Thompson"
+            }
+          },
+          {
+            "name": "get_user_using_name",
+            "arguments": {
+              "first_name": "Benjamin",
+              "last_name": "Chen"
+            }
+          },
+          {
+            "name": "find_locations",
+            "arguments": {
+              "name": "TechCorp NYC Headquarters"
+            }
+          },
+          {
+            "name": "register_configuration_item",
+            "arguments": {
+              "name": "Benjamin Chen Laptop",
+              "owner_id": "USER_005",
+              "location_id": "LOC_001",
+              "serial_number": "LAPTOP-UK-229",
+              "status": "in_use",
+              "cost": 92500.0
+            }
+          },
+          {
+            "name": "retrieve_knowledge_articles",
+            "arguments": {
+              "body": "install"
+            }
+          },
+          {
+            "name": "create_incident",
+            "arguments": {
+              "caller_id": "USER_005",
+              "short_description": "Software installation",
+              "configuration_item": "CI_005",
+              "channel": "chat",
+              "category": "software",
+              "impact": "medium",
+              "urgency": "medium",
+              "priority": "moderate"
+            }
+          },
+          {
+            "name": "find_sla_definitions",
+            "arguments": {
+              "applies_to_priority": "moderate"
+            }
+          },
+          {
+            "name": "link_new_incident_sla",
+            "arguments": {
+              "incident_id": "INC_024",
+              "sla_def_id": "SLA_004"
+            }
+          }
+        ],
+        "nl_assertions": [
+          "The assistant verifies the operator's identity before making any change.",
+          "A configuration item with serial LAPTOP-UK-229 is registered, owned by Benjamin Chen, at TechCorp NYC Headquarters, in_use, cost 92500.",
+          "A new incident is opened with Benjamin Chen as caller, linked to that laptop, medium impact and medium urgency, priority moderate, state new.",
+          "The new incident receives an SLA record matching its moderate priority.",
+          "No report notification is sent to Benjamin, because the operator declined it."
+        ]
+      },
+      "initial_state_delta": null,
+      "current_time": "2026-01-13T09:00:00",
+      "org_ids": null,
+      "seed_db": "single_tenant_db.json",
+      "tenancy": {
+        "model": "single_tenant"
+      },
+      "source": {
+        "repo": "https://github.com/ServiceNow/EnterpriseOps-Gym",
+        "commit": "271f2c357f763376997dfd16807fcde2474ae41b",
+        "hf_dataset": "ServiceNow-AI/EnterpriseOps-Gym",
+        "hf_revision": "c8e538eae8a6205294f0a86675fefdc1fac408f6",
+        "license": "Apache-2.0",
+        "attribution": "Adapted from EnterpriseOps-Gym (ServiceNow), Apache-2.0; see Bench2/NOTICE",
+        "mode_used": "oracle",
+        "upstream_task_id": "task_20260113_182602_664_46ca2862_b6ef60ca",
+        "upstream_user_prompt_sha256": "035b09163ea407259938beff0541cb68258e441c9a69afe785b6f4decc074e66",
+        "upstream_system_prompt_sha256": "a5e328395b8aadc1680140c0424d9f35ffe071cd359846825be50555379b8e72",
+        "upstream_seed": "db_1765301900121_3mwjj54xy.sql",
+        "upstream_seed_sha256": "99f193904ef9c1f06c3ecff48000697653f178d6300c70e86d34d5a17081e3a4",
+        "upstream_acting_user": {
+          "user_id": "USER_001",
+          "name": "Marcus Thompson",
+          "email": "marcus.thompson@techcorp.com"
+        },
+        "upstream_verifiers_raw": 2,
+        "initial_state_vs_upstream": {
+          "delta_size_after_bench2_delta": 0,
+          "renamed_ids_same_content": [
+            "user_group_member/MEMBER_001->MEM_001",
+            "user_group_member/MEMBER_002->MEM_002",
+            "user_group_member/MEMBER_003->MEM_003",
+            "user_group_member/MEMBER_004->MEM_004",
+            "user_group_member/MEMBER_005->MEM_005"
+          ]
+        }
+      },
+      "upstream_verifiers": [
+        {
+          "name": "Report incident",
+          "query": "SELECT COUNT(*) FROM incident WHERE incident_id = \"INC_024\" AND configuration_item = \"CI_005\" AND caller_id = \"USER_005\" AND status = \"new\" AND impact = \"medium\" AND urgency = \"medium\" AND priority = \"moderate\";",
+          "expected_value": 1
+        },
+        {
+          "name": "Add Configuration Item",
+          "query": "SELECT COUNT(*) FROM configuration_item WHERE configuration_item_id = \"CI_005\" AND serial_number = \"LAPTOP-UK-229\" AND owner_id = \"USER_005\" AND location_id = \"LOC_001\" AND status = \"in_use\" AND cost = 92500;",
+          "expected_value": 1
+        }
+      ],
+      "conversion_notes": [
+        "Upstream single-turn instruction rewritten as a multi-turn conversation: the operator states the request and reveals facts from known_info when asked; simulator_guidance fixes the answers to PROPOSED/ASK cascades.",
+        "The agent sees Bench2's task-invariant policy.md, not the upstream per-task system prompt (sha256 recorded in source).",
+        "No org slicing (org_ids null): the whole seed is loaded as upstream does, so sequential IDs of created records match the upstream verifiers.",
+        "current_time is 09:00 on the date in the upstream task_id.",
+        "Scoring is Bench2's full-DB comparison (stricter than upstream): any unrequested write, or a REQUIRED policy cascade left out, gives DB=0 even where every upstream verifier passes. NL assertions are new and are not used for the training reward (decision D1).",
+        "Added for Bench2: asset name (required by register_configuration_item, absent upstream) and incident category 'software' (from 'an incident for Software installation'); both are unconstrained by the upstream verifiers.",
+        "Policy cascades in gold: channel defaults to chat (§3.1); SLA_004 is the only moderate-priority SLA of ORG_001 (§6, REQUIRED); the REQUIRED knowledge search finds no article about software installation, so no link (§7); the PROPOSED report notification is declined.",
+        "'around ₹92,500' is recorded as 92500, as the upstream verifier requires; the cost field has no currency."
+      ],
+      "information_boundary": {
+        "policy_visible": [
+          "Bench2 policy.md and the 94 tool schemas (task-invariant)",
+          "fixed greeting",
+          "user simulator messages (known_info facts are revealed only when the user states them)",
+          "real tool results and errors"
+        ],
+        "private": [
+          "scenario.task_description, simulator_guidance, persona.known_info (until stated)",
+          "evaluation_criteria.actions (gold) and nl_assertions",
+          "initial_state_delta, seed_db, current_time, org scope",
+          "upstream task_id, prompt, system prompt and verifiers",
+          "validation_cases"
+        ]
+      },
+      "validation_cases": [
+        {
+          "name": "wrong_priority",
+          "edit": {
+            "set": {
+              "5": {
+                "priority": "high"
+              }
+            }
+          },
+          "bench2_mismatch": "incident/INC_024 priority",
+          "upstream_all_pass": false,
+          "reason": "priority must follow the medium x medium matrix cell (moderate)"
+        },
+        {
+          "name": "sla_not_spawned",
+          "edit": {
+            "drop": [
+              7
+            ]
+          },
+          "bench2_mismatch": "incident_sla: missing",
+          "upstream_all_pass": true,
+          "reason": "Bench2 policy REQUIRES an SLA on creation; the upstream verifiers do not check it"
+        },
+        {
+          "name": "laptop_registered_in_london",
+          "edit": {
+            "set": {
+              "3": {
+                "location_id": "LOC_002"
+              }
+            }
+          },
+          "bench2_mismatch": "configuration_item/CI_005 location_id",
+          "upstream_all_pass": false,
+          "reason": "the laptop is used at the New York office, not Benjamin's home location"
+        },
+        {
+          "name": "unconfirmed_report_notification",
+          "edit": {
+            "extra": [
+              {
+                "name": "send_notification",
+                "arguments": {
+                  "incident_id": "INC_024",
+                  "email": "benjamin.chen@techcorp.com",
+                  "type": "report",
+                  "subject": "Incident INC-000024 opened",
+                  "message": "Your software installation incident has been opened."
+                }
+              }
+            ]
+          },
+          "bench2_mismatch": "notification: unexpected",
+          "upstream_all_pass": true,
+          "reason": "the operator declined the PROPOSED notification; upstream does not penalise extra writes"
+        }
+      ]
+    },
+    {
+      "id": "itsmbench_eops_66392a82_52c8290e",
+      "scenario": {
+        "persona": {
+          "identity": {
+            "user_id": "USER_001",
+            "first_name": "Marcus",
+            "last_name": "Thompson",
+            "email": "marcus.thompson@techcorp.com",
+            "role": "admin"
+          },
+          "personality": "Concerned but polite; gives details when asked.",
+          "role_description": "IT administrator, TechCorp (ORG_001)",
+          "known_info": {
+            "requester_name": "Marcus Thompson",
+            "device": "4K video conferencing hub",
+            "serial_number": "VC-HUB-LON-014",
+            "device_contact": "Elena Petrov",
+            "correct_cost": "4000",
+            "problem": "freezing and dropping video calls during critical client sessions in San Francisco",
+            "incident_caller": "Elena Petrov",
+            "incident_category": "hardware",
+            "incident_impact": "high",
+            "incident_urgency": "high"
+          }
+        },
+        "task_description": "You are Marcus Thompson, IT administrator at TechCorp. A 4K video conferencing hub (serial VC-HUB-LON-014) whose contact is Elena Petrov has been freezing and dropping video calls during critical client sessions in San Francisco. Its recorded cost is wrong: the correct cost is 4000 (pounds). You want the cost fixed and a high-impact, high-urgency incident opened describing the freezing and dropped calls, with Elena as the caller.",
+        "simulator_guidance": "Open by reporting that the video conferencing hub keeps freezing and dropping calls and that its recorded cost is wrong. Give the serial number and the correct cost (4000) when asked. Elena Petrov is the caller. Impact high, urgency high, category hardware. If the agent proposes sending Elena a report notification, decline. Do not ask for any other change to the device. Confirm the agent's plan otherwise. End once both changes are confirmed."
+      },
+      "evaluation_criteria": {
+        "actions": [
+          {
+            "name": "get_user_using_name",
+            "arguments": {
+              "first_name": "Marcus",
+              "last_name": "Thompson"
+            }
+          },
+          {
+            "name": "find_configuration_item_by_serial_number",
+            "arguments": {
+              "serial_number": "VC-HUB-LON-014"
+            }
+          },
+          {
+            "name": "update_configuration_item",
+            "arguments": {
+              "configuration_item_id": "CI_005",
+              "cost": 4000.0
+            }
+          },
+          {
+            "name": "get_user_using_name",
+            "arguments": {
+              "first_name": "Elena",
+              "last_name": "Petrov"
+            }
+          },
+          {
+            "name": "retrieve_knowledge_articles",
+            "arguments": {
+              "body": "video"
+            }
+          },
+          {
+            "name": "create_incident",
+            "arguments": {
+              "caller_id": "USER_006",
+              "short_description": "Video conferencing hub freezing and dropping calls",
+              "configuration_item": "CI_005",
+              "channel": "chat",
+              "category": "hardware",
+              "impact": "high",
+              "urgency": "high",
+              "priority": "critical"
+            }
+          },
+          {
+            "name": "find_sla_definitions",
+            "arguments": {
+              "applies_to_priority": "critical"
+            }
+          },
+          {
+            "name": "link_new_incident_sla",
+            "arguments": {
+              "incident_id": "INC_024",
+              "sla_def_id": "SLA_001"
+            }
+          }
+        ],
+        "nl_assertions": [
+          "The assistant verifies the operator's identity before making any change.",
+          "The cost of the hub with serial VC-HUB-LON-014 is corrected to 4000 and nothing else on that configuration item is changed.",
+          "A new incident is opened with Elena Petrov as caller, linked to the hub, high impact, high urgency, priority critical, state new, describing the freezing and dropped calls.",
+          "The new incident receives an SLA record matching its critical priority.",
+          "No report notification is sent to Elena, because the operator declined it."
+        ]
+      },
+      "initial_state_delta": {
+        "configuration_item": {
+          "CI_005": {
+            "create": {
+              "configuration_item_id": "CI_005",
+              "name": "Boardroom Video Hub",
+              "serial_number": "VC-HUB-LON-014",
+              "owner_id": "USER_006",
+              "location_id": "LOC_003",
+              "org_id": "ORG_002",
+              "status": "in_use",
+              "cost": 6000.0,
+              "created_on": "2024-01-10 14:00:00",
+              "updated_on": "2024-01-10 14:00:00"
+            }
+          }
+        }
+      },
+      "current_time": "2025-12-18T09:00:00",
+      "org_ids": null,
+      "seed_db": "single_tenant_db.json",
+      "tenancy": {
+        "model": "single_tenant"
+      },
+      "source": {
+        "repo": "https://github.com/ServiceNow/EnterpriseOps-Gym",
+        "commit": "271f2c357f763376997dfd16807fcde2474ae41b",
+        "hf_dataset": "ServiceNow-AI/EnterpriseOps-Gym",
+        "hf_revision": "c8e538eae8a6205294f0a86675fefdc1fac408f6",
+        "license": "Apache-2.0",
+        "attribution": "Adapted from EnterpriseOps-Gym (ServiceNow), Apache-2.0; see Bench2/NOTICE",
+        "mode_used": "oracle",
+        "upstream_task_id": "task_20251218_124419_383_66392a82_52c8290e",
+        "upstream_user_prompt_sha256": "625e6f45652ab4fff7c0c1338757bae07d7ccaed7347c856edfb5f450f0b415f",
+        "upstream_system_prompt_sha256": "e2891a7b98b63800c16bd1bc1219f66d9d7f52ab6e86a0c702d99e3890e87c4f",
+        "upstream_seed": "db_1765984530018_6f72jkf3p.sql",
+        "upstream_seed_sha256": "aaca465e8ca9c74dd54279bd2842003c8d08950d643b65199575b4fc86198096",
+        "upstream_acting_user": {
+          "user_id": "USER_001",
+          "name": "Marcus Thompson",
+          "email": "marcus.thompson@techcorp.com"
+        },
+        "upstream_verifiers_raw": 2,
+        "initial_state_vs_upstream": {
+          "delta_size_after_bench2_delta": 0,
+          "renamed_ids_same_content": [
+            "user_group_member/MEMBER_001->MEM_001",
+            "user_group_member/MEMBER_002->MEM_002",
+            "user_group_member/MEMBER_003->MEM_003",
+            "user_group_member/MEMBER_004->MEM_004",
+            "user_group_member/MEMBER_005->MEM_005"
+          ]
+        }
+      },
+      "upstream_verifiers": [
+        {
+          "name": "Cost update",
+          "query": "SELECT COUNT(*) AS cnt FROM configuration_item WHERE configuration_item_id = 'CI_005' AND cost = 4000;",
+          "expected_value": 1
+        },
+        {
+          "name": "High-impact incident created",
+          "query": "SELECT COUNT(*) AS cnt FROM incident i JOIN configuration_item c ON i.configuration_item = c.configuration_item_id WHERE c.serial_number = 'VC-HUB-LON-014' AND i.caller_id = 'USER_006' AND i.status = 'new' AND i.impact = 'high' AND i.urgency = 'high' AND i.priority = 'critical';",
+          "expected_value": 1
+        }
+      ],
+      "conversion_notes": [
+        "Upstream single-turn instruction rewritten as a multi-turn conversation: the operator states the request and reveals facts from known_info when asked; simulator_guidance fixes the answers to PROPOSED/ASK cascades.",
+        "The agent sees Bench2's task-invariant policy.md, not the upstream per-task system prompt (sha256 recorded in source).",
+        "No org slicing (org_ids null): the whole seed is loaded as upstream does, so sequential IDs of created records match the upstream verifiers.",
+        "current_time is 09:00 on the date in the upstream task_id.",
+        "Scoring is Bench2's full-DB comparison (stricter than upstream): any unrequested write, or a REQUIRED policy cascade left out, gives DB=0 even where every upstream verifier passes. NL assertions are new and are not used for the training reward (decision D1).",
+        "The upstream seed adds CI_005 (Boardroom Video Hub) to the single-tenant world; the delta creates that exact row. Upstream data places it in ORG_002 (Acme Corp HQ) while its owner/contact Elena is in ORG_001; kept as is.",
+        "Added for Bench2: category 'hardware'. Policy cascades in gold: channel chat (§3.1); SLA_001 is the only critical SLA of ORG_001 (§6); the REQUIRED knowledge search finds no article about the hub (§7); the PROPOSED report notification is declined.",
+        "'£4,000' is recorded as 4000, as the upstream verifier requires; the cost field has no currency."
+      ],
+      "information_boundary": {
+        "policy_visible": [
+          "Bench2 policy.md and the 94 tool schemas (task-invariant)",
+          "fixed greeting",
+          "user simulator messages (known_info facts are revealed only when the user states them)",
+          "real tool results and errors"
+        ],
+        "private": [
+          "scenario.task_description, simulator_guidance, persona.known_info (until stated)",
+          "evaluation_criteria.actions (gold) and nl_assertions",
+          "initial_state_delta, seed_db, current_time, org scope",
+          "upstream task_id, prompt, system prompt and verifiers",
+          "validation_cases"
+        ]
+      },
+      "validation_cases": [
+        {
+          "name": "cost_not_corrected",
+          "edit": {
+            "drop": [
+              2
+            ]
+          },
+          "bench2_mismatch": "configuration_item/CI_005 cost",
+          "upstream_all_pass": false,
+          "reason": "the requested cost correction is missing"
+        },
+        {
+          "name": "operator_as_caller",
+          "edit": {
+            "set": {
+              "5": {
+                "caller_id": "USER_001"
+              }
+            }
+          },
+          "bench2_mismatch": "incident/INC_024 caller_id",
+          "upstream_all_pass": false,
+          "reason": "Elena, the device contact, is the caller"
+        },
+        {
+          "name": "sla_for_wrong_priority",
+          "edit": {
+            "set": {
+              "7": {
+                "sla_def_id": "SLA_002"
+              }
+            }
+          },
+          "bench2_mismatch": "sla_def_id",
+          "upstream_all_pass": true,
+          "reason": "the SLA must match the critical priority; upstream does not check SLAs"
+        }
+      ]
+    },
+    {
+      "id": "itsmbench_eops_1d219d93_d1ba6c2d",
+      "scenario": {
+        "persona": {
+          "identity": {
+            "user_id": "USER_039",
+            "first_name": "Karen",
+            "last_name": "Watkins",
+            "email": "karen.watkins@servicenow.com",
+            "role": "admin"
+          },
+          "personality": "Organised and to the point; expects the agent to check before creating things.",
+          "role_description": "ITSM administrator, ServiceNow (provider, ORG_001)",
+          "known_info": {
+            "requester_name": "Karen Watkins",
+            "new_location_name": "Pune HQ",
+            "new_location_street": "Tech Park, Building 4",
+            "new_location_city": "Pune",
+            "new_location_country": "India",
+            "transfer_rule": "every in_stock configuration item at the other locations in India moves to Pune HQ",
+            "asset_1": "Cisco Meraki MX85, serial SN-MER-888, cost 2000, in_use",
+            "asset_2": "Dell Precision 5000, serial SN-DELL-999, cost 3500, in_stock",
+            "asset_owner": "Elizabeth Gregory",
+            "elizabeth_change": "promote to manager; her location record stays as it is",
+            "kb_title": "Pune HQ IT Setup",
+            "kb_body": "only the serial numbers of the two new assets: SN-MER-888, SN-DELL-999",
+            "kb_owner": "Karen Watkins"
+          }
+        },
+        "task_description": "You are Karen Watkins, ITSM administrator. You are opening 'Pune HQ' at Tech Park, Building 4 (street), Pune, India; check whether the location exists and create it if missing. Move every in_stock configuration item at the other locations in India to Pune HQ. Register two new assets at Pune HQ owned by Elizabeth Gregory, who becomes the manager for the site: a Cisco Meraki MX85 (SN-MER-888, 2000, in_use) and a Dell Precision 5000 (SN-DELL-999, 3500, in_stock). Promote Elizabeth to manager. Finally create a knowledge article titled 'Pune HQ IT Setup', owned by you, that lists only the serial numbers of the two new assets.",
+        "simulator_guidance": "Open with the Pune HQ setup request and give details when asked. If asked whether Elizabeth's own location should change, say no, only her role changes. If asked who owns the article, say yourself. Only in_stock items move; items in use stay where they are. Confirm the agent's plan otherwise. End once everything is confirmed."
+      },
+      "evaluation_criteria": {
+        "actions": [
+          {
+            "name": "get_user_using_name",
+            "arguments": {
+              "first_name": "Karen",
+              "last_name": "Watkins"
+            }
+          },
+          {
+            "name": "find_locations",
+            "arguments": {
+              "country": "India"
+            }
+          },
+          {
+            "name": "add_location",
+            "arguments": {
+              "name": "Pune HQ",
+              "city": "Pune",
+              "country": "India",
+              "street": "Tech Park, Building 4"
+            }
+          },
+          {
+            "name": "find_configuration_items",
+            "arguments": {
+              "location_id": "LOC_004",
+              "status": "in_stock"
+            }
+          },
+          {
+            "name": "update_configuration_item",
+            "arguments": {
+              "configuration_item_id": "CI_035",
+              "location_id": "LOC_024"
+            }
+          },
+          {
+            "name": "get_user_using_name",
+            "arguments": {
+              "first_name": "Elizabeth",
+              "last_name": "Gregory"
+            }
+          },
+          {
+            "name": "update_user_details",
+            "arguments": {
+              "user_id": "USER_042",
+              "role": "manager"
+            }
+          },
+          {
+            "name": "register_configuration_item",
+            "arguments": {
+              "name": "Cisco Meraki MX85",
+              "owner_id": "USER_042",
+              "location_id": "LOC_024",
+              "serial_number": "SN-MER-888",
+              "status": "in_use",
+              "cost": 2000.0
+            }
+          },
+          {
+            "name": "register_configuration_item",
+            "arguments": {
+              "name": "Dell Precision 5000",
+              "owner_id": "USER_042",
+              "location_id": "LOC_024",
+              "serial_number": "SN-DELL-999",
+              "status": "in_stock",
+              "cost": 3500.0
+            }
+          },
+          {
+            "name": "create_knowledge_article",
+            "arguments": {
+              "title": "Pune HQ IT Setup",
+              "owner_id": "USER_039",
+              "body": "SN-MER-888, SN-DELL-999"
+            }
+          }
+        ],
+        "nl_assertions": [
+          "The assistant checks whether Pune HQ already exists before creating it.",
+          "Pune HQ is created at Tech Park, Building 4, Pune, India.",
+          "The only in_stock configuration item at the other Indian location (Dell Latitude - Christine Torres, CI_035) is moved to Pune HQ; in-use items in India are not moved.",
+          "Two configuration items are registered at Pune HQ owned by Elizabeth Gregory: Cisco Meraki MX85 (SN-MER-888, 2000, in_use) and Dell Precision 5000 (SN-DELL-999, 3500, in_stock).",
+          "Elizabeth Gregory's role is changed to manager and her own location is not changed.",
+          "A knowledge article 'Pune HQ IT Setup' is created listing only SN-MER-888 and SN-DELL-999."
+        ]
+      },
+      "initial_state_delta": {
+        "change_request_mapping": {
+          "CRM_017": {
+            "delete": true
+          }
+        },
+        "problem": {
+          "PRB_011": {
+            "delete": true
+          }
+        },
+        "change": {
+          "CHG_017": {
+            "set": {
+              "status": "scheduled"
+            }
+          }
+        }
+      },
+      "current_time": "2025-12-23T09:00:00",
+      "org_ids": null,
+      "seed_db": "msp_db.json",
+      "tenancy": {
+        "model": "msp_provider_internal"
+      },
+      "source": {
+        "repo": "https://github.com/ServiceNow/EnterpriseOps-Gym",
+        "commit": "271f2c357f763376997dfd16807fcde2474ae41b",
+        "hf_dataset": "ServiceNow-AI/EnterpriseOps-Gym",
+        "hf_revision": "c8e538eae8a6205294f0a86675fefdc1fac408f6",
+        "license": "Apache-2.0",
+        "attribution": "Adapted from EnterpriseOps-Gym (ServiceNow), Apache-2.0; see Bench2/NOTICE",
+        "mode_used": "oracle",
+        "upstream_task_id": "task_20251223_101136_983_1d219d93_d1ba6c2d",
+        "upstream_user_prompt_sha256": "f39c967267f0c2f0092535e59f78e7924315b2589177023f1f3b5edc9cacf061",
+        "upstream_system_prompt_sha256": "7bb25d850cf76193c25ecb1480ff66187fdbc51841ae589a87f52307fe568a0b",
+        "upstream_seed": "db_1765893060767_9rwtfbbp7.sql",
+        "upstream_seed_sha256": "65e917166cba0d30d5c2fba2765f266361173af9ee51e31498a0f83dbdc14c2f",
+        "upstream_acting_user": {
+          "user_id": "USER_039",
+          "name": "Karen Watkins",
+          "email": "karen.watkins@servicenow.com"
+        },
+        "upstream_verifiers_raw": 6,
+        "initial_state_vs_upstream": {
+          "delta_size_after_bench2_delta": 0,
+          "renamed_ids_same_content": []
+        }
+      },
+      "upstream_verifiers": [
+        {
+          "name": "Checking creation of new location",
+          "query": "select count() from location where name = 'Pune HQ' and city = 'Pune' and country = 'India'",
+          "expected_value": 1
+        },
+        {
+          "name": "Adding cisco configuration item ",
+          "query": "select count() from configuration_item where name = 'Cisco Meraki MX85' and owner_id = 'USER_042' and cost = 2000 and location_id = (select location_id from location where name = 'Pune HQ')",
+          "expected_value": 1
+        },
+        {
+          "name": "Adding configuration item dell",
+          "query": "select count() from configuration_item where name = 'Dell Precision 5000' and owner_id = 'USER_042' and cost = 3500 and location_id = (select location_id from location where name = 'Pune HQ')",
+          "expected_value": 1
+        },
+        {
+          "name": "Updating configuration item",
+          "query": "select count() from configuration_item where configuration_item_id = 'CI_035' and location_id = (select location_id from location where name = 'Pune HQ')",
+          "expected_value": 1
+        },
+        {
+          "name": "Adding knowlege articles",
+          "query": "select count() from knowledge where title = 'Pune HQ IT Setup'",
+          "expected_value": 1
+        },
+        {
+          "name": "Updating the user to manager",
+          "query": "select count() from users where user_id = 'USER_042' and role = 'manager'",
+          "expected_value": 1
+        }
+      ],
+      "conversion_notes": [
+        "Upstream single-turn instruction rewritten as a multi-turn conversation: the operator states the request and reveals facts from known_info when asked; simulator_guidance fixes the answers to PROPOSED/ASK cascades.",
+        "The agent sees Bench2's task-invariant policy.md, not the upstream per-task system prompt (sha256 recorded in source).",
+        "No org slicing (org_ids null): the whole seed is loaded as upstream does, so sequential IDs of created records match the upstream verifiers.",
+        "current_time is 09:00 on the date in the upstream task_id.",
+        "Scoring is Bench2's full-DB comparison (stricter than upstream): any unrequested write, or a REQUIRED policy cascade left out, gives DB=0 even where every upstream verifier passes. NL assertions are new and are not used for the training reward (decision D1).",
+        "Delta restores the upstream seed db_1765893060767 on top of Bench2 msp_db.json (= upstream canonical db_1766420030407): delete CRM_017 and PRB_011, CHG_017 status back to 'scheduled'. None of these records is touched by the task.",
+        "Tenancy label 'msp_provider_internal': MSP world, but every record involved is in the provider org ORG_001 (Bench2's MSP tasks are provider/client).",
+        "Added for Bench2: 'Tech Park, Building 4' is the street field; Elizabeth's location stays unchanged; the article owner is Karen. All three are unconstrained by the upstream verifiers."
+      ],
+      "information_boundary": {
+        "policy_visible": [
+          "Bench2 policy.md and the 94 tool schemas (task-invariant)",
+          "fixed greeting",
+          "user simulator messages (known_info facts are revealed only when the user states them)",
+          "real tool results and errors"
+        ],
+        "private": [
+          "scenario.task_description, simulator_guidance, persona.known_info (until stated)",
+          "evaluation_criteria.actions (gold) and nl_assertions",
+          "initial_state_delta, seed_db, current_time, org scope",
+          "upstream task_id, prompt, system prompt and verifiers",
+          "validation_cases"
+        ]
+      },
+      "validation_cases": [
+        {
+          "name": "dell_left_in_bangalore",
+          "edit": {
+            "set": {
+              "8": {
+                "location_id": "LOC_004"
+              }
+            }
+          },
+          "bench2_mismatch": "location_id",
+          "upstream_all_pass": false,
+          "reason": "both new assets belong at Pune HQ"
+        },
+        {
+          "name": "role_not_changed",
+          "edit": {
+            "drop": [
+              6
+            ]
+          },
+          "bench2_mismatch": "users/USER_042 role",
+          "upstream_all_pass": false,
+          "reason": "Elizabeth must become manager"
+        },
+        {
+          "name": "in_stock_item_not_moved",
+          "edit": {
+            "drop": [
+              4
+            ]
+          },
+          "bench2_mismatch": "configuration_item/CI_035 location_id",
+          "upstream_all_pass": false,
+          "reason": "CI_035 is in_stock in India and must move"
+        },
+        {
+          "name": "in_use_item_also_moved",
+          "edit": {
+            "extra": [
+              {
+                "name": "update_configuration_item",
+                "arguments": {
+                  "configuration_item_id": "CI_023",
+                  "location_id": "LOC_024"
+                }
+              }
+            ]
+          },
+          "bench2_mismatch": "configuration_item/CI_023 location_id",
+          "upstream_all_pass": true,
+          "reason": "only in_stock items move; upstream does not check untouched rows"
+        },
+        {
+          "name": "elizabeth_relocated",
+          "edit": {
+            "extra": [
+              {
+                "name": "update_user_details",
+                "arguments": {
+                  "user_id": "USER_042",
+                  "location_id": "LOC_024"
+                }
+              }
+            ]
+          },
+          "bench2_mismatch": "users/USER_042 location_id",
+          "upstream_all_pass": true,
+          "reason": "the operator said only her role changes; upstream does not check her location"
+        }
+      ]
+    }
+  ],
+  "isolated": [
+    {
+      "upstream_task_id": "task_20251219_144431_663_97d7df7d_a52988e5",
+      "reason": "ambiguous REQUIRED cascade",
+      "detail": "Bench2 policy §3.1/§7 REQUIRE a knowledge search at incident creation and linking 'any matching' article. For an Email Service slowdown, KB_002 'Email Client Configuration Guide' (published, ORG_001) can defensibly be linked or not; full-DB scoring would make one of two reasonable behaviours score 0. Not resolvable by user-provided information because the cascade is REQUIRED.",
+      "upstream_user_prompt_sha256": "236eba4a5442f27576e559d4fa711c81e53cfba9dbbd592b73377ceab73852dc"
+    },
+    {
+      "upstream_task_id": "task_20251218_104259_233_66392a82_74b17170",
+      "reason": "upstream prompt contradicts its verifier",
+      "detail": "The prompt gives the storage node cost as '$64,00'; the verifier requires 6400. Choosing 6400 for the multi-turn user would adopt the verifier's reading over the prompt text.",
+      "upstream_user_prompt_sha256": "a259f2920d277b7ea414d896105a8deef8700117ad5e95b610e6a5aa57c3d1ac"
+    },
+    {
+      "upstream_task_id": "task_20260114_085016_654_e6427839_ca9119ec",
+      "reason": "upstream expected state conflicts with a REQUIRED Bench2 rule",
+      "detail": "The verifier requires GROUP_001 'Level 1 Support Team' to be dissolved (active=0), but GROUP_001 has active incidents (INC_003, INC_004, INC_014, INC_016) and Bench2 policy §12.3 REQUIRES blocking the dissolution until they are reassigned; the upstream task asks for no reassignment.",
+      "upstream_user_prompt_sha256": "c67d342b2802c9ec1b45a050d16d4caa594d9d82b98dc5a0ad5e232a4deb11e1"
+    },
+    {
+      "upstream_task_id": "task_20260114_094327_107_46ca2862_796e7685",
+      "reason": "ambiguous REQUIRED cascade",
+      "detail": "Creating the child incident (priority moderate) REQUIRES spawning a matching SLA (§6). The MSP world has two moderate SLAs for ORG_001 (SLA_005 'Priority 3 - Response', SLA_006 'Priority 3 - Resolution') and the seed's existing incidents follow no single convention (mostly one row, either kind). The REQUIRED knowledge search may also match KB_006 'SAP Login \"Session Locked\"'.",
+      "upstream_user_prompt_sha256": "c31e1f00c5a84027a7615020fc1f553a0cb5630b2a886f617c6e93f0d807b680"
+    },
+    {
+      "upstream_task_id": "task_20260116_081645_096_66392a82_fd509f97",
+      "reason": "REQUIRED cascade impossible with Bench2 tools, plus ambiguous SLA",
+      "detail": "Deactivating Travis Wood REQUIRES removing his user_role row (USER_011:ROLE_002:ORG_001) (§12.2); Bench2 has no tool that removes user_role rows. The new low-priority incident also has two candidate SLAs (SLA_007/SLA_008), and four PROPOSED offboarding cascades (INC_002, INC_093, CHG_010, PRB_006) would need scripted answers.",
+      "upstream_user_prompt_sha256": "06daad0627634ec054ee162109574f4b620981f3618d4a4ab302c2a2e08db18e"
+    }
+  ]
+}

@@ -14,6 +14,7 @@
 | 5：生命周期与隔离 | 用户认可（含第 1 次补修，提交 `b067d90`） | 2026-10-30 用户原话：“第 5 步及补修 b067d90 验收通过。记录本条批准，现在仅执行第 6 步：数据划分与预算冻结。” |
 | 6：数据划分与预算冻结 | **收尾待验收**（划分已选 v1） | 未批准。2026-10-30 用户原话：“第 6 步划分选择 v1：train 29 / dev 13 / held-out 11。暂不最终验收，不进入第 7 步。仅完成以下收尾”（实验定位、checkpoint 规则、无损紧凑序列化对照、40,960 待验证、不裁剪观察）。 |
 | 6A：EnterpriseOps-Gym ITSM 扩展可行性审计 | **待验收** | 未批准。2026-10-30 用户原话：“暂不进入第 7 步，也不修改现有 v1 划分。现在仅执行新增的第 6A 步：EnterpriseOps-Gym ITSM 扩展可行性审计。……只提交审计报告和试点清单，等待我验收后再执行第 6B 步。” 第 6 步仍为收尾待验收。 |
+| 6B：EnterpriseOps-Gym ITSM 迁移试点 | **待确认**（3 题通过、5 题隔离） | 未批准。2026-10-30 用户原话：“规模决策：本轮仅做 6B，最多迁移推荐清单中的 8 题……完成后提交逐题验收结果，等待确认，不自动扩大规模。” 6A 视为随本条进入 6B；第 6 步仍为收尾待验收。 |
 | 7 及以后 | 未开始 | — |
 
 ## 运行环境
@@ -278,4 +279,19 @@
   - `pytest tests/unit/test_itsm_eopsgym_audit.py`：见 `pytest_eopsgym_audit.log`；
   - 全量回归：见 `pytest_airlinerl_full.log`。
 - 没有 gold 回放，没有启动 GPU，没有加载权重，没有调用 LLM。
+
+## 第 6B 步证据
+
+- 逐题验收：`docs/itsm_step6b/README.md`；原始结果：`docs/itsm_step6b/pilot_validation.json`；试点文件：`configs/data/itsm_eops_pilot_v1.json`（不进 Bench2 `tasks.json`，不进 v1 划分）。
+- 改动：
+  - 新增 `src/agent_rl/data/itsm_eops_pilot.py`、`scripts/data/build_itsm_eops_pilot.py`、`scripts/data/validate_itsm_eops_pilot.py`、`tests/unit/test_itsm_eops_pilot.py`；
+  - `ItsmEnv` 增加可选参数 `task=`（id 必须与 config 一致；不传时行为不变）。
+  - Bench2、评分模块、v1 划分均未修改。
+- 结果：
+  - 通过 3 题：`b6ef60ca`、`52c8290e`、`1d219d93`。Bench2 DB=1；上游验证器在 gold 上全部通过、在初始状态下全部不通过；12 个反例全部 DB=0（7 个上游也能识别，5 个只有 Bench2 能识别）。
+  - 隔离 5 题，原因：REQUIRED 连带操作结果不唯一、prompt 与验证器矛盾、与 REQUIRED 规则冲突、REQUIRED 操作无对应工具。
+- 实测（脚本化 episode）：11–13 步，响应 2.2k–2.9k，完整序列 30.4k–31.1k token。
+- 合并后复查：试点题只连到 train 家族，dev/held-out 不变；`1d219d93` 把两个 v1 训练家族连成一个分量。
+- 运行：`build_itsm_eops_pilot.py --check` 结果为 up to date；`validate_itsm_eops_pilot.py` 退出码 0；测试日志见 `/home/sar/work/EnterGym/output/itsm-step6b/`。
+- 没有启动 GPU，没有调用 LLM，没有扩大规模；纳入训练集 v2 待确认。
 

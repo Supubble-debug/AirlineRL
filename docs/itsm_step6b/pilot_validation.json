@@ -1,0 +1,781 @@
+{
+  "pilot_version": "itsm_eops_pilot_v1",
+  "caveat": "Scripted gold episodes: tool calls are the gold actions, user turns are fixed text, one plan and one recap message are templated. Token figures are not a policy output distribution; timings are local CPU (WSL2). Bench2 scoring is full-DB fuzzy; upstream verifiers are run on the same final DB exported to SQLite. Passing both does not make the converted task equivalent to the EnterpriseOps-Gym evaluation.",
+  "tokenizer": {
+    "revision": "b968826d9c46dd6066d109eabc6255188de91218",
+    "enable_thinking": false
+  },
+  "max_steps": 40,
+  "tasks": {
+    "itsmbench_eops_46ca2862_b6ef60ca": {
+      "upstream_task_id": "task_20260113_182602_664_46ca2862_b6ef60ca",
+      "gold_actions": 8,
+      "bench2_gold_db_reward": 1.0,
+      "upstream_verifiers_on_gold": [
+        {
+          "name": "Report incident",
+          "expected": 1,
+          "actual": 1,
+          "error": null,
+          "passed": true
+        },
+        {
+          "name": "Add Configuration Item",
+          "expected": 1,
+          "actual": 1,
+          "error": null,
+          "passed": true
+        }
+      ],
+      "upstream_verifiers_on_initial_state": [
+        {
+          "name": "Report incident",
+          "expected": 1,
+          "actual": 0,
+          "error": null,
+          "passed": false
+        },
+        {
+          "name": "Add Configuration Item",
+          "expected": 1,
+          "actual": 0,
+          "error": null,
+          "passed": false
+        }
+      ],
+      "validation_cases": [
+        {
+          "name": "wrong_priority",
+          "reason": "priority must follow the medium x medium matrix cell (moderate)",
+          "bench2_db_reward": 0.0,
+          "bench2_mismatches": [
+            "incident/INC_024 priority: 'moderate' != 'high'"
+          ],
+          "expected_mismatch_found": true,
+          "upstream_all_pass": false,
+          "upstream_failed": [
+            "Report incident"
+          ],
+          "as_expected": true
+        },
+        {
+          "name": "sla_not_spawned",
+          "reason": "Bench2 policy REQUIRES an SLA on creation; the upstream verifiers do not check it",
+          "bench2_db_reward": 0.0,
+          "bench2_mismatches": [
+            "incident_sla: missing ['TSLA_011']"
+          ],
+          "expected_mismatch_found": true,
+          "upstream_all_pass": true,
+          "upstream_failed": [],
+          "as_expected": true
+        },
+        {
+          "name": "laptop_registered_in_london",
+          "reason": "the laptop is used at the New York office, not Benjamin's home location",
+          "bench2_db_reward": 0.0,
+          "bench2_mismatches": [
+            "configuration_item/CI_005 location_id: 'LOC_001' != 'LOC_002'"
+          ],
+          "expected_mismatch_found": true,
+          "upstream_all_pass": false,
+          "upstream_failed": [
+            "Add Configuration Item"
+          ],
+          "as_expected": true
+        },
+        {
+          "name": "unconfirmed_report_notification",
+          "reason": "the operator declined the PROPOSED notification; upstream does not penalise extra writes",
+          "bench2_db_reward": 0.0,
+          "bench2_mismatches": [
+            "notification: unexpected ['NOTIF_008']"
+          ],
+          "expected_mismatch_found": true,
+          "upstream_all_pass": true,
+          "upstream_failed": [],
+          "as_expected": true
+        }
+      ],
+      "measured_scripted_episode": {
+        "termination_reason": "agent_done",
+        "db_match": true,
+        "agent_turns": 11,
+        "step_count": 11,
+        "tool_calls": 8,
+        "initial_prompt_tokens": 28131,
+        "generated_tokens": 541,
+        "generated_tokens_max_action": 160,
+        "environment_tokens": 1838,
+        "environment_tokens_max_turn": 394,
+        "response_tokens": 2379,
+        "full_sequence_tokens": 30510,
+        "seconds": {
+          "env_build_and_reset": 0.0086,
+          "tool_calls_total": 0.0026,
+          "tool_call_max": 0.0006,
+          "gold_replay_and_db_scoring": 0.0077
+        }
+      },
+      "accepted": true
+    },
+    "itsmbench_eops_66392a82_52c8290e": {
+      "upstream_task_id": "task_20251218_124419_383_66392a82_52c8290e",
+      "gold_actions": 8,
+      "bench2_gold_db_reward": 1.0,
+      "upstream_verifiers_on_gold": [
+        {
+          "name": "Cost update",
+          "expected": 1,
+          "actual": 1,
+          "error": null,
+          "passed": true
+        },
+        {
+          "name": "High-impact incident created",
+          "expected": 1,
+          "actual": 1,
+          "error": null,
+          "passed": true
+        }
+      ],
+      "upstream_verifiers_on_initial_state": [
+        {
+          "name": "Cost update",
+          "expected": 1,
+          "actual": 0,
+          "error": null,
+          "passed": false
+        },
+        {
+          "name": "High-impact incident created",
+          "expected": 1,
+          "actual": 0,
+          "error": null,
+          "passed": false
+        }
+      ],
+      "validation_cases": [
+        {
+          "name": "cost_not_corrected",
+          "reason": "the requested cost correction is missing",
+          "bench2_db_reward": 0.0,
+          "bench2_mismatches": [
+            "configuration_item/CI_005 cost: 4000.0 != 6000.0",
+            "configuration_item/CI_005 updated_on: '2025-12-18 09:00:00' != '2024-01-10 14:00:00'"
+          ],
+          "expected_mismatch_found": true,
+          "upstream_all_pass": false,
+          "upstream_failed": [
+            "Cost update"
+          ],
+          "as_expected": true
+        },
+        {
+          "name": "operator_as_caller",
+          "reason": "Elena, the device contact, is the caller",
+          "bench2_db_reward": 0.0,
+          "bench2_mismatches": [
+            "incident/INC_024 caller_id: 'USER_006' != 'USER_001'"
+          ],
+          "expected_mismatch_found": true,
+          "upstream_all_pass": false,
+          "upstream_failed": [
+            "High-impact incident created"
+          ],
+          "as_expected": true
+        },
+        {
+          "name": "sla_for_wrong_priority",
+          "reason": "the SLA must match the critical priority; upstream does not check SLAs",
+          "bench2_db_reward": 0.0,
+          "bench2_mismatches": [
+            "incident_sla/TSLA_011 sla_def_id: 'SLA_001' != 'SLA_002'"
+          ],
+          "expected_mismatch_found": true,
+          "upstream_all_pass": true,
+          "upstream_failed": [],
+          "as_expected": true
+        }
+      ],
+      "measured_scripted_episode": {
+        "termination_reason": "agent_done",
+        "db_match": true,
+        "agent_turns": 11,
+        "step_count": 11,
+        "tool_calls": 8,
+        "initial_prompt_tokens": 28132,
+        "generated_tokens": 506,
+        "generated_tokens_max_action": 147,
+        "environment_tokens": 1736,
+        "environment_tokens_max_turn": 332,
+        "response_tokens": 2242,
+        "full_sequence_tokens": 30374,
+        "seconds": {
+          "env_build_and_reset": 0.0078,
+          "tool_calls_total": 0.0012,
+          "tool_call_max": 0.0003,
+          "gold_replay_and_db_scoring": 0.0053
+        }
+      },
+      "accepted": true
+    },
+    "itsmbench_eops_1d219d93_d1ba6c2d": {
+      "upstream_task_id": "task_20251223_101136_983_1d219d93_d1ba6c2d",
+      "gold_actions": 10,
+      "bench2_gold_db_reward": 1.0,
+      "upstream_verifiers_on_gold": [
+        {
+          "name": "Checking creation of new location",
+          "expected": 1,
+          "actual": 1,
+          "error": null,
+          "passed": true
+        },
+        {
+          "name": "Adding cisco configuration item ",
+          "expected": 1,
+          "actual": 1,
+          "error": null,
+          "passed": true
+        },
+        {
+          "name": "Adding configuration item dell",
+          "expected": 1,
+          "actual": 1,
+          "error": null,
+          "passed": true
+        },
+        {
+          "name": "Updating configuration item",
+          "expected": 1,
+          "actual": 1,
+          "error": null,
+          "passed": true
+        },
+        {
+          "name": "Adding knowlege articles",
+          "expected": 1,
+          "actual": 1,
+          "error": null,
+          "passed": true
+        },
+        {
+          "name": "Updating the user to manager",
+          "expected": 1,
+          "actual": 1,
+          "error": null,
+          "passed": true
+        }
+      ],
+      "upstream_verifiers_on_initial_state": [
+        {
+          "name": "Checking creation of new location",
+          "expected": 1,
+          "actual": 0,
+          "error": null,
+          "passed": false
+        },
+        {
+          "name": "Adding cisco configuration item ",
+          "expected": 1,
+          "actual": 0,
+          "error": null,
+          "passed": false
+        },
+        {
+          "name": "Adding configuration item dell",
+          "expected": 1,
+          "actual": 0,
+          "error": null,
+          "passed": false
+        },
+        {
+          "name": "Updating configuration item",
+          "expected": 1,
+          "actual": 0,
+          "error": null,
+          "passed": false
+        },
+        {
+          "name": "Adding knowlege articles",
+          "expected": 1,
+          "actual": 0,
+          "error": null,
+          "passed": false
+        },
+        {
+          "name": "Updating the user to manager",
+          "expected": 1,
+          "actual": 0,
+          "error": null,
+          "passed": false
+        }
+      ],
+      "validation_cases": [
+        {
+          "name": "dell_left_in_bangalore",
+          "reason": "both new assets belong at Pune HQ",
+          "bench2_db_reward": 0.0,
+          "bench2_mismatches": [
+            "configuration_item/CI_102 location_id: 'LOC_024' != 'LOC_004'"
+          ],
+          "expected_mismatch_found": true,
+          "upstream_all_pass": false,
+          "upstream_failed": [
+            "Adding configuration item dell"
+          ],
+          "as_expected": true
+        },
+        {
+          "name": "role_not_changed",
+          "reason": "Elizabeth must become manager",
+          "bench2_db_reward": 0.0,
+          "bench2_mismatches": [
+            "users/USER_042 role: 'manager' != 'agent'",
+            "users/USER_042 updated_on: '2025-12-23 09:00:00' != '2026-05-28 11:58:09'"
+          ],
+          "expected_mismatch_found": true,
+          "upstream_all_pass": false,
+          "upstream_failed": [
+            "Updating the user to manager"
+          ],
+          "as_expected": true
+        },
+        {
+          "name": "in_stock_item_not_moved",
+          "reason": "CI_035 is in_stock in India and must move",
+          "bench2_db_reward": 0.0,
+          "bench2_mismatches": [
+            "configuration_item/CI_035 location_id: 'LOC_024' != 'LOC_004'",
+            "configuration_item/CI_035 updated_on: '2025-12-23 09:00:00' != '2023-04-13 09:00:00'"
+          ],
+          "expected_mismatch_found": true,
+          "upstream_all_pass": false,
+          "upstream_failed": [
+            "Updating configuration item"
+          ],
+          "as_expected": true
+        },
+        {
+          "name": "in_use_item_also_moved",
+          "reason": "only in_stock items move; upstream does not check untouched rows",
+          "bench2_db_reward": 0.0,
+          "bench2_mismatches": [
+            "configuration_item/CI_023 location_id: 'LOC_004' != 'LOC_024'",
+            "configuration_item/CI_023 updated_on: '2023-03-03 09:00:00' != '2025-12-23 09:00:00'"
+          ],
+          "expected_mismatch_found": true,
+          "upstream_all_pass": true,
+          "upstream_failed": [],
+          "as_expected": true
+        },
+        {
+          "name": "elizabeth_relocated",
+          "reason": "the operator said only her role changes; upstream does not check her location",
+          "bench2_db_reward": 0.0,
+          "bench2_mismatches": [
+            "users/USER_042 location_id: 'LOC_004' != 'LOC_024'"
+          ],
+          "expected_mismatch_found": true,
+          "upstream_all_pass": true,
+          "upstream_failed": [],
+          "as_expected": true
+        }
+      ],
+      "measured_scripted_episode": {
+        "termination_reason": "agent_done",
+        "db_match": true,
+        "agent_turns": 13,
+        "step_count": 13,
+        "tool_calls": 10,
+        "initial_prompt_tokens": 28130,
+        "generated_tokens": 758,
+        "generated_tokens_max_action": 252,
+        "environment_tokens": 2168,
+        "environment_tokens_max_turn": 280,
+        "response_tokens": 2926,
+        "full_sequence_tokens": 31056,
+        "seconds": {
+          "env_build_and_reset": 0.0116,
+          "tool_calls_total": 0.0021,
+          "tool_call_max": 0.0004,
+          "gold_replay_and_db_scoring": 0.0206
+        }
+      },
+      "accepted": true
+    }
+  },
+  "isolated": [
+    {
+      "upstream_task_id": "task_20251219_144431_663_97d7df7d_a52988e5",
+      "reason": "ambiguous REQUIRED cascade"
+    },
+    {
+      "upstream_task_id": "task_20251218_104259_233_66392a82_74b17170",
+      "reason": "upstream prompt contradicts its verifier"
+    },
+    {
+      "upstream_task_id": "task_20260114_085016_654_e6427839_ca9119ec",
+      "reason": "upstream expected state conflicts with a REQUIRED Bench2 rule"
+    },
+    {
+      "upstream_task_id": "task_20260114_094327_107_46ca2862_796e7685",
+      "reason": "ambiguous REQUIRED cascade"
+    },
+    {
+      "upstream_task_id": "task_20260116_081645_096_66392a82_fd509f97",
+      "reason": "REQUIRED cascade impossible with Bench2 tools, plus ambiguous SLA"
+    }
+  ],
+  "family_overlap": {
+    "checks": {
+      "pilot_components_touch_train_only": true,
+      "no_component_bridges_v1_splits": true,
+      "no_pilot_shares_2plus_entities_with_dev_or_heldout": true,
+      "pilot_shares_le_1_write_tool_with_dev_or_heldout": true,
+      "dev_and_heldout_unchanged": true
+    },
+    "pilot_links": [
+      {
+        "a": "itsmbench_eops_1d219d93_d1ba6c2d",
+        "b": "itsmbench_eops_46ca2862_b6ef60ca",
+        "write_jaccard": 0.143,
+        "shared_creation_tools": [
+          "register_configuration_item"
+        ]
+      },
+      {
+        "a": "itsmbench_eops_1d219d93_d1ba6c2d",
+        "b": "itsmbench_msp_001",
+        "write_jaccard": 0.143,
+        "shared_creation_tools": [
+          "register_configuration_item"
+        ]
+      },
+      {
+        "a": "itsmbench_eops_1d219d93_d1ba6c2d",
+        "b": "itsmbench_msp_002",
+        "write_jaccard": 0.143,
+        "shared_creation_tools": [
+          "register_configuration_item"
+        ]
+      },
+      {
+        "a": "itsmbench_eops_1d219d93_d1ba6c2d",
+        "b": "itsmbench_msp_003",
+        "write_jaccard": 0.286,
+        "shared_creation_tools": [
+          "add_location",
+          "register_configuration_item"
+        ]
+      },
+      {
+        "a": "itsmbench_eops_1d219d93_d1ba6c2d",
+        "b": "itsmbench_msp_004",
+        "write_jaccard": 0.286,
+        "shared_creation_tools": [
+          "register_configuration_item"
+        ]
+      },
+      {
+        "a": "itsmbench_eops_1d219d93_d1ba6c2d",
+        "b": "itsmbench_single_001",
+        "write_jaccard": 0.125,
+        "shared_creation_tools": [
+          "add_location"
+        ]
+      },
+      {
+        "a": "itsmbench_eops_1d219d93_d1ba6c2d",
+        "b": "itsmbench_single_002",
+        "write_jaccard": 0.111,
+        "shared_creation_tools": [
+          "register_configuration_item"
+        ]
+      },
+      {
+        "a": "itsmbench_eops_1d219d93_d1ba6c2d",
+        "b": "itsmbench_single_003",
+        "write_jaccard": 0.125,
+        "shared_creation_tools": [
+          "add_location"
+        ]
+      },
+      {
+        "a": "itsmbench_eops_1d219d93_d1ba6c2d",
+        "b": "itsmbench_single_004",
+        "write_jaccard": 0.222,
+        "shared_creation_tools": [
+          "add_location",
+          "register_configuration_item"
+        ]
+      },
+      {
+        "a": "itsmbench_eops_1d219d93_d1ba6c2d",
+        "b": "itsmbench_single_005",
+        "write_jaccard": 0.1,
+        "shared_creation_tools": [
+          "register_configuration_item"
+        ]
+      },
+      {
+        "a": "itsmbench_eops_1d219d93_d1ba6c2d",
+        "b": "itsmbench_single_011",
+        "write_jaccard": 0.111,
+        "shared_creation_tools": [
+          "create_knowledge_article"
+        ]
+      },
+      {
+        "a": "itsmbench_eops_1d219d93_d1ba6c2d",
+        "b": "itsmbench_single_015",
+        "write_jaccard": 0.111,
+        "shared_creation_tools": [
+          "create_knowledge_article"
+        ]
+      },
+      {
+        "a": "itsmbench_eops_46ca2862_b6ef60ca",
+        "b": "itsmbench_msp_001",
+        "write_jaccard": 0.2,
+        "shared_creation_tools": [
+          "register_configuration_item"
+        ]
+      },
+      {
+        "a": "itsmbench_eops_46ca2862_b6ef60ca",
+        "b": "itsmbench_msp_002",
+        "write_jaccard": 0.2,
+        "shared_creation_tools": [
+          "register_configuration_item"
+        ]
+      },
+      {
+        "a": "itsmbench_eops_46ca2862_b6ef60ca",
+        "b": "itsmbench_msp_003",
+        "write_jaccard": 0.167,
+        "shared_creation_tools": [
+          "register_configuration_item"
+        ]
+      },
+      {
+        "a": "itsmbench_eops_46ca2862_b6ef60ca",
+        "b": "itsmbench_msp_004",
+        "write_jaccard": 0.167,
+        "shared_creation_tools": [
+          "register_configuration_item"
+        ]
+      },
+      {
+        "a": "itsmbench_eops_46ca2862_b6ef60ca",
+        "b": "itsmbench_single_002",
+        "write_jaccard": 0.333,
+        "shared_creation_tools": [
+          "register_configuration_item"
+        ]
+      },
+      {
+        "a": "itsmbench_eops_46ca2862_b6ef60ca",
+        "b": "itsmbench_single_004",
+        "write_jaccard": 0.125,
+        "shared_creation_tools": [
+          "register_configuration_item"
+        ]
+      },
+      {
+        "a": "itsmbench_eops_46ca2862_b6ef60ca",
+        "b": "itsmbench_single_005",
+        "write_jaccard": 0.125,
+        "shared_creation_tools": [
+          "register_configuration_item"
+        ]
+      }
+    ],
+    "bridged_v1_families": [],
+    "tasks": {
+      "itsmbench_eops_1d219d93_d1ba6c2d": {
+        "component_v1_members": [
+          "itsmbench_msp_001",
+          "itsmbench_msp_002",
+          "itsmbench_msp_003",
+          "itsmbench_msp_004",
+          "itsmbench_msp_005",
+          "itsmbench_msp_006",
+          "itsmbench_msp_007",
+          "itsmbench_msp_008",
+          "itsmbench_msp_009",
+          "itsmbench_msp_010",
+          "itsmbench_msp_011",
+          "itsmbench_msp_012",
+          "itsmbench_msp_013",
+          "itsmbench_msp_014",
+          "itsmbench_msp_015",
+          "itsmbench_msp_016",
+          "itsmbench_msp_017",
+          "itsmbench_msp_018",
+          "itsmbench_msp_031",
+          "itsmbench_single_001",
+          "itsmbench_single_002",
+          "itsmbench_single_003",
+          "itsmbench_single_004",
+          "itsmbench_single_005",
+          "itsmbench_single_006",
+          "itsmbench_single_007",
+          "itsmbench_single_011",
+          "itsmbench_single_015"
+        ],
+        "component_v1_splits": [
+          "train"
+        ],
+        "component_v1_families": [
+          "change_problem_advance_with_kb",
+          "onboarding_and_catalog_admin"
+        ],
+        "component_pilot_members": [
+          "itsmbench_eops_1d219d93_d1ba6c2d",
+          "itsmbench_eops_46ca2862_b6ef60ca"
+        ],
+        "same_seed_entity_overlap": [
+          {
+            "bench2_task": "itsmbench_msp_004",
+            "split": "train",
+            "same_seed_entities": [
+              "USER_039"
+            ]
+          },
+          {
+            "bench2_task": "itsmbench_msp_023",
+            "split": "heldout",
+            "same_seed_entities": [
+              "USER_039"
+            ]
+          }
+        ],
+        "max_shared_write_tools_with_dev_or_heldout": {
+          "count": 0,
+          "task": null
+        }
+      },
+      "itsmbench_eops_46ca2862_b6ef60ca": {
+        "component_v1_members": [
+          "itsmbench_msp_001",
+          "itsmbench_msp_002",
+          "itsmbench_msp_003",
+          "itsmbench_msp_004",
+          "itsmbench_msp_005",
+          "itsmbench_msp_006",
+          "itsmbench_msp_007",
+          "itsmbench_msp_008",
+          "itsmbench_msp_009",
+          "itsmbench_msp_010",
+          "itsmbench_msp_011",
+          "itsmbench_msp_012",
+          "itsmbench_msp_013",
+          "itsmbench_msp_014",
+          "itsmbench_msp_015",
+          "itsmbench_msp_016",
+          "itsmbench_msp_017",
+          "itsmbench_msp_018",
+          "itsmbench_msp_031",
+          "itsmbench_single_001",
+          "itsmbench_single_002",
+          "itsmbench_single_003",
+          "itsmbench_single_004",
+          "itsmbench_single_005",
+          "itsmbench_single_006",
+          "itsmbench_single_007",
+          "itsmbench_single_011",
+          "itsmbench_single_015"
+        ],
+        "component_v1_splits": [
+          "train"
+        ],
+        "component_v1_families": [
+          "change_problem_advance_with_kb",
+          "onboarding_and_catalog_admin"
+        ],
+        "component_pilot_members": [
+          "itsmbench_eops_1d219d93_d1ba6c2d",
+          "itsmbench_eops_46ca2862_b6ef60ca"
+        ],
+        "same_seed_entity_overlap": [
+          {
+            "bench2_task": "itsmbench_single_005",
+            "split": "train",
+            "same_seed_entities": [
+              "LOC_001"
+            ]
+          },
+          {
+            "bench2_task": "itsmbench_single_006",
+            "split": "train",
+            "same_seed_entities": [
+              "USER_005"
+            ]
+          },
+          {
+            "bench2_task": "itsmbench_single_008",
+            "split": "dev",
+            "same_seed_entities": [
+              "USER_005"
+            ]
+          },
+          {
+            "bench2_task": "itsmbench_single_019",
+            "split": "dev",
+            "same_seed_entities": [
+              "USER_005"
+            ]
+          }
+        ],
+        "max_shared_write_tools_with_dev_or_heldout": {
+          "count": 0,
+          "task": null
+        }
+      },
+      "itsmbench_eops_66392a82_52c8290e": {
+        "component_v1_members": [],
+        "component_v1_splits": [],
+        "component_v1_families": [],
+        "component_pilot_members": [
+          "itsmbench_eops_66392a82_52c8290e"
+        ],
+        "same_seed_entity_overlap": [
+          {
+            "bench2_task": "itsmbench_single_005",
+            "split": "train",
+            "same_seed_entities": [
+              "SLA_001"
+            ]
+          },
+          {
+            "bench2_task": "itsmbench_single_006",
+            "split": "train",
+            "same_seed_entities": [
+              "SLA_001"
+            ]
+          },
+          {
+            "bench2_task": "itsmbench_single_010",
+            "split": "dev",
+            "same_seed_entities": [
+              "SLA_001"
+            ]
+          },
+          {
+            "bench2_task": "itsmbench_single_022",
+            "split": "heldout",
+            "same_seed_entities": [
+              "USER_006"
+            ]
+          }
+        ],
+        "max_shared_write_tools_with_dev_or_heldout": {
+          "count": 0,
+          "task": null
+        }
+      }
+    }
+  }
+}

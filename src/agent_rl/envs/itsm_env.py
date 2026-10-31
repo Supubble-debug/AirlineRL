@@ -304,12 +304,19 @@ class ItsmEnv:
         *,
         user: UserModel | None = None,
         episode_id: str | None = None,
+        task: Task | None = None,
     ) -> None:
-        tasks = _tasks_by_id()
-        if config.task_id not in tasks:
-            raise ValueError(f"unknown ITSM task_id {config.task_id!r}")
+        """``task`` supplies a task outside Bench2's ``tasks.json`` (e.g. the step 6B
+        pilot); its id must equal ``config.task_id``."""
+        if task is None:
+            tasks = _tasks_by_id()
+            if config.task_id not in tasks:
+                raise ValueError(f"unknown ITSM task_id {config.task_id!r}")
+            task = tasks[config.task_id]
+        elif task.id != config.task_id:
+            raise ValueError(f"task.id {task.id!r} does not match config.task_id {config.task_id!r}")
         self.config = config
-        self.task = tasks[config.task_id]
+        self.task = task
         self.episode_id = episode_id or f"{self.task.id}:{uuid.uuid4().hex[:8]}"
         self._user = user if user is not None else UserSimulator(
             self.task.scenario,
