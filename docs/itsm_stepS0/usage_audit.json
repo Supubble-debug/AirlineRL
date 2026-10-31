@@ -1,6 +1,6 @@
 {
-  "version": "itsm_usage_s0_candidate_v1",
-  "status": "candidate for S0 acceptance; v1/v2 manifests unchanged; no usage version frozen",
+  "version": "itsm_usage_s0_candidate_v2",
+  "status": "candidate for S0 acceptance (revision S0-R1); v1/v2 manifests unchanged; no usage version frozen",
   "scope": "offline: gold replays and edited replays on real Bench2 tools under the task clock; no tokenizer, model, LLM or GPU; held-out only read for the isolation audit",
   "text_match": {
     "strategy": "fuzzy",
@@ -31,6 +31,7 @@
             "delivered_also_failed": 0.0
           },
           "discriminated": true,
+          "missed_negatives": [],
           "free_text_key_fact_missed": []
         },
         {
@@ -45,6 +46,7 @@
             "group_manager_skipped": 0.0
           },
           "discriminated": true,
+          "missed_negatives": [],
           "free_text_key_fact_missed": []
         },
         {
@@ -61,6 +63,11 @@
             "s0_reminder_wrong_service": 1.0
           },
           "discriminated": false,
+          "missed_negatives": [
+            "s0_update_says_work_finished",
+            "s0_update_wrong_incident_number",
+            "s0_reminder_wrong_service"
+          ],
           "free_text_key_fact_missed": [
             "s0_update_says_work_finished",
             "s0_update_wrong_incident_number",
@@ -72,6 +79,7 @@
         "queued_left_queued": {
           "source": "existing_validation_case",
           "kind": "structured",
+          "tool_calls_succeeded": true,
           "db_reward": 0.0,
           "mismatches": [
             "notification/NOTIF_003 status: 'failed' != 'queued'",
@@ -81,6 +89,7 @@
         "delivered_also_failed": {
           "source": "existing_validation_case",
           "kind": "structured",
+          "tool_calls_succeeded": true,
           "db_reward": 0.0,
           "mismatches": [
             "notification/NOTIF_002 status: 'delivered' != 'failed'",
@@ -90,6 +99,7 @@
         "caller_sent_reminder": {
           "source": "existing_validation_case",
           "kind": "structured",
+          "tool_calls_succeeded": true,
           "db_reward": 0.0,
           "mismatches": [
             "notification/NOTIF_030 type: 'update' != 'reminder'"
@@ -98,6 +108,7 @@
         "group_manager_skipped": {
           "source": "existing_validation_case",
           "kind": "structured",
+          "tool_calls_succeeded": true,
           "db_reward": 0.0,
           "mismatches": [
             "notification: missing ['NOTIF_032']"
@@ -107,6 +118,7 @@
           "source": "s0",
           "kind": "key_fact",
           "reason": "caller told the work is finished, the opposite of the operator's text",
+          "tool_calls_succeeded": true,
           "db_reward": 1.0,
           "mismatches": [],
           "fuzzy_recall": 0.929,
@@ -116,6 +128,7 @@
           "source": "s0",
           "kind": "key_fact",
           "reason": "caller update cites another incident number",
+          "tool_calls_succeeded": true,
           "db_reward": 1.0,
           "mismatches": [],
           "fuzzy_recall": 0.929,
@@ -125,6 +138,7 @@
           "source": "s0",
           "kind": "key_fact",
           "reason": "reminder names the wrong outage",
+          "tool_calls_succeeded": true,
           "db_reward": 1.0,
           "mismatches": [],
           "fuzzy_recall": 0.846,
@@ -133,7 +147,7 @@
       },
       "grpo": {
         "proposed": "suspended_reward_blind_spot",
-        "basis": "a core requirement carried only by fuzzy-compared free text is not discriminated: operator_texts_status_and_progress"
+        "basis": "a core requirement has a key negative scoring DB=1 (fuzzy-compared free text): operator_texts_status_and_progress"
       },
       "sft": {
         "proposed": "eligible_pending_trajectory_review",
@@ -159,6 +173,7 @@
             "s0_location_wrong_city": 0.0
           },
           "discriminated": true,
+          "missed_negatives": [],
           "free_text_key_fact_missed": []
         },
         {
@@ -173,6 +188,7 @@
             "in_use_item_also_moved": 0.0
           },
           "discriminated": true,
+          "missed_negatives": [],
           "free_text_key_fact_missed": []
         },
         {
@@ -185,6 +201,7 @@
             "dell_left_in_bangalore": 0.0
           },
           "discriminated": true,
+          "missed_negatives": [],
           "free_text_key_fact_missed": []
         },
         {
@@ -199,6 +216,7 @@
             "elizabeth_relocated": 0.0
           },
           "discriminated": true,
+          "missed_negatives": [],
           "free_text_key_fact_missed": []
         },
         {
@@ -213,6 +231,10 @@
             "s0_kb_missing_serial": 1.0
           },
           "discriminated": false,
+          "missed_negatives": [
+            "s0_kb_wrong_serial",
+            "s0_kb_missing_serial"
+          ],
           "free_text_key_fact_missed": [
             "s0_kb_wrong_serial",
             "s0_kb_missing_serial"
@@ -223,6 +245,7 @@
         "dell_left_in_bangalore": {
           "source": "existing_validation_case",
           "kind": "structured",
+          "tool_calls_succeeded": true,
           "db_reward": 0.0,
           "mismatches": [
             "configuration_item/CI_102 location_id: 'LOC_024' != 'LOC_004'"
@@ -231,6 +254,7 @@
         "role_not_changed": {
           "source": "existing_validation_case",
           "kind": "structured",
+          "tool_calls_succeeded": true,
           "db_reward": 0.0,
           "mismatches": [
             "users/USER_042 role: 'manager' != 'agent'",
@@ -240,6 +264,7 @@
         "in_stock_item_not_moved": {
           "source": "existing_validation_case",
           "kind": "structured",
+          "tool_calls_succeeded": true,
           "db_reward": 0.0,
           "mismatches": [
             "configuration_item/CI_035 location_id: 'LOC_024' != 'LOC_004'",
@@ -249,6 +274,7 @@
         "in_use_item_also_moved": {
           "source": "existing_validation_case",
           "kind": "structured",
+          "tool_calls_succeeded": true,
           "db_reward": 0.0,
           "mismatches": [
             "configuration_item/CI_023 location_id: 'LOC_004' != 'LOC_024'",
@@ -258,6 +284,7 @@
         "elizabeth_relocated": {
           "source": "existing_validation_case",
           "kind": "structured",
+          "tool_calls_succeeded": true,
           "db_reward": 0.0,
           "mismatches": [
             "users/USER_042 location_id: 'LOC_004' != 'LOC_024'"
@@ -267,6 +294,7 @@
           "source": "s0",
           "kind": "structured",
           "reason": "Pune HQ created in the wrong city",
+          "tool_calls_succeeded": true,
           "db_reward": 0.0,
           "mismatches": [
             "location/LOC_024 city: 'Pune' != 'Mumbai'"
@@ -276,6 +304,7 @@
           "source": "s0",
           "kind": "key_fact",
           "reason": "article lists a wrong serial for the Dell",
+          "tool_calls_succeeded": true,
           "db_reward": 1.0,
           "mismatches": [],
           "fuzzy_recall": 0.8,
@@ -285,6 +314,7 @@
           "source": "s0",
           "kind": "key_fact",
           "reason": "article omits the Dell serial",
+          "tool_calls_succeeded": true,
           "db_reward": 1.0,
           "mismatches": [],
           "fuzzy_recall": 0.6,
@@ -293,7 +323,7 @@
       },
       "grpo": {
         "proposed": "suspended_reward_blind_spot",
-        "basis": "a core requirement carried only by fuzzy-compared free text is not discriminated: kb_lists_only_the_two_serials"
+        "basis": "a core requirement has a key negative scoring DB=1 (fuzzy-compared free text): kb_lists_only_the_two_serials"
       },
       "sft": {
         "proposed": "eligible_pending_trajectory_review",
@@ -321,6 +351,7 @@
             "one_offering_missing": 0.0
           },
           "discriminated": true,
+          "missed_negatives": [],
           "free_text_key_fact_missed": []
         },
         {
@@ -333,6 +364,7 @@
             "template_on_archiving_offering": 0.0
           },
           "discriminated": true,
+          "missed_negatives": [],
           "free_text_key_fact_missed": []
         }
       ],
@@ -340,6 +372,7 @@
         "offering_under_wrong_service": {
           "source": "existing_validation_case",
           "kind": "structured",
+          "tool_calls_succeeded": true,
           "db_reward": 0.0,
           "mismatches": [
             "service_offering/SVCOFF_062 business_service: 'SVC_001' != 'SVC_002'"
@@ -348,6 +381,7 @@
         "criticality_not_inherited": {
           "source": "existing_validation_case",
           "kind": "structured",
+          "tool_calls_succeeded": true,
           "db_reward": 0.0,
           "mismatches": [
             "service_offering/SVCOFF_063 business_criticality: 'critical' != 'somewhat-critical'"
@@ -356,6 +390,7 @@
         "template_on_archiving_offering": {
           "source": "existing_validation_case",
           "kind": "structured",
+          "tool_calls_succeeded": true,
           "db_reward": 0.0,
           "mismatches": [
             "incident_template/TMPL_004 service_offering: 'SVCOFF_061' != 'SVCOFF_062'"
@@ -364,6 +399,7 @@
         "one_offering_missing": {
           "source": "existing_validation_case",
           "kind": "structured",
+          "tool_calls_succeeded": true,
           "db_reward": 0.0,
           "mismatches": [
             "service_offering: missing ['SVCOFF_063']"
@@ -396,6 +432,7 @@
             "laptop_registered_in_london": 0.0
           },
           "discriminated": true,
+          "missed_negatives": [],
           "free_text_key_fact_missed": []
         },
         {
@@ -408,10 +445,12 @@
             "wrong_priority": 0.0
           },
           "discriminated": true,
+          "missed_negatives": [],
           "free_text_key_fact_missed": []
         },
         {
-          "id": "incident_about_software_installation",
+          "id": "fact_software_not_hardware",
+          "fact": "the incident is about software, not hardware (category and subject)",
           "carrier": "free_text+structured",
           "negatives": [
             "s0_category_hardware",
@@ -421,9 +460,30 @@
             "s0_category_hardware": 0.0,
             "s0_subject_says_hardware": 1.0
           },
-          "discriminated": true,
+          "discriminated": false,
+          "missed_negatives": [
+            "s0_subject_says_hardware"
+          ],
           "free_text_key_fact_missed": [
             "s0_subject_says_hardware"
+          ]
+        },
+        {
+          "id": "fact_installation_not_removal",
+          "fact": "the requested operation is installation, not removal (subject only)",
+          "carrier": "free_text",
+          "negatives": [
+            "s0_subject_says_removal"
+          ],
+          "negative_db_rewards": {
+            "s0_subject_says_removal": 1.0
+          },
+          "discriminated": false,
+          "missed_negatives": [
+            "s0_subject_says_removal"
+          ],
+          "free_text_key_fact_missed": [
+            "s0_subject_says_removal"
           ]
         },
         {
@@ -436,6 +496,7 @@
             "sla_not_spawned": 0.0
           },
           "discriminated": true,
+          "missed_negatives": [],
           "free_text_key_fact_missed": []
         },
         {
@@ -448,6 +509,7 @@
             "unconfirmed_report_notification": 0.0
           },
           "discriminated": true,
+          "missed_negatives": [],
           "free_text_key_fact_missed": []
         }
       ],
@@ -455,6 +517,7 @@
         "wrong_priority": {
           "source": "existing_validation_case",
           "kind": "structured",
+          "tool_calls_succeeded": true,
           "db_reward": 0.0,
           "mismatches": [
             "incident/INC_024 priority: 'moderate' != 'high'"
@@ -463,6 +526,7 @@
         "sla_not_spawned": {
           "source": "existing_validation_case",
           "kind": "structured",
+          "tool_calls_succeeded": true,
           "db_reward": 0.0,
           "mismatches": [
             "incident_sla: missing ['TSLA_011']"
@@ -471,6 +535,7 @@
         "laptop_registered_in_london": {
           "source": "existing_validation_case",
           "kind": "structured",
+          "tool_calls_succeeded": true,
           "db_reward": 0.0,
           "mismatches": [
             "configuration_item/CI_005 location_id: 'LOC_001' != 'LOC_002'"
@@ -479,6 +544,7 @@
         "unconfirmed_report_notification": {
           "source": "existing_validation_case",
           "kind": "structured",
+          "tool_calls_succeeded": true,
           "db_reward": 0.0,
           "mismatches": [
             "notification: unexpected ['NOTIF_008']"
@@ -488,6 +554,7 @@
           "source": "s0",
           "kind": "key_fact",
           "reason": "incident subject names hardware instead of software installation",
+          "tool_calls_succeeded": true,
           "db_reward": 1.0,
           "mismatches": [],
           "fuzzy_recall": 0.5,
@@ -497,21 +564,32 @@
           "source": "s0",
           "kind": "structured",
           "reason": "incident category hardware instead of software",
+          "tool_calls_succeeded": true,
           "db_reward": 0.0,
           "mismatches": [
             "incident/INC_024 category: 'software' != 'hardware'"
           ]
+        },
+        "s0_subject_says_removal": {
+          "source": "s0",
+          "kind": "key_fact",
+          "reason": "S0-R1: category stays software, the subject names software removal instead of installation",
+          "tool_calls_succeeded": true,
+          "db_reward": 1.0,
+          "mismatches": [],
+          "fuzzy_recall": 0.5,
+          "threshold": 0.5
         }
       },
       "grpo": {
-        "proposed": "eligible",
-        "basis": "every core requirement has a DB=0 negative"
+        "proposed": "suspended_reward_blind_spot",
+        "basis": "a core requirement has a key negative scoring DB=1 (fuzzy-compared free text): fact_software_not_hardware, fact_installation_not_removal"
       },
       "sft": {
         "proposed": "eligible_pending_trajectory_review",
         "basis": "unambiguous user goal, tools exist, no policy conflict, gold DB=1 and valid upstream verifiers pass; the reward blind spot is covered by explicit fact checks in review",
         "fact_checks": [
-          "incident short_description names software installation"
+          "incident category is software and short_description names software (not hardware) installation (not removal)"
         ]
       }
     },
@@ -531,6 +609,7 @@
             "cost_not_corrected": 0.0
           },
           "discriminated": true,
+          "missed_negatives": [],
           "free_text_key_fact_missed": []
         },
         {
@@ -543,6 +622,7 @@
             "operator_as_caller": 0.0
           },
           "discriminated": true,
+          "missed_negatives": [],
           "free_text_key_fact_missed": []
         },
         {
@@ -555,6 +635,7 @@
             "sla_for_wrong_priority": 0.0
           },
           "discriminated": true,
+          "missed_negatives": [],
           "free_text_key_fact_missed": []
         },
         {
@@ -569,6 +650,10 @@
             "s0_symptom_unrelated": 1.0
           },
           "discriminated": false,
+          "missed_negatives": [
+            "s0_symptom_replaced",
+            "s0_symptom_unrelated"
+          ],
           "free_text_key_fact_missed": [
             "s0_symptom_replaced",
             "s0_symptom_unrelated"
@@ -579,6 +664,7 @@
         "cost_not_corrected": {
           "source": "existing_validation_case",
           "kind": "structured",
+          "tool_calls_succeeded": true,
           "db_reward": 0.0,
           "mismatches": [
             "configuration_item/CI_005 cost: 4000.0 != 6000.0",
@@ -588,6 +674,7 @@
         "operator_as_caller": {
           "source": "existing_validation_case",
           "kind": "structured",
+          "tool_calls_succeeded": true,
           "db_reward": 0.0,
           "mismatches": [
             "incident/INC_024 caller_id: 'USER_006' != 'USER_001'"
@@ -596,6 +683,7 @@
         "sla_for_wrong_priority": {
           "source": "existing_validation_case",
           "kind": "structured",
+          "tool_calls_succeeded": true,
           "db_reward": 0.0,
           "mismatches": [
             "incident_sla/TSLA_011 sla_def_id: 'SLA_001' != 'SLA_002'"
@@ -605,6 +693,7 @@
           "source": "s0",
           "kind": "key_fact",
           "reason": "incident describes overheating/rebooting, not freezing and dropped calls",
+          "tool_calls_succeeded": true,
           "db_reward": 1.0,
           "mismatches": [],
           "fuzzy_recall": 0.5,
@@ -614,6 +703,7 @@
           "source": "s0",
           "kind": "key_fact",
           "reason": "incident describes no fault at all",
+          "tool_calls_succeeded": true,
           "db_reward": 1.0,
           "mismatches": [],
           "fuzzy_recall": 0.5,
@@ -622,7 +712,7 @@
       },
       "grpo": {
         "proposed": "suspended_reward_blind_spot",
-        "basis": "a core requirement carried only by fuzzy-compared free text is not discriminated: incident_describes_freezing_and_dropped_calls"
+        "basis": "a core requirement has a key negative scoring DB=1 (fuzzy-compared free text): incident_describes_freezing_and_dropped_calls"
       },
       "sft": {
         "proposed": "eligible_pending_trajectory_review",
@@ -650,6 +740,7 @@
             "serial_set_on_wrong_ci": 0.0
           },
           "discriminated": true,
+          "missed_negatives": [],
           "free_text_key_fact_missed": []
         },
         {
@@ -662,6 +753,7 @@
             "service_left_in_repair": 0.0
           },
           "discriminated": true,
+          "missed_negatives": [],
           "free_text_key_fact_missed": []
         },
         {
@@ -674,6 +766,7 @@
             "article_left_draft_internal": 0.0
           },
           "discriminated": true,
+          "missed_negatives": [],
           "free_text_key_fact_missed": []
         },
         {
@@ -688,6 +781,10 @@
             "s0_kb_wrong_criticality": 1.0
           },
           "discriminated": false,
+          "missed_negatives": [
+            "s0_kb_old_serial",
+            "s0_kb_wrong_criticality"
+          ],
           "free_text_key_fact_missed": [
             "s0_kb_old_serial",
             "s0_kb_wrong_criticality"
@@ -698,6 +795,7 @@
         "new_ci_registered": {
           "source": "existing_validation_case",
           "kind": "structured",
+          "tool_calls_succeeded": true,
           "db_reward": 0.0,
           "mismatches": [
             "configuration_item: unexpected ['CI_101']"
@@ -706,6 +804,7 @@
         "article_left_draft_internal": {
           "source": "existing_validation_case",
           "kind": "structured",
+          "tool_calls_succeeded": true,
           "db_reward": 0.0,
           "mismatches": [
             "knowledge/KB_026 state: 'published' != 'draft'",
@@ -715,6 +814,7 @@
         "service_left_in_repair": {
           "source": "existing_validation_case",
           "kind": "structured",
+          "tool_calls_succeeded": true,
           "db_reward": 0.0,
           "mismatches": [
             "service/SVC_007 status: 'operational' != 'repair_in_progress'",
@@ -724,6 +824,7 @@
         "serial_set_on_wrong_ci": {
           "source": "existing_validation_case",
           "kind": "structured",
+          "tool_calls_succeeded": true,
           "db_reward": 0.0,
           "mismatches": [
             "configuration_item/CI_001 serial_number: 'DB-2025-PROD-001' != 'SRV-ORC-9981'",
@@ -736,6 +837,7 @@
           "source": "s0",
           "kind": "key_fact",
           "reason": "article records the replaced serial instead of the new one",
+          "tool_calls_succeeded": true,
           "db_reward": 1.0,
           "mismatches": [],
           "fuzzy_recall": 0.984,
@@ -745,6 +847,7 @@
           "source": "s0",
           "kind": "key_fact",
           "reason": "article misstates the service's criticality",
+          "tool_calls_succeeded": true,
           "db_reward": 1.0,
           "mismatches": [],
           "fuzzy_recall": 0.984,
@@ -753,7 +856,7 @@
       },
       "grpo": {
         "proposed": "suspended_reward_blind_spot",
-        "basis": "a core requirement carried only by fuzzy-compared free text is not discriminated: article_body_operator_facts"
+        "basis": "a core requirement has a key negative scoring DB=1 (fuzzy-compared free text): article_body_operator_facts"
       },
       "sft": {
         "proposed": "eligible_pending_trajectory_review",
@@ -777,6 +880,7 @@
             "ci_set_to_disposed": 0.0
           },
           "discriminated": true,
+          "missed_negatives": [],
           "free_text_key_fact_missed": []
         },
         {
@@ -791,6 +895,7 @@
             "printer_set_as_primary_ci": 0.0
           },
           "discriminated": true,
+          "missed_negatives": [],
           "free_text_key_fact_missed": []
         },
         {
@@ -803,6 +908,7 @@
             "retired_ci_also_linked": 0.0
           },
           "discriminated": true,
+          "missed_negatives": [],
           "free_text_key_fact_missed": []
         }
       ],
@@ -810,6 +916,7 @@
         "retired_ci_also_linked": {
           "source": "existing_validation_case",
           "kind": "structured",
+          "tool_calls_succeeded": true,
           "db_reward": 0.0,
           "mismatches": [
             "incident_affected_cis: unexpected ['TASKCI_016']"
@@ -818,6 +925,7 @@
         "ci_set_to_disposed": {
           "source": "existing_validation_case",
           "kind": "structured",
+          "tool_calls_succeeded": true,
           "db_reward": 0.0,
           "mismatches": [
             "configuration_item/CI_041 status: 'retired' != 'disposed'"
@@ -826,6 +934,7 @@
         "printer_not_linked": {
           "source": "existing_validation_case",
           "kind": "structured",
+          "tool_calls_succeeded": true,
           "db_reward": 0.0,
           "mismatches": [
             "incident_affected_cis: missing ['TASKCI_015']"
@@ -834,6 +943,7 @@
         "printer_set_as_primary_ci": {
           "source": "existing_validation_case",
           "kind": "structured",
+          "tool_calls_succeeded": true,
           "db_reward": 0.0,
           "mismatches": [
             "incident/INC_026 configuration_item: 'CI_021' != 'CI_096'",
@@ -2323,6 +2433,70 @@
       "no_upstream_task_in_both": true
     },
     "bench2_cross_split_pairs_known_since_v1": 118,
+    "family_of": {
+      "itsmbench_eops_01395ded_eff85dae": "itsmbench_eops_01395ded_eff85dae",
+      "itsmbench_eops_1d219d93_d1ba6c2d": "itsmbench_eops_1d219d93_d1ba6c2d",
+      "itsmbench_eops_46ca2862_56a4f834": "itsmbench_eops_1d219d93_d1ba6c2d",
+      "itsmbench_eops_46ca2862_b6ef60ca": "itsmbench_eops_1d219d93_d1ba6c2d",
+      "itsmbench_eops_66392a82_52c8290e": "itsmbench_eops_66392a82_52c8290e",
+      "itsmbench_eops_78a5b71e_a4fb07a9": "itsmbench_eops_78a5b71e_a4fb07a9",
+      "itsmbench_eops_99ba2325_54f35603": "itsmbench_eops_99ba2325_54f35603",
+      "itsmbench_eops_99ba2325_7915481a": "itsmbench_eops_1d219d93_d1ba6c2d",
+      "itsmbench_eops_99ba2325_887f5580": "itsmbench_eops_99ba2325_887f5580",
+      "itsmbench_msp_001": "itsmbench_eops_1d219d93_d1ba6c2d",
+      "itsmbench_msp_002": "itsmbench_eops_1d219d93_d1ba6c2d",
+      "itsmbench_msp_003": "itsmbench_eops_1d219d93_d1ba6c2d",
+      "itsmbench_msp_004": "itsmbench_eops_1d219d93_d1ba6c2d",
+      "itsmbench_msp_005": "itsmbench_eops_1d219d93_d1ba6c2d",
+      "itsmbench_msp_006": "itsmbench_eops_1d219d93_d1ba6c2d",
+      "itsmbench_msp_007": "itsmbench_eops_1d219d93_d1ba6c2d",
+      "itsmbench_msp_008": "itsmbench_eops_1d219d93_d1ba6c2d",
+      "itsmbench_msp_009": "itsmbench_eops_1d219d93_d1ba6c2d",
+      "itsmbench_msp_010": "itsmbench_eops_1d219d93_d1ba6c2d",
+      "itsmbench_msp_011": "itsmbench_eops_1d219d93_d1ba6c2d",
+      "itsmbench_msp_012": "itsmbench_eops_1d219d93_d1ba6c2d",
+      "itsmbench_msp_013": "itsmbench_eops_1d219d93_d1ba6c2d",
+      "itsmbench_msp_014": "itsmbench_eops_1d219d93_d1ba6c2d",
+      "itsmbench_msp_015": "itsmbench_eops_1d219d93_d1ba6c2d",
+      "itsmbench_msp_016": "itsmbench_eops_1d219d93_d1ba6c2d",
+      "itsmbench_msp_017": "itsmbench_eops_1d219d93_d1ba6c2d",
+      "itsmbench_msp_018": "itsmbench_eops_1d219d93_d1ba6c2d",
+      "itsmbench_msp_019": "itsmbench_msp_019",
+      "itsmbench_msp_020": "itsmbench_msp_020",
+      "itsmbench_msp_021": "itsmbench_msp_019",
+      "itsmbench_msp_022": "itsmbench_msp_019",
+      "itsmbench_msp_023": "itsmbench_msp_023",
+      "itsmbench_msp_024": "itsmbench_msp_019",
+      "itsmbench_msp_025": "itsmbench_msp_019",
+      "itsmbench_msp_026": "itsmbench_msp_019",
+      "itsmbench_msp_027": "itsmbench_msp_027",
+      "itsmbench_msp_028": "itsmbench_msp_027",
+      "itsmbench_msp_029": "itsmbench_msp_019",
+      "itsmbench_msp_030": "itsmbench_msp_030",
+      "itsmbench_msp_031": "itsmbench_eops_1d219d93_d1ba6c2d",
+      "itsmbench_single_001": "itsmbench_eops_1d219d93_d1ba6c2d",
+      "itsmbench_single_002": "itsmbench_eops_1d219d93_d1ba6c2d",
+      "itsmbench_single_003": "itsmbench_eops_1d219d93_d1ba6c2d",
+      "itsmbench_single_004": "itsmbench_eops_1d219d93_d1ba6c2d",
+      "itsmbench_single_005": "itsmbench_eops_1d219d93_d1ba6c2d",
+      "itsmbench_single_006": "itsmbench_eops_1d219d93_d1ba6c2d",
+      "itsmbench_single_007": "itsmbench_eops_1d219d93_d1ba6c2d",
+      "itsmbench_single_008": "itsmbench_msp_019",
+      "itsmbench_single_009": "itsmbench_single_009",
+      "itsmbench_single_010": "itsmbench_msp_019",
+      "itsmbench_single_011": "itsmbench_eops_1d219d93_d1ba6c2d",
+      "itsmbench_single_012": "itsmbench_single_012",
+      "itsmbench_single_013": "itsmbench_single_012",
+      "itsmbench_single_014": "itsmbench_msp_019",
+      "itsmbench_single_015": "itsmbench_eops_1d219d93_d1ba6c2d",
+      "itsmbench_single_016": "itsmbench_single_016",
+      "itsmbench_single_017": "itsmbench_msp_027",
+      "itsmbench_single_018": "itsmbench_single_018",
+      "itsmbench_single_019": "itsmbench_msp_019",
+      "itsmbench_single_020": "itsmbench_msp_019",
+      "itsmbench_single_021": "itsmbench_msp_027",
+      "itsmbench_single_022": "itsmbench_msp_027"
+    },
     "upstream_annotators_shared_across_uses": {
       "99ba2325": {
         "train": [
@@ -2343,15 +2517,15 @@
         "use": "sft_only",
         "grpo": "suspended_reward_blind_spot",
         "sft": "eligible_pending_trajectory_review",
-        "basis": "a core requirement carried only by fuzzy-compared free text is not discriminated: kb_lists_only_the_two_serials"
+        "basis": "a core requirement has a key negative scoring DB=1 (fuzzy-compared free text): kb_lists_only_the_two_serials"
       },
       {
         "id": "itsmbench_eops_46ca2862_b6ef60ca",
         "origin": "derived_6B",
-        "use": "both",
-        "grpo": "eligible",
+        "use": "sft_only",
+        "grpo": "suspended_reward_blind_spot",
         "sft": "eligible_pending_trajectory_review",
-        "basis": "every core requirement has a DB=0 negative"
+        "basis": "a core requirement has a key negative scoring DB=1 (fuzzy-compared free text): fact_software_not_hardware, fact_installation_not_removal"
       },
       {
         "id": "itsmbench_eops_66392a82_52c8290e",
@@ -2359,7 +2533,7 @@
         "use": "sft_only",
         "grpo": "suspended_reward_blind_spot",
         "sft": "eligible_pending_trajectory_review",
-        "basis": "a core requirement carried only by fuzzy-compared free text is not discriminated: incident_describes_freezing_and_dropped_calls"
+        "basis": "a core requirement has a key negative scoring DB=1 (fuzzy-compared free text): incident_describes_freezing_and_dropped_calls"
       },
       {
         "id": "itsmbench_msp_001",
@@ -2367,7 +2541,7 @@
         "use": "both",
         "grpo": "eligible_as_accepted_in_steps_3_and_6",
         "sft": "eligible_pending_trajectory_review",
-        "basis": "v1/v2 train; free-text key facts not audited (open item)"
+        "basis": "v1/v2 train; gold writes no fuzzy-compared free text"
       },
       {
         "id": "itsmbench_msp_002",
@@ -2375,7 +2549,7 @@
         "use": "both",
         "grpo": "eligible_as_accepted_in_steps_3_and_6",
         "sft": "eligible_pending_trajectory_review",
-        "basis": "v1/v2 train; free-text key facts not audited (open item)"
+        "basis": "v1/v2 train; gold writes no fuzzy-compared free text"
       },
       {
         "id": "itsmbench_msp_003",
@@ -2383,7 +2557,7 @@
         "use": "both",
         "grpo": "eligible_as_accepted_in_steps_3_and_6",
         "sft": "eligible_pending_trajectory_review",
-        "basis": "v1/v2 train; free-text key facts not audited (open item)"
+        "basis": "v1/v2 train; gold writes no fuzzy-compared free text"
       },
       {
         "id": "itsmbench_msp_004",
@@ -2391,7 +2565,7 @@
         "use": "both",
         "grpo": "eligible_as_accepted_in_steps_3_and_6",
         "sft": "eligible_pending_trajectory_review",
-        "basis": "v1/v2 train; free-text key facts not audited (open item)"
+        "basis": "v1/v2 train; gold writes no fuzzy-compared free text"
       },
       {
         "id": "itsmbench_msp_005",
@@ -2399,7 +2573,7 @@
         "use": "both",
         "grpo": "eligible_as_accepted_in_steps_3_and_6",
         "sft": "eligible_pending_trajectory_review",
-        "basis": "v1/v2 train; free-text key facts not audited (open item)"
+        "basis": "v1/v2 train; gold writes no fuzzy-compared free text"
       },
       {
         "id": "itsmbench_msp_006",
@@ -2407,7 +2581,7 @@
         "use": "both",
         "grpo": "eligible_as_accepted_in_steps_3_and_6",
         "sft": "eligible_pending_trajectory_review",
-        "basis": "v1/v2 train; free-text key facts not audited (open item)"
+        "basis": "v1/v2 train; gold writes no fuzzy-compared free text"
       },
       {
         "id": "itsmbench_msp_007",
@@ -2415,7 +2589,7 @@
         "use": "both",
         "grpo": "eligible_as_accepted_in_steps_3_and_6",
         "sft": "eligible_pending_trajectory_review",
-        "basis": "v1/v2 train; free-text key facts not audited (open item)"
+        "basis": "v1/v2 train; gold writes no fuzzy-compared free text"
       },
       {
         "id": "itsmbench_msp_008",
@@ -2423,7 +2597,7 @@
         "use": "both",
         "grpo": "eligible_as_accepted_in_steps_3_and_6",
         "sft": "eligible_pending_trajectory_review",
-        "basis": "v1/v2 train; free-text key facts not audited (open item)"
+        "basis": "v1/v2 train; gold writes no fuzzy-compared free text"
       },
       {
         "id": "itsmbench_msp_009",
@@ -2431,7 +2605,7 @@
         "use": "both",
         "grpo": "eligible_as_accepted_in_steps_3_and_6",
         "sft": "eligible_pending_trajectory_review",
-        "basis": "v1/v2 train; free-text key facts not audited (open item)"
+        "basis": "v1/v2 train; gold writes no fuzzy-compared free text"
       },
       {
         "id": "itsmbench_msp_010",
@@ -2439,7 +2613,7 @@
         "use": "both",
         "grpo": "eligible_as_accepted_in_steps_3_and_6",
         "sft": "eligible_pending_trajectory_review",
-        "basis": "v1/v2 train; free-text key facts not audited (open item)"
+        "basis": "v1/v2 train; gold writes no fuzzy-compared free text"
       },
       {
         "id": "itsmbench_msp_011",
@@ -2447,7 +2621,7 @@
         "use": "both",
         "grpo": "eligible_as_accepted_in_steps_3_and_6",
         "sft": "eligible_pending_trajectory_review",
-        "basis": "v1/v2 train; free-text key facts not audited (open item)"
+        "basis": "v1/v2 train; gold writes no fuzzy-compared free text"
       },
       {
         "id": "itsmbench_msp_012",
@@ -2455,7 +2629,7 @@
         "use": "both",
         "grpo": "eligible_as_accepted_in_steps_3_and_6",
         "sft": "eligible_pending_trajectory_review",
-        "basis": "v1/v2 train; free-text key facts not audited (open item)"
+        "basis": "v1/v2 train; gold writes no fuzzy-compared free text"
       },
       {
         "id": "itsmbench_msp_013",
@@ -2463,7 +2637,7 @@
         "use": "both",
         "grpo": "eligible_as_accepted_in_steps_3_and_6",
         "sft": "eligible_pending_trajectory_review",
-        "basis": "v1/v2 train; free-text key facts not audited (open item)"
+        "basis": "v1/v2 train; gold writes no fuzzy-compared free text"
       },
       {
         "id": "itsmbench_msp_014",
@@ -2471,7 +2645,7 @@
         "use": "both",
         "grpo": "eligible_as_accepted_in_steps_3_and_6",
         "sft": "eligible_pending_trajectory_review",
-        "basis": "v1/v2 train; free-text key facts not audited (open item)"
+        "basis": "v1/v2 train; gold writes no fuzzy-compared free text"
       },
       {
         "id": "itsmbench_msp_015",
@@ -2479,7 +2653,7 @@
         "use": "both",
         "grpo": "eligible_as_accepted_in_steps_3_and_6",
         "sft": "eligible_pending_trajectory_review",
-        "basis": "v1/v2 train; free-text key facts not audited (open item)"
+        "basis": "v1/v2 train; gold writes no fuzzy-compared free text"
       },
       {
         "id": "itsmbench_msp_016",
@@ -2487,7 +2661,7 @@
         "use": "both",
         "grpo": "eligible_as_accepted_in_steps_3_and_6",
         "sft": "eligible_pending_trajectory_review",
-        "basis": "v1/v2 train; free-text key facts not audited (open item)"
+        "basis": "v1/v2 train; gold writes no fuzzy-compared free text"
       },
       {
         "id": "itsmbench_msp_017",
@@ -2495,7 +2669,7 @@
         "use": "both",
         "grpo": "eligible_as_accepted_in_steps_3_and_6",
         "sft": "eligible_pending_trajectory_review",
-        "basis": "v1/v2 train; free-text key facts not audited (open item)"
+        "basis": "v1/v2 train; gold writes no fuzzy-compared free text"
       },
       {
         "id": "itsmbench_msp_018",
@@ -2503,7 +2677,7 @@
         "use": "both",
         "grpo": "eligible_as_accepted_in_steps_3_and_6",
         "sft": "eligible_pending_trajectory_review",
-        "basis": "v1/v2 train; free-text key facts not audited (open item)"
+        "basis": "v1/v2 train; gold writes no fuzzy-compared free text"
       },
       {
         "id": "itsmbench_msp_019",
@@ -2607,7 +2781,7 @@
         "use": "both",
         "grpo": "eligible_as_accepted_in_steps_3_and_6",
         "sft": "eligible_pending_trajectory_review",
-        "basis": "v1/v2 train; free-text key facts not audited (open item)"
+        "basis": "v1/v2 train; gold writes no fuzzy-compared free text"
       },
       {
         "id": "itsmbench_single_001",
@@ -2615,7 +2789,7 @@
         "use": "both",
         "grpo": "eligible_as_accepted_in_steps_3_and_6",
         "sft": "eligible_pending_trajectory_review",
-        "basis": "v1/v2 train; free-text key facts not audited (open item)"
+        "basis": "v1/v2 train; gold writes no fuzzy-compared free text"
       },
       {
         "id": "itsmbench_single_002",
@@ -2623,7 +2797,7 @@
         "use": "both",
         "grpo": "eligible_as_accepted_in_steps_3_and_6",
         "sft": "eligible_pending_trajectory_review",
-        "basis": "v1/v2 train; free-text key facts not audited (open item)"
+        "basis": "v1/v2 train; gold writes no fuzzy-compared free text"
       },
       {
         "id": "itsmbench_single_003",
@@ -2631,7 +2805,7 @@
         "use": "both",
         "grpo": "eligible_as_accepted_in_steps_3_and_6",
         "sft": "eligible_pending_trajectory_review",
-        "basis": "v1/v2 train; free-text key facts not audited (open item)"
+        "basis": "v1/v2 train; gold writes no fuzzy-compared free text"
       },
       {
         "id": "itsmbench_single_004",
@@ -2639,31 +2813,31 @@
         "use": "both",
         "grpo": "eligible_as_accepted_in_steps_3_and_6",
         "sft": "eligible_pending_trajectory_review",
-        "basis": "v1/v2 train; free-text key facts not audited (open item)"
+        "basis": "v1/v2 train; gold writes no fuzzy-compared free text"
       },
       {
         "id": "itsmbench_single_005",
         "origin": "bench2",
         "use": "both",
-        "grpo": "eligible_as_accepted_in_steps_3_and_6",
+        "grpo": "eligible_pending_r1_before_step_9",
         "sft": "eligible_pending_trajectory_review",
-        "basis": "v1/v2 train; free-text key facts not audited (open item)"
+        "basis": "v1/v2 train; gold writes fuzzy-compared free text (user_group/GROUP_003 description); key-fact R1 pending, to be completed before step 9 (user, S0-R1)"
       },
       {
         "id": "itsmbench_single_006",
         "origin": "bench2",
         "use": "both",
-        "grpo": "eligible_as_accepted_in_steps_3_and_6",
+        "grpo": "eligible_pending_r1_before_step_9",
         "sft": "eligible_pending_trajectory_review",
-        "basis": "v1/v2 train; free-text key facts not audited (open item)"
+        "basis": "v1/v2 train; gold writes fuzzy-compared free text (notification/NOTIF_005 subject, notification/NOTIF_005 message); key-fact R1 pending, to be completed before step 9 (user, S0-R1)"
       },
       {
         "id": "itsmbench_single_007",
         "origin": "bench2",
         "use": "both",
-        "grpo": "eligible_as_accepted_in_steps_3_and_6",
+        "grpo": "eligible_pending_r1_before_step_9",
         "sft": "eligible_pending_trajectory_review",
-        "basis": "v1/v2 train; free-text key facts not audited (open item)"
+        "basis": "v1/v2 train; gold writes fuzzy-compared free text (incident/INC_024 worknotes, notification/NOTIF_008 subject, notification/NOTIF_008 message); key-fact R1 pending, to be completed before step 9 (user, S0-R1)"
       },
       {
         "id": "itsmbench_single_008",
@@ -2693,9 +2867,9 @@
         "id": "itsmbench_single_011",
         "origin": "bench2",
         "use": "both",
-        "grpo": "eligible_as_accepted_in_steps_3_and_6",
+        "grpo": "eligible_pending_r1_before_step_9",
         "sft": "eligible_pending_trajectory_review",
-        "basis": "v1/v2 train; free-text key facts not audited (open item)"
+        "basis": "v1/v2 train; gold writes fuzzy-compared free text (knowledge/KB_004 body, problem/PRB_001 worknotes); key-fact R1 pending, to be completed before step 9 (user, S0-R1)"
       },
       {
         "id": "itsmbench_single_012",
@@ -2725,9 +2899,9 @@
         "id": "itsmbench_single_015",
         "origin": "bench2",
         "use": "both",
-        "grpo": "eligible_as_accepted_in_steps_3_and_6",
+        "grpo": "eligible_pending_r1_before_step_9",
         "sft": "eligible_pending_trajectory_review",
-        "basis": "v1/v2 train; free-text key facts not audited (open item)"
+        "basis": "v1/v2 train; gold writes fuzzy-compared free text (problem/PRB_003 worknotes); key-fact R1 pending, to be completed before step 9 (user, S0-R1)"
       },
       {
         "id": "itsmbench_single_016",
@@ -2751,7 +2925,7 @@
         "use": "both",
         "grpo": "eligible_as_accepted_in_steps_3_and_6",
         "sft": "eligible_pending_trajectory_review",
-        "basis": "v1/v2 train; free-text key facts not audited (open item)"
+        "basis": "v1/v2 train; gold writes no fuzzy-compared free text"
       },
       {
         "id": "itsmbench_single_019",
@@ -2799,7 +2973,7 @@
         "use": "sft_only",
         "grpo": "suspended_reward_blind_spot",
         "sft": "eligible_pending_trajectory_review",
-        "basis": "a core requirement carried only by fuzzy-compared free text is not discriminated: operator_texts_status_and_progress"
+        "basis": "a core requirement has a key negative scoring DB=1 (fuzzy-compared free text): operator_texts_status_and_progress"
       },
       {
         "id": "itsmbench_eops_46ca2862_56a4f834",
@@ -2815,15 +2989,15 @@
         "use": "sft_only",
         "grpo": "suspended_reward_blind_spot",
         "sft": "eligible_pending_trajectory_review",
-        "basis": "a core requirement carried only by fuzzy-compared free text is not discriminated: article_body_operator_facts"
+        "basis": "a core requirement has a key negative scoring DB=1 (fuzzy-compared free text): article_body_operator_facts"
       },
       {
         "id": "itsmbench_eops_78a5b71e_a4fb07a9",
         "origin": "derived_6D-2_isolated",
-        "use": "sft_only_candidate",
+        "use": "sft_only",
         "grpo": "no",
-        "sft": "candidate_needs_approval",
-        "basis": "isolated for GRPO only: core requirement invisible to the DB reward (D8 skips description); no ambiguity, tool gap or policy conflict"
+        "sft": "eligible_pending_trajectory_review",
+        "basis": "isolated for GRPO only: core requirement invisible to the DB reward (D8 skips description); no ambiguity, tool gap or policy conflict. 2026-10-31 user decision (S0-R1): 78a5 接纳为 SFT-only 来源"
       },
       {
         "id": "itsmbench_eops_99ba2325_54f35603",
@@ -2831,21 +3005,19 @@
         "use": "heldout_candidate",
         "grpo": "no",
         "sft": "no",
-        "basis": "6D-3 passing held-out candidate (6D-3 not yet accepted)"
+        "basis": "6D-3 passing candidate, reserved for held-out (user, S0-R1); no v3 manifest yet"
       }
     ],
     "use_counts": {
-      "both": 32,
+      "both": 31,
       "dev": 13,
       "heldout": 11,
       "heldout_candidate": 1,
-      "sft_only": 4,
-      "sft_only_candidate": 1
+      "sft_only": 6
     },
     "pools": {
       "grpo": [
         "itsmbench_eops_46ca2862_56a4f834",
-        "itsmbench_eops_46ca2862_b6ef60ca",
         "itsmbench_eops_99ba2325_887f5580",
         "itsmbench_msp_001",
         "itsmbench_msp_002",
@@ -2877,12 +3049,20 @@
         "itsmbench_single_015",
         "itsmbench_single_018"
       ],
+      "grpo_pending_r1_before_step9": [
+        "itsmbench_single_005",
+        "itsmbench_single_006",
+        "itsmbench_single_007",
+        "itsmbench_single_011",
+        "itsmbench_single_015"
+      ],
       "sft": [
         "itsmbench_eops_01395ded_eff85dae",
         "itsmbench_eops_1d219d93_d1ba6c2d",
         "itsmbench_eops_46ca2862_56a4f834",
         "itsmbench_eops_46ca2862_b6ef60ca",
         "itsmbench_eops_66392a82_52c8290e",
+        "itsmbench_eops_78a5b71e_a4fb07a9",
         "itsmbench_eops_99ba2325_7915481a",
         "itsmbench_eops_99ba2325_887f5580",
         "itsmbench_msp_001",
@@ -2915,9 +3095,183 @@
         "itsmbench_single_015",
         "itsmbench_single_018"
       ],
-      "sft_only_candidates": [
-        "itsmbench_eops_78a5b71e_a4fb07a9"
+      "sft_only": [
+        "itsmbench_eops_01395ded_eff85dae",
+        "itsmbench_eops_1d219d93_d1ba6c2d",
+        "itsmbench_eops_46ca2862_b6ef60ca",
+        "itsmbench_eops_66392a82_52c8290e",
+        "itsmbench_eops_78a5b71e_a4fb07a9",
+        "itsmbench_eops_99ba2325_7915481a"
       ]
+    },
+    "pool_families": {
+      "grpo": {
+        "tasks": 31,
+        "families": 3,
+        "sizes": [
+          29,
+          1,
+          1
+        ],
+        "components": [
+          {
+            "anchor": "itsmbench_eops_1d219d93_d1ba6c2d",
+            "size_in_pool": 29,
+            "v2_families": [
+              "onboarding_catalog_and_change_problem_kb_merged"
+            ],
+            "members": [
+              "itsmbench_eops_46ca2862_56a4f834",
+              "itsmbench_msp_001",
+              "itsmbench_msp_002",
+              "itsmbench_msp_003",
+              "itsmbench_msp_004",
+              "itsmbench_msp_005",
+              "itsmbench_msp_006",
+              "itsmbench_msp_007",
+              "itsmbench_msp_008",
+              "itsmbench_msp_009",
+              "itsmbench_msp_010",
+              "itsmbench_msp_011",
+              "itsmbench_msp_012",
+              "itsmbench_msp_013",
+              "itsmbench_msp_014",
+              "itsmbench_msp_015",
+              "itsmbench_msp_016",
+              "itsmbench_msp_017",
+              "itsmbench_msp_018",
+              "itsmbench_msp_031",
+              "itsmbench_single_001",
+              "itsmbench_single_002",
+              "itsmbench_single_003",
+              "itsmbench_single_004",
+              "itsmbench_single_005",
+              "itsmbench_single_006",
+              "itsmbench_single_007",
+              "itsmbench_single_011",
+              "itsmbench_single_015"
+            ]
+          },
+          {
+            "anchor": "itsmbench_eops_99ba2325_887f5580",
+            "size_in_pool": 1,
+            "v2_families": [],
+            "members": [
+              "itsmbench_eops_99ba2325_887f5580"
+            ]
+          },
+          {
+            "anchor": "itsmbench_single_018",
+            "size_in_pool": 1,
+            "v2_families": [
+              "ci_maintenance"
+            ],
+            "members": [
+              "itsmbench_single_018"
+            ]
+          }
+        ]
+      },
+      "sft": {
+        "tasks": 37,
+        "families": 6,
+        "sizes": [
+          32,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "components": [
+          {
+            "anchor": "itsmbench_eops_1d219d93_d1ba6c2d",
+            "size_in_pool": 32,
+            "v2_families": [
+              "onboarding_catalog_and_change_problem_kb_merged"
+            ],
+            "members": [
+              "itsmbench_eops_1d219d93_d1ba6c2d",
+              "itsmbench_eops_46ca2862_56a4f834",
+              "itsmbench_eops_46ca2862_b6ef60ca",
+              "itsmbench_eops_99ba2325_7915481a",
+              "itsmbench_msp_001",
+              "itsmbench_msp_002",
+              "itsmbench_msp_003",
+              "itsmbench_msp_004",
+              "itsmbench_msp_005",
+              "itsmbench_msp_006",
+              "itsmbench_msp_007",
+              "itsmbench_msp_008",
+              "itsmbench_msp_009",
+              "itsmbench_msp_010",
+              "itsmbench_msp_011",
+              "itsmbench_msp_012",
+              "itsmbench_msp_013",
+              "itsmbench_msp_014",
+              "itsmbench_msp_015",
+              "itsmbench_msp_016",
+              "itsmbench_msp_017",
+              "itsmbench_msp_018",
+              "itsmbench_msp_031",
+              "itsmbench_single_001",
+              "itsmbench_single_002",
+              "itsmbench_single_003",
+              "itsmbench_single_004",
+              "itsmbench_single_005",
+              "itsmbench_single_006",
+              "itsmbench_single_007",
+              "itsmbench_single_011",
+              "itsmbench_single_015"
+            ]
+          },
+          {
+            "anchor": "itsmbench_eops_01395ded_eff85dae",
+            "size_in_pool": 1,
+            "v2_families": [],
+            "members": [
+              "itsmbench_eops_01395ded_eff85dae"
+            ]
+          },
+          {
+            "anchor": "itsmbench_eops_66392a82_52c8290e",
+            "size_in_pool": 1,
+            "v2_families": [
+              "incident_intake_with_ci_update"
+            ],
+            "members": [
+              "itsmbench_eops_66392a82_52c8290e"
+            ]
+          },
+          {
+            "anchor": "itsmbench_eops_78a5b71e_a4fb07a9",
+            "size_in_pool": 1,
+            "v2_families": [],
+            "members": [
+              "itsmbench_eops_78a5b71e_a4fb07a9"
+            ]
+          },
+          {
+            "anchor": "itsmbench_eops_99ba2325_887f5580",
+            "size_in_pool": 1,
+            "v2_families": [],
+            "members": [
+              "itsmbench_eops_99ba2325_887f5580"
+            ]
+          },
+          {
+            "anchor": "itsmbench_single_018",
+            "size_in_pool": 1,
+            "v2_families": [
+              "ci_maintenance"
+            ],
+            "members": [
+              "itsmbench_single_018"
+            ]
+          }
+        ]
+      },
+      "note": "components of the step-6 family rule computed over every v2, derived, admitted and held-out-candidate task; a component is counted once per pool"
     },
     "excluded_converted_or_reviewed": [
       {
@@ -3129,9 +3483,9 @@
     {
       "task_id": "itsmbench_eops_78a5b71e_a4fb07a9",
       "optional": true,
-      "why": "SFT-only candidate (needs admission); change lifecycle with an operator text naming the extra CI",
+      "why": "SFT-only source (admitted 2026-10-31); change lifecycle with an operator text naming the extra CI",
       "max_candidate_trajectories": 2,
-      "use": "sft_only_candidate",
+      "use": "sft_only",
       "fact_checks": [
         "change short_description carries the operator's text naming SRV-LNX-4421"
       ]

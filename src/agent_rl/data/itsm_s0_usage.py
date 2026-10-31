@@ -10,9 +10,12 @@ Three parts:
   derived train tasks (6B: 3, 6D-2: 4), each with targeted negatives. The
   existing validation cases are re-run; the key-fact negatives added here
   (6D-3-R1: "everything else correct, only a key fact wrong") cover the core
-  requirements carried by fuzzy-compared free text. GRPO eligibility needs a
-  DB = 0 negative for every core requirement; SFT eligibility is judged
-  separately (a fuzzy blind spot does not make a correct demonstration wrong).
+  requirements carried by fuzzy-compared free text. Each core requirement is
+  one fact, and every key negative listed for it must score DB = 0 (S0-R1: a
+  structured negative that fails cannot cover another confirmed core error
+  that passes). GRPO eligibility needs that for every core requirement; SFT
+  eligibility is judged separately (a fuzzy blind spot does not make a correct
+  demonstration wrong).
 * ``joint_isolation_audit``: the training union SFT u GRPO against dev and
   held-out (family, shared write tools, gold entities, near duplicates, upstream
   source).
@@ -49,16 +52,20 @@ from agent_rl.data.itsm_split import CREATION_TOOLS, WRITE_JACCARD_THRESHOLD, lo
 from agent_rl.data.itsm_split_v2 import ACCEPTED_DERIVED_TASK_IDS, DEFAULT_V2_PATH, derived_raw_tasks
 from agent_rl.envs.itsm_scoring import build_task_environment, replay_gold_actions, score_final_db, task_clock
 
-S0_VERSION = "itsm_usage_s0_candidate_v1"
+S0_VERSION = "itsm_usage_s0_candidate_v2"
 REPO_ROOT = Path(__file__).resolve().parents[3]
 SCREENING_PATH = REPO_ROOT / "docs" / "itsm_step6d" / "candidate_screening.json"
 FUZZY = TextMatchConfig(strategy="fuzzy")
 DERIVED_TRAIN_TASK_IDS = tuple(sorted((*ACCEPTED_DERIVED_TASK_IDS, *ACCEPTED_V3_TRAIN_TASK_IDS)))
 #: Isolated in 6D-2 only because its core requirement is invisible to the DB
-#: reward; no ambiguity, missing tool or policy conflict. Proposed as an SFT-only
-#: source; admitting it needs the user's approval.
-SFT_ONLY_CANDIDATE_IDS = ("itsmbench_eops_78a5b71e_a4fb07a9",)
-#: 6D-3 passing held-out candidate (6D-3 not yet accepted): reserved for evaluation either way.
+#: reward; no ambiguity, missing tool or policy conflict. Admitted by the user as
+#: an SFT-only source on 2026-10-31 (S0-R1); never a GRPO source.
+SFT_ONLY_ADMITTED_IDS = ("itsmbench_eops_78a5b71e_a4fb07a9",)
+SFT_ONLY_ADMISSION = "2026-10-31 user decision (S0-R1): 78a5 接纳为 SFT-only 来源"
+#: Bench2 v2-train tasks whose gold writes fuzzy-compared free text: R1 (key-fact
+#: negatives) is pending and must be completed before step 9 (user, S0-R1).
+R1_PENDING_DEADLINE = "before_step_9"
+#: 6D-3 passing held-out candidate: reserved for held-out (user, S0-R1); never a training source.
 HELDOUT_CANDIDATE_IDS = ("itsmbench_eops_99ba2325_54f35603",)
 
 _CAPTION = "Status update on the SAP database outage (INC-000001): the team is still working on it and resolution progress is being tracked."
@@ -71,6 +78,7 @@ S0_CASES: dict[str, list[dict[str, Any]]] = {
     "itsmbench_eops_46ca2862_b6ef60ca": [
         {"name": "s0_subject_says_hardware", "kind": "key_fact", "index": 5, "field": "short_description", "value": "Hardware installation", "reason": "incident subject names hardware instead of software installation"},
         {"name": "s0_category_hardware", "kind": "structured", "index": 5, "field": "category", "value": "hardware", "reason": "incident category hardware instead of software"},
+        {"name": "s0_subject_says_removal", "kind": "key_fact", "index": 5, "field": "short_description", "value": "Software removal", "reason": "S0-R1: category stays software, the subject names software removal instead of installation"},
     ],
     "itsmbench_eops_66392a82_52c8290e": [
         {"name": "s0_symptom_replaced", "kind": "key_fact", "index": 5, "field": "short_description", "value": "Video conferencing hub overheating and rebooting", "reason": "incident describes overheating/rebooting, not freezing and dropped calls"},
@@ -92,14 +100,17 @@ S0_CASES: dict[str, list[dict[str, Any]]] = {
     ],
 }
 
-#: Core requirements per derived train task -> negatives (existing validation
-#: cases or S0 cases). ``carrier``: "structured", "free_text" or
-#: "free_text+structured" (the same fact is also held by a structured field).
+#: Core requirements per derived train task, one fact each -> key negatives
+#: (existing validation cases or S0 cases). ``carrier``: "structured",
+#: "free_text" or "free_text+structured" (the fact is held by both kinds of
+#: field). A requirement is discriminated only if every listed negative scores
+#: DB = 0; a structured DB = 0 does not cover a key-fact DB = 1.
 CORE_REQUIREMENTS: dict[str, list[dict[str, Any]]] = {
     "itsmbench_eops_46ca2862_b6ef60ca": [
         {"id": "laptop_registered_as_specified", "carrier": "structured", "negatives": ["laptop_registered_in_london"]},
         {"id": "incident_fields_and_priority", "carrier": "structured", "negatives": ["wrong_priority"]},
-        {"id": "incident_about_software_installation", "carrier": "free_text+structured", "negatives": ["s0_category_hardware", "s0_subject_says_hardware"]},
+        {"id": "fact_software_not_hardware", "fact": "the incident is about software, not hardware (category and subject)", "carrier": "free_text+structured", "negatives": ["s0_category_hardware", "s0_subject_says_hardware"]},
+        {"id": "fact_installation_not_removal", "fact": "the requested operation is installation, not removal (subject only)", "carrier": "free_text", "negatives": ["s0_subject_says_removal"]},
         {"id": "required_sla_record", "carrier": "structured", "negatives": ["sla_not_spawned"]},
         {"id": "declined_notification_not_sent", "carrier": "structured", "negatives": ["unconfirmed_report_notification"]},
     ],
@@ -141,7 +152,7 @@ CORE_REQUIREMENTS: dict[str, list[dict[str, Any]]] = {
 #: SFT acceptance checks that the DB reward cannot make: exact facts a correct
 #: demonstration must carry (checked on the trajectory's final DB, then read by a human).
 SFT_FACT_CHECKS: dict[str, list[str]] = {
-    "itsmbench_eops_46ca2862_b6ef60ca": ["incident short_description names software installation"],
+    "itsmbench_eops_46ca2862_b6ef60ca": ["incident category is software and short_description names software (not hardware) installation (not removal)"],
     "itsmbench_eops_66392a82_52c8290e": ["incident short_description or description states freezing and dropped calls"],
     "itsmbench_eops_1d219d93_d1ba6c2d": ["article body contains SN-MER-888 and SN-DELL-999 and no other serial"],
     "itsmbench_eops_01395ded_eff85dae": ["each notification subject/message equals the operator's text (whitespace-normalised)"],
@@ -159,7 +170,7 @@ SFT_PILOT_CANDIDATES: tuple[dict[str, Any], ...] = (
     {"task_id": "itsmbench_eops_99ba2325_887f5580", "optional": False, "why": "derived, use both; the correct behaviour includes refusing to link a retired CI (§5.1)"},
     {"task_id": "itsmbench_eops_01395ded_eff85dae", "optional": False, "why": "derived, SFT-only after R1; operator-dictated texts must pass through the simulator verbatim; inactive caller decision"},
     {"task_id": "itsmbench_eops_66392a82_52c8290e", "optional": False, "why": "derived, SFT-only after R1; single tenant; REQUIRED SLA and knowledge search cascades; declined PROPOSED notification"},
-    {"task_id": "itsmbench_eops_78a5b71e_a4fb07a9", "optional": True, "why": "SFT-only candidate (needs admission); change lifecycle with an operator text naming the extra CI"},
+    {"task_id": "itsmbench_eops_78a5b71e_a4fb07a9", "optional": True, "why": "SFT-only source (admitted 2026-10-31); change lifecycle with an operator text naming the extra CI"},
 )
 MAX_PILOT_TRAJECTORIES_PER_TASK = 2
 
@@ -180,13 +191,13 @@ def derived_entries() -> dict[str, dict[str, Any]]:
     return {tid: entries[tid] for tid in DERIVED_TRAIN_TASK_IDS}
 
 
-def sft_only_candidate_entries() -> dict[str, dict[str, Any]]:
+def sft_only_admitted_entries() -> dict[str, dict[str, Any]]:
     conversions = {
         i["attempted_conversion"]["id"]: i["attempted_conversion"]
         for i in _batch2()["isolated"]
         if "attempted_conversion" in i
     }
-    return {tid: conversions[tid] for tid in SFT_ONLY_CANDIDATE_IDS}
+    return {tid: conversions[tid] for tid in SFT_ONLY_ADMITTED_IDS}
 
 
 def heldout_candidate_entries() -> dict[str, dict[str, Any]]:
@@ -209,9 +220,11 @@ def _s0_edit(task: Task, case: dict[str, Any]) -> tuple[dict[str, Any], str | No
 
 
 def run_negative(task: Task, edit: dict[str, Any]) -> dict[str, Any]:
+    # run_actions raises if any tool call fails, so every recorded negative is a
+    # sequence of successful real tool calls.
     environment = run_actions(task, edited_actions(task, edit))
     score = score_final_db(task, environment, text_match=FUZZY)
-    return {"db_reward": score.db_reward, "mismatches": list(score.mismatches)}
+    return {"tool_calls_succeeded": True, "db_reward": score.db_reward, "mismatches": list(score.mismatches)}
 
 
 def free_text_exposure(task: Task) -> list[str]:
@@ -248,20 +261,16 @@ def core_requirement_audit() -> dict[str, Any]:
         requirements = []
         for requirement in CORE_REQUIREMENTS[task_id]:
             rewards = {name: cases[name]["db_reward"] for name in requirement["negatives"]}
-            structured = [n for n in requirement["negatives"] if cases[n]["kind"] != "key_fact"]
-            key_facts = [n for n in requirement["negatives"] if cases[n]["kind"] == "key_fact"]
+            missed = [n for n in requirement["negatives"] if rewards[n] != 0.0]
             requirements.append(
                 {
                     **requirement,
                     "negative_db_rewards": rewards,
-                    # Discriminated when a structured negative carrying the fact fails, or,
-                    # for text-only requirements, every key-fact negative fails.
-                    "discriminated": (
-                        any(rewards[n] == 0.0 for n in structured)
-                        if structured
-                        else all(rewards[n] == 0.0 for n in key_facts)
-                    ),
-                    "free_text_key_fact_missed": [n for n in key_facts if rewards[n] == 1.0],
+                    # S0-R1: every key negative is checked on its own; one that fails
+                    # (DB = 0) does not cover another that passes (DB = 1).
+                    "discriminated": not missed,
+                    "missed_negatives": missed,
+                    "free_text_key_fact_missed": [n for n in missed if cases[n]["kind"] == "key_fact"],
                 }
             )
         grpo_ok = all(r["discriminated"] for r in requirements)
@@ -275,7 +284,7 @@ def core_requirement_audit() -> dict[str, Any]:
                 "basis": (
                     "every core requirement has a DB=0 negative"
                     if grpo_ok
-                    else "a core requirement carried only by fuzzy-compared free text is not discriminated: "
+                    else "a core requirement has a key negative scoring DB=1 (fuzzy-compared free text): "
                     + ", ".join(r["id"] for r in requirements if not r["discriminated"])
                 ),
             },
@@ -305,9 +314,9 @@ def joint_isolation_audit() -> dict[str, Any]:
     raw.update(derived_raw_tasks())
     use = {tid: manifest["tasks"][tid]["split"] for tid in raw}
     raw.update({tid: e for tid, e in derived_entries().items()})
-    raw.update(sft_only_candidate_entries())
+    raw.update(sft_only_admitted_entries())
     raw.update(heldout_candidate_entries())
-    for tid in ACCEPTED_V3_TRAIN_TASK_IDS + SFT_ONLY_CANDIDATE_IDS:
+    for tid in ACCEPTED_V3_TRAIN_TASK_IDS + SFT_ONLY_ADMITTED_IDS:
         use[tid] = "train"
     for tid in HELDOUT_CANDIDATE_IDS:
         use[tid] = "heldout"
@@ -338,6 +347,7 @@ def joint_isolation_audit() -> dict[str, Any]:
     components = collections.defaultdict(list)
     for tid in sorted(raw):
         components[root(tid)].append(tid)
+    family_of = {tid: members[0] for members in components.values() for tid in members}
     straddling = [
         {"members": len(c), "uses": sorted({use[t] for t in c})}
         for c in components.values()
@@ -382,6 +392,7 @@ def joint_isolation_audit() -> dict[str, Any]:
             "no_upstream_task_in_both": not upstream_overlap,
         },
         "bench2_cross_split_pairs_known_since_v1": len([p for p in pairs if p["train_origin"] == "bench2"]),
+        "family_of": dict(sorted(family_of.items())),
         "upstream_annotators_shared_across_uses": {
             a: {u: sorted(ids) for u, ids in by_use.items()}
             for a, by_use in sorted(annotators.items())
@@ -401,8 +412,28 @@ _BARRED_REASON_CLASS = {
 }
 
 
-def source_registry(core: dict[str, Any]) -> dict[str, Any]:
+def _pool_families(pool: list[str], family_of: dict[str, str], v2_family: dict[str, str]) -> dict[str, Any]:
+    by_component = collections.defaultdict(list)
+    for tid in pool:
+        by_component[family_of[tid]].append(tid)
+    components = sorted(
+        (
+            {
+                "anchor": anchor,
+                "size_in_pool": len(members),
+                "v2_families": sorted({v2_family[t] for t in members if t in v2_family}),
+                "members": sorted(members),
+            }
+            for anchor, members in by_component.items()
+        ),
+        key=lambda c: (-c["size_in_pool"], c["anchor"]),
+    )
+    return {"tasks": len(pool), "families": len(components), "sizes": [c["size_in_pool"] for c in components], "components": components}
+
+
+def source_registry(core: dict[str, Any], exposure: dict[str, list[str]], family_of: dict[str, str]) -> dict[str, Any]:
     manifest = json.loads(DEFAULT_V2_PATH.read_text(encoding="utf-8"))
+    r1_pending = sorted(t for t, fields in exposure.items() if fields)
     rows = []
     for tid, entry in sorted(manifest["tasks"].items()):
         split = entry["split"]
@@ -410,16 +441,16 @@ def source_registry(core: dict[str, Any]) -> dict[str, Any]:
             rows.append({"id": tid, "origin": entry["source"], "use": split, "grpo": "no", "sft": "no", "basis": f"v2 {split}"})
         elif tid in core:
             rows.append({"id": tid, "origin": "derived_6B", "use": None, "grpo": core[tid]["grpo"]["proposed"], "sft": core[tid]["sft"]["proposed"], "basis": core[tid]["grpo"]["basis"]})
+        elif tid in r1_pending:
+            rows.append({"id": tid, "origin": "bench2", "use": None, "grpo": "eligible_pending_r1_" + R1_PENDING_DEADLINE, "sft": "eligible_pending_trajectory_review", "basis": "v1/v2 train; gold writes fuzzy-compared free text (" + ", ".join(exposure[tid]) + "); key-fact R1 pending, to be completed before step 9 (user, S0-R1)"})
         else:
-            rows.append({"id": tid, "origin": "bench2", "use": None, "grpo": "eligible_as_accepted_in_steps_3_and_6", "sft": "eligible_pending_trajectory_review", "basis": "v1/v2 train; free-text key facts not audited (open item)"})
+            rows.append({"id": tid, "origin": "bench2", "use": None, "grpo": "eligible_as_accepted_in_steps_3_and_6", "sft": "eligible_pending_trajectory_review", "basis": "v1/v2 train; gold writes no fuzzy-compared free text"})
     for tid in ACCEPTED_V3_TRAIN_TASK_IDS:
         rows.append({"id": tid, "origin": "derived_6D-2", "use": None, "grpo": core[tid]["grpo"]["proposed"], "sft": core[tid]["sft"]["proposed"], "basis": core[tid]["grpo"]["basis"]})
-    rows.append({"id": SFT_ONLY_CANDIDATE_IDS[0], "origin": "derived_6D-2_isolated", "use": None, "grpo": "no", "sft": "candidate_needs_approval", "basis": "isolated for GRPO only: core requirement invisible to the DB reward (D8 skips description); no ambiguity, tool gap or policy conflict"})
-    rows.append({"id": HELDOUT_CANDIDATE_IDS[0], "origin": "derived_6D-3", "use": "heldout_candidate", "grpo": "no", "sft": "no", "basis": "6D-3 passing held-out candidate (6D-3 not yet accepted)"})
+    rows.append({"id": SFT_ONLY_ADMITTED_IDS[0], "origin": "derived_6D-2_isolated", "use": None, "grpo": "no", "sft": "eligible_pending_trajectory_review", "basis": "isolated for GRPO only: core requirement invisible to the DB reward (D8 skips description); no ambiguity, tool gap or policy conflict. " + SFT_ONLY_ADMISSION})
+    rows.append({"id": HELDOUT_CANDIDATE_IDS[0], "origin": "derived_6D-3", "use": "heldout_candidate", "grpo": "no", "sft": "no", "basis": "6D-3 passing candidate, reserved for held-out (user, S0-R1); no v3 manifest yet"})
     for row in rows:
-        if row["use"] is None and row["sft"] == "candidate_needs_approval":
-            row["use"] = "sft_only_candidate"
-        elif row["use"] is None:
+        if row["use"] is None:
             row["use"] = {
                 (True, True): "both",
                 (True, False): "grpo_only",
@@ -432,7 +463,7 @@ def source_registry(core: dict[str, Any]) -> dict[str, Any]:
         reason = next((v for k, v in _BARRED_REASON_CLASS.items() if item["reason"].startswith(k)), item["reason"])
         excluded.append({"upstream": item["upstream_task_id"][-17:], "from": "6B", "reason": reason, "sft": "no", "grpo": "no"})
     for item in _batch2()["isolated"]:
-        if item["upstream_task_id"].endswith(SFT_ONLY_CANDIDATE_IDS[0][-17:]):
+        if item["upstream_task_id"].endswith(SFT_ONLY_ADMITTED_IDS[0][-17:]):
             continue
         reason = next((v for k, v in _BARRED_REASON_CLASS.items() if item["reason"].startswith(k)), item["reason"])
         excluded.append({"upstream": item["upstream_task_id"][-17:], "from": "6D-2", "reason": reason, "sft": "no", "grpo": "no"})
@@ -443,7 +474,7 @@ def source_registry(core: dict[str, Any]) -> dict[str, Any]:
     processed = {r["upstream"] for r in excluded} | {
         e["source"]["upstream_task_id"][-17:]
         for e in load_pilot(DEFAULT_PILOT_PATH)["tasks"] + _batch2()["tasks"] + load_pilot(DEFAULT_HELDOUT_V3_PATH)["tasks"]
-    } | {SFT_ONLY_CANDIDATE_IDS[0][-17:]}
+    } | {SFT_ONLY_ADMITTED_IDS[0][-17:]}
     screening_rows = collections.Counter()
     deferred = []
     for candidate in sorted(screening.values(), key=lambda c: c["suffix"]):
@@ -459,13 +490,22 @@ def source_registry(core: dict[str, Any]) -> dict[str, Any]:
             deferred.append({"upstream": suffix, "manual": verdict, "reason": candidate["manual"].get("reason")})
 
     counts = collections.Counter(r["use"] for r in rows)
+    grpo = sorted(r["id"] for r in rows if r["use"] in ("both", "grpo_only"))
+    sft = sorted(r["id"] for r in rows if r["use"] in ("both", "sft_only"))
+    v2_family = {tid: e["family"] for tid, e in manifest["tasks"].items()}
     return {
         "tasks": rows,
         "use_counts": dict(sorted(counts.items())),
         "pools": {
-            "grpo": sorted(r["id"] for r in rows if r["use"] in ("both", "grpo_only")),
-            "sft": sorted(r["id"] for r in rows if r["use"] in ("both", "sft_only")),
-            "sft_only_candidates": sorted(r["id"] for r in rows if r["use"] == "sft_only_candidate"),
+            "grpo": grpo,
+            "grpo_pending_r1_before_step9": sorted(r["id"] for r in rows if r["grpo"].startswith("eligible_pending_r1")),
+            "sft": sft,
+            "sft_only": sorted(r["id"] for r in rows if r["use"] == "sft_only"),
+        },
+        "pool_families": {
+            "grpo": _pool_families(grpo, family_of, v2_family),
+            "sft": _pool_families(sft, family_of, v2_family),
+            "note": "components of the step-6 family rule computed over every v2, derived, admitted and held-out-candidate task; a component is counted once per pool",
         },
         "excluded_converted_or_reviewed": excluded,
         "screening_6D-1_unprocessed": dict(sorted(screening_rows.items())),
@@ -488,18 +528,19 @@ def bench2_train_free_text_exposure() -> dict[str, list[str]]:
 
 def build_s0_audit() -> dict[str, Any]:
     core = core_requirement_audit()
-    registry = source_registry(core)
     exposure = bench2_train_free_text_exposure()
+    joint = joint_isolation_audit()
+    registry = source_registry(core, exposure, joint["family_of"])
     return {
         "version": S0_VERSION,
-        "status": "candidate for S0 acceptance; v1/v2 manifests unchanged; no usage version frozen",
+        "status": "candidate for S0 acceptance (revision S0-R1); v1/v2 manifests unchanged; no usage version frozen",
         "scope": (
             "offline: gold replays and edited replays on real Bench2 tools under the task clock; "
             "no tokenizer, model, LLM or GPU; held-out only read for the isolation audit"
         ),
         "text_match": {"strategy": "fuzzy", "threshold": DB_FUZZY_THRESHOLD, "d8": "unchanged"},
         "core_requirements": core,
-        "joint_isolation": joint_isolation_audit(),
+        "joint_isolation": joint,
         "registry": registry,
         "sft_pilot_candidates": [
             {
