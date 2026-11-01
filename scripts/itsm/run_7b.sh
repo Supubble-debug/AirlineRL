@@ -67,7 +67,8 @@ env_report() {
   git -C . rev-parse HEAD 2>/dev/null; git -C . status --short 2>/dev/null | head
   $P -c "import vllm, torch, transformers, sys; print('python', sys.version.split()[0]); print('vllm', vllm.__version__); print('torch', torch.__version__, 'cuda', torch.version.cuda); print('transformers', transformers.__version__); print('gpu', torch.cuda.get_device_name(0))"
   $P -c "import importlib.metadata as m; [print(p, m.version(p)) for p in ('flashinfer-python','verl','huggingface_hub','safetensors')]" 2>&1
-  $P -c "import flash_attn" 2>&1 | tail -1
+  $P -c "import flash_attn" 2>&1 | tail -1 || true  # expected to fail: flash_attn is not installed (step 1)
+  return 0
 }
 
 download() {
