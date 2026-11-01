@@ -33,6 +33,7 @@ from agent_rl.data.itsm_split_v2 import (
     load_manifest_v2,
     task_content_sha256,
 )
+from agent_rl.data.itsm_frozen import verify_frozen
 from agent_rl.data.itsm_split_v3 import SPLIT_VERSION_V3, all_raw_tasks, load_manifest_v3
 from agent_rl.data.itsm_usage import PURPOSES, USAGE_VERSION, load_usage_registry
 from agent_rl.envs.itsm_scoring import load_itsm_tasks
@@ -51,7 +52,10 @@ def _check_version(split_version: str) -> None:
 def _manifest(split_version: str) -> dict[str, Any]:
     if split_version == SPLIT_VERSION:
         return load_manifest()
-    return load_manifest_v2() if split_version == SPLIT_VERSION_V2 else load_manifest_v3()
+    if split_version == SPLIT_VERSION_V2:
+        return load_manifest_v2()
+    verify_frozen()  # v3 is frozen: its bytes must equal the accepted SHA-256
+    return load_manifest_v3()
 
 
 @lru_cache(maxsize=None)
@@ -125,6 +129,7 @@ def task_ids(split: str, *, split_version: str, final_evaluation: bool = False) 
 def _usage(usage_version: str) -> dict[str, Any]:
     if usage_version not in USAGE_VERSIONS:
         raise ValueError(f"unknown usage_version {usage_version!r}; expected one of {list(USAGE_VERSIONS)}")
+    verify_frozen()
     return load_usage_registry()
 
 

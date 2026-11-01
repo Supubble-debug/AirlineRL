@@ -1,0 +1,294 @@
+"""ItsmAgentLoop token/span/mask/log-prob contract (step 7A, offline).
+
+A deterministic sampler stub stands in for verl's rollout server; the tokenizer
+is the pinned Qwen3-8B tokenizer, the env is the real ItsmEnv on real Bench2
+tools with a scripted user. The stub's log-probs are synthetic: these tests
+check that the loop copies them position by position and never invents them;
+they are NOT an acceptance of real sampled log-probs (step 7B).
+"""
+
+from __future__ import annotations
+
+import asyncio
+import json
+import os
+import sys
+from pathlib import Path
+from types import SimpleNamespace
+
+import pytest
+
+pytest.importorskip("verl.experimental.agent_loop.agent_loop")
+TOKENIZER_DIR = Path(os.environ.get("ITSM_TOKENIZER_DIR", Path.home() / ".cache/entergym/tokenizers/Qwen3-8B-b968826d"))
+if not (TOKENIZER_DIR / "tokenizer_config.json").exists():
+    pytest.skip("pinned Qwen3-8B tokenizer not available", allow_module_level=True)
+
+from transformers import AutoTokenizer
+
+from enterprise_worlds.evaluator.text_match_strategy import TextMatchConfig
+from verl.utils.tokenizer.chat_template import initialize_system_prompt, initialize_turn_separator
+
+from agent_rl.data import itsm_task_sets
+from agent_rl.envs.itsm_env import ItsmEnv, ItsmEnvConfig
+from agent_rl.prompts.action_prompt import OBSERVATION_PROMPT, build_action_messages
+from agent_rl.rollout.itsm_agent_loop import (
+    ItsmAgentLoop,
+    ItsmAgentLoopSettings,
+    SamplerContractError,
+    parse_action,
+)
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from itsm_test_support import ScriptedUser  # noqa: E402
+
+TOKENIZER = AutoTokenizer.from_pretrained(str(TOKENIZER_DIR), trust_remote_code=False)
+TEMPLATE_KWARGS = {"enable_thinking": False}
+IM_END = TOKENIZER.convert_tokens_to_ids("<|im_end|>")
+TASK = "itsmbench_eops_99ba2325_887f5580"  # GRPO-trainable, MSP, includes a policy refusal
+GOLD = [a.arguments | {"__name": a.name} for a in itsm_task_sets.resolve_task(TASK, split_version="itsm_split_v3").evaluation_criteria.actions]
+REPLIES = [
+    "Hi, Karen Watkins here. Please retire SPR-AGT-01 and link it and PRT-ACME-01 to the MacBook Kernel Panic incident as affected CIs.",
+    "Understood, link only the printer then. Go ahead.",
+    "Thanks, that's everything.",
+]
+
+
+def tool_call_text(name: str, arguments: dict) -> str:
+    return "<tool_call>\n" + json.dumps({"name": name, "arguments": arguments}) + "\n</tool_call>"
+
+
+GOLD_SCRIPT = [
+    *(tool_call_text(g["__name"], {k: v for k, v in g.items() if k != "__name"}) for g in GOLD[:4]),
+    "Plan: retire CI_041 and link CI_096 to INC_026. A retired CI may not be linked to an active incident, so I will not link CI_041. Shall I proceed?",
+    *(tool_call_text(g["__name"], {k: v for k, v in g.items() if k != "__name"}) for g in GOLD[4:]),
+    "Done: CI_041 retired, CI_096 linked to INC_026 as an affected CI. Anything else?",
+    tool_call_text("done", {}),
+]
+
+
+class StubSampler:
+    """Deterministic stand-in for verl's server manager: replays scripted texts."""
+
+    def __init__(self, texts, *, logprobs="ok", stop=True):
+        self.texts = list(texts)
+        self.logprobs = logprobs
+        self.stop = stop
+        self.calls = []
+        self.emitted = []
+
+    async def generate(self, *, request_id, prompt_ids, sampling_params):
+        index = len(self.calls)
+        self.calls.append({"request_id": request_id, "prompt_ids": list(prompt_ids), "sampling_params": dict(sampling_params)})
+        ids = TOKENIZER.encode(self.texts[index], add_special_tokens=False) + ([IM_END] if self.stop else [])
+        if self.logprobs == "ok":
+            lps = [-(index + 1) - 0.001 * k for k in range(len(ids))]
+        elif self.logprobs == "missing":
+            lps = None
+        else:
+            lps = [-1.0] * (len(ids) - 1)
+        self.emitted.append((ids, lps))
+        return SimpleNamespace(token_ids=ids, log_probs=lps, stop_reason="completed")
+
+
+def make_loop(sampler, *, purpose="grpo", response_length=12288, replies=REPLIES, enable_thinking=False):
+    loop = object.__new__(ItsmAgentLoop)
+    loop.settings = ItsmAgentLoopSettings(purpose=purpose)
+    loop.tokenizer = TOKENIZER
+    loop.processor = None
+    loop.apply_chat_template_kwargs = {"enable_thinking": enable_thinking}
+    loop.system_prompt = initialize_system_prompt(TOKENIZER, **TEMPLATE_KWARGS)
+    loop.turn_separator = initialize_turn_separator(TOKENIZER, **TEMPLATE_KWARGS)
+    loop.rollout_config = SimpleNamespace(prompt_length=28672, response_length=response_length)
+    loop.server_manager = sampler
+    loop.envs = []
+
+    def make_env(task_id, episode_id):
+        config = ItsmEnvConfig(task_id=task_id, text_match=TextMatchConfig(strategy="fuzzy"), max_steps=40, split_version="itsm_split_v3")
+        env = ItsmEnv(config, user=ScriptedUser(list(replies)), episode_id=episode_id)
+        loop.envs.append(env)
+        return env
+
+    loop._make_env = make_env
+    loop._check_template()
+    return loop
+
+
+def run(loop, task_id=TASK):
+    async def go():
+        loop.loop = asyncio.get_running_loop()
+        return await loop.run({"temperature": 1.0}, task_id=task_id, uid="g0", rollout_n=0)
+
+    return asyncio.run(go())
+
+
+@pytest.fixture(scope="module")
+def happy():
+    sampler = StubSampler(GOLD_SCRIPT)
+    loop = make_loop(sampler)
+    output = run(loop)
+    return loop, sampler, output, loop.envs[0].export_trace()
+
+
+# -- happy path: rendering, spans, mask, log-probs ------------------------------------------------
+
+
+def test_episode_reaches_db_1_with_agent_done(happy):
+    _, sampler, output, trace = happy
+    info = output.extra_fields["reward_extra_info"]
+    assert info["itsm_termination_reason"] == "agent_done"
+    assert output.reward_score == 1.0 and info["itsm_db_reward"] == 1.0
+    assert output.num_turns == len(GOLD_SCRIPT) == len(sampler.calls)
+
+
+def test_prompt_is_the_qwen3_template_of_public_info_only(happy):
+    loop, _, output, trace = happy
+    env = ItsmEnv(ItsmEnvConfig(task_id=TASK, text_match=TextMatchConfig(strategy="fuzzy"), max_steps=40, split_version="itsm_split_v3"), user=ScriptedUser(list(REPLIES)))
+    reset = env.reset()
+    messages = build_action_messages(domain_policy=reset.public_info["policy"], observation=reset.observation)
+    expected = TOKENIZER.apply_chat_template(messages, tools=reset.public_info["tools"], add_generation_prompt=True, tokenize=True, enable_thinking=False)
+    expected = list(expected["input_ids"]) if hasattr(expected, "keys") else list(expected)
+    assert output.prompt_ids == expected
+    text = TOKENIZER.decode(output.prompt_ids)
+    assert text.endswith("<|im_start|>assistant\n<think>\n\n</think>\n\n")
+    task = itsm_task_sets.resolve_task(TASK, split_version="itsm_split_v3")
+    full = TOKENIZER.decode(output.prompt_ids + output.response_ids)
+    for private in (task.scenario.task_description, task.scenario.simulator_guidance, TASK, "EnterpriseOps", *task.evaluation_criteria.nl_assertions):
+        assert private not in full
+
+
+def test_policy_spans_carry_sampler_tokens_mask_1_and_sampler_logprobs(happy):
+    _, sampler, output, _ = happy
+    spans = output.extra_fields["itsm_turn_spans"]
+    assert len(spans) == len(sampler.emitted)
+    for span, (ids, lps) in zip(spans, sampler.emitted):
+        s, e = span["start"], span["end"]
+        assert output.response_ids[s:e] == ids
+        assert output.response_mask[s:e] == [1] * len(ids)
+        assert output.response_logprobs[s:e] == lps
+    assert sum(output.response_mask) == sum(len(ids) for ids, _ in sampler.emitted)
+    assert output.extra_fields["itsm_logprob_sources"] == {"mask_1": "sampler", "mask_0": "placeholder_masked"}
+
+
+def test_environment_spans_are_mask_0_placeholders_and_verbatim_observations(happy):
+    loop, _, output, trace = happy
+    env_spans = output.extra_fields["itsm_env_spans"]
+    assert len(env_spans) == len(GOLD_SCRIPT) - 1  # no env turn after done
+    covered = set()
+    for span in env_spans:
+        s, e = span["start"], span["end"]
+        assert output.response_mask[s:e] == [0] * (e - s)
+        assert output.response_logprobs[s:e] == [0.0] * (e - s)
+        assert output.response_ids[s : s + len(loop.turn_separator)] == loop.turn_separator
+        covered.update(range(s, e))
+    policy = {i for sp in output.extra_fields["itsm_turn_spans"] for i in range(sp["start"], sp["end"])}
+    assert covered | policy == set(range(len(output.response_ids))) and not covered & policy
+    # Observations enter verbatim (no compression or cut), wrapped in OBSERVATION_PROMPT.
+    decoded = TOKENIZER.decode(output.response_ids)
+    for message in trace["messages"]:
+        if message["role"] == "tool":
+            assert message["content"] in decoded
+
+
+def test_each_generate_call_sees_prompt_plus_response_so_far(happy):
+    _, sampler, output, _ = happy
+    spans = output.extra_fields["itsm_turn_spans"]
+    for call, span in zip(sampler.calls, spans):
+        assert call["prompt_ids"] == output.prompt_ids + output.response_ids[: span["start"]]
+        assert call["sampling_params"]["max_tokens"] == 512
+        assert IM_END in call["sampling_params"]["stop_token_ids"]
+    assert len({c["request_id"] for c in sampler.calls}) == 1  # one sticky request, no rotation
+
+
+def test_environment_turn_length_matches_the_step6_budget_measurement(happy):
+    """Env turns are counted exactly as step 6 measured them (budget v1 basis)."""
+    loop, _, output, _ = happy
+    sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts" / "data"))
+    import measure_itsm_tokens as measure
+
+    renderer = measure.Renderer(TOKENIZER, [])
+    for span in output.extra_fields["itsm_env_spans"]:
+        text = TOKENIZER.decode(output.response_ids[span["start"] + len(loop.turn_separator) : span["end"]])
+        inner = text.split("<observation>\n", 1)[1].split("\n</observation>", 1)[0]
+        assert span["end"] - span["start"] == renderer.environment_turn(OBSERVATION_PROMPT.format(observation=inner))
+
+
+# -- one action per turn --------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    ("text", "reason"),
+    [
+        ("Let me look that up. " + tool_call_text("get_user_using_name", {"first_name": "Karen", "last_name": "Watkins"}), "both text and tool calls"),
+        (tool_call_text("get_user_using_name", {"first_name": "Karen", "last_name": "Watkins"}) * 2, "at most one tool call"),
+        ("Checking now. <tool_call>\n{\"name\": \"get_user_using_name\", \"arguments\": {broken}\n</tool_call>", "malformed tool call"),
+        ("<tool_call>\n{\"name\": \"get_user_using_name\"", "unterminated"),
+        ("   ", "text or one tool call"),
+    ],
+)
+def test_invalid_output_ends_with_invalid_action_and_outcome_0(text: str, reason: str):
+    sampler = StubSampler([text])
+    output = run(make_loop(sampler))
+    info = output.extra_fields["reward_extra_info"]
+    assert info["itsm_termination_reason"] == "invalid_action"
+    assert output.reward_score == 0.0 and info["itsm_training_reward_source"] == "invalid_action"
+    assert reason in output.extra_fields["itsm_turn_spans"][0]["invalid_action"]
+    assert output.response_mask == [1] * len(output.response_ids)  # the attempt is kept, no env turn after it
+
+
+def test_output_cut_at_the_action_limit_is_invalid():
+    sampler = StubSampler([tool_call_text("get_user_using_name", {"first_name": "Karen", "last_name": "Watkins"})], stop=False)
+    output = run(make_loop(sampler))
+    assert output.extra_fields["itsm_turn_spans"][0]["invalid_action"].startswith("action_token_limit")
+
+
+def test_parse_action_message_and_done():
+    assert parse_action("Hello there<|im_end|>", "Hello there", stopped=True).action.kind == "message"
+    assert parse_action(tool_call_text("done", {}) + "<|im_end|>", tool_call_text("done", {}), stopped=True).action.kind == "done"
+    assert parse_action(tool_call_text("done", {"x": 1}), tool_call_text("done", {"x": 1}), stopped=True).error
+
+
+# -- log-probs are never invented ----------------------------------------------------------------
+
+
+@pytest.mark.parametrize("mode", ["missing", "misaligned"])
+def test_missing_or_misaligned_logprobs_are_a_sampler_error(mode: str):
+    sampler = StubSampler(GOLD_SCRIPT, logprobs=mode)
+    with pytest.raises(SamplerContractError, match="one log-prob per generated token"):
+        run(make_loop(sampler))
+
+
+# -- budget: no rotation --------------------------------------------------------------------------
+
+
+def test_response_budget_ends_with_response_length_and_no_rotation():
+    sampler = StubSampler(GOLD_SCRIPT)
+    output = run(make_loop(sampler, response_length=1200))
+    info = output.extra_fields["reward_extra_info"]
+    assert info["itsm_termination_reason"] == "response_length"
+    assert len(output.response_ids) <= 1200
+    assert len({c["request_id"] for c in sampler.calls}) == 1
+    assert all(c["prompt_ids"][: len(output.prompt_ids)] == output.prompt_ids for c in sampler.calls)
+
+
+# -- purpose gating -------------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    ("purpose", "task_id"),
+    [
+        ("grpo", "itsmbench_eops_46ca2862_b6ef60ca"),  # SFT-only
+        ("grpo", "itsmbench_single_005"),  # R1 pending
+        ("grpo", "itsmbench_eops_78a5b71e_a4fb07a9"),  # SFT-only, never GRPO
+        ("grpo", "itsmbench_msp_019"),  # dev
+        ("grpo", "itsmbench_eops_99ba2325_54f35603"),  # held-out
+        ("dev", TASK),  # train task in a dev loop
+    ],
+)
+def test_purpose_gate_refuses_tasks_outside_the_purpose(purpose: str, task_id: str):
+    with pytest.raises(PermissionError, match="not allowed"):
+        run(make_loop(StubSampler([]), purpose=purpose), task_id=task_id)
+
+
+def test_thinking_must_be_disabled():
+    with pytest.raises(ValueError, match="enable_thinking"):
+        make_loop(StubSampler([]), enable_thinking=True)

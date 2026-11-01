@@ -20,7 +20,8 @@
 | 6D-2：7 题迁移验证 | 用户认可：第 1、3、6、7 题作为 v3 新增训练题（train 目标 32 → 36）；第 2、4、8 题继续隔离；不授权重新设计第 4 题 | 2026-10-30 用户原话：“第 6D-2 验收通过。一、数据决定 1. 批准第 1、3、6、7 题作为 v3 新增训练题，训练集目标规模由 32 增至 36。2. v1/v2 不改；本次批准不等于 v3 最终验收或冻结。3. 第 2、4、8 题继续隔离。4. 暂不授权重新设计第 4 题，不修改 D8、fuzzy 阈值、policy 或评分。5. 第 5、9、10 题及其他备选题继续暂缓，不扩大训练候选范围。” |
 | 6D-3：v3 held-out 候选审读与迁移验证 | 用户认可：1 题通过（`99ba2325_54f35603`，纳入 held-out），7 题隔离 | 2026-10-30 用户原话（同一条消息）：“二、只执行第 6D-3：v3 held-out 候选审读与迁移验证。范围限定为 docs/itsm_step6d/v3_proposal.md 已列出的 8 道候选。两道服务目录题继续优先保留给 held-out，不转入 train。……不通过的候选隔离并记录理由，不另找题替补，不放宽门槛。不运行模型，不用 held-out 调试长度、预算或模型配置。……本步先不生成正式 v3 manifest，不开始第 7 步，不启动 GPU、不调用真实 LLM、不做 SFT 或训练。完成后停止，等待我检验确认。” 2026-10-31 用户原话：“目前已完成6d-3”，未出现“验收通过”，状态按实际仍记为待验收。 2026-10-31 用户原话：“6D-3 验收通过，54f35603 纳入 held-out。” |
 | S0：联合数据用途与 SFT 轨迹试点设计（新路线，仅离线） | 用户认可（含 S0-R1）；D-S0-1/2/3/4/5/6 已定，D-S0-8 的 API 上限已定（45 美元），GPU 上限待批 | 未批准。2026-10-31 用户原话：“研究主线改为 SFT → GRPO，执行仍逐步验收。本次只执行 S0：联合数据用途与 SFT 轨迹试点设计，不开始采样或训练。……将之前建议的 6D-3-R1 检查纳入本步，避免另开重复流程。……仅修改设计与必要离线审计，不联网调用 LLM、不启动 GPU、不训练、不自动进入第 7 步或 S1。完成后停止，等待我验收。” 随后：“请阅读code/main/docs/playbook2.md，这是新路线，之前的code/main/docs/itsm_migration_agent_playbook.md是原路线”。 2026-10-31 用户原话：“S0 暂不最终验收，只执行 S0-R1 补修。按本次逐项决定更新提案……1. 新增 b6ef60ca 反例……将该题改为暂停 GRPO、保留 SFT 来源。2. 修正核心要求的判定逻辑：不能用一个结构化反例 DB=0，覆盖另一个已确认的核心错误反例 DB=1……3. ……原有 5 题登记为待补 R1，第 9 步前完成。78a5 接纳为 SFT-only 来源；54f35603 保留给 held-out。4. 修正 Teacher/裁判偏差表述，补充实际模型版本核对方案。API 上限须包含重试及所有收费请求，并在发起请求前预留费用……只修订 S0、运行受影响的离线验证并提交验收。本次不生成正式 v3，不进入第 7 步或 S1，不调用 LLM、不启动 GPU、不训练。完成后停止。” 2026-10-31 用户原话：“S0-R1 验收通过。明确确认本次回复中的各项决定：五道派生题暂停 GRPO；78a5 保留为 SFT-only 来源”。 |
-| v3 manifest 与用途登记 `itsm_usage_v1` 冻结 | **待验收**（测试通过 ≠ 验收） | 未批准。2026-10-31 用户原话：“S0-R1 验收通过。明确确认本次回复中的各项决定：五道派生题暂停 GRPO；78a5 保留为 SFT-only 来源；6D-3 验收通过，54f35603 纳入 held-out。现在只执行：生成 v3 manifest 与用途登记，提交冻结验收。……4. Teacher 候选改为 GPT-6.1 Sol，供应商为 Micu：https://www.micuapi.ai 接口兼容性、实际模型 ID、参数、版本和价格留到第 7 步验证；不静默替换模型，不照搬 DeepSeek 参数。5. S1 总费用上限为 45 美元。换用 GPT 后重新核算单请求、单轨迹和总预留；本步只更新预算说明，不调用模型。……不开始第 7 步或 S1，不调用 LLM、不启动 GPU、不训练。完成后停止，等待我验收。” |
+| v3 manifest 与用途登记 `itsm_usage_v1` 冻结 | **用户认可（已冻结）**：提交 `70e6a3b451149bb24ae0eba18fc544705d4c323a`；`itsm_split_v3.json` SHA256 `9326167dfee696a809f685f178284e23e6e8f3402559d4b47650c4fcf85b5bc0`；`itsm_usage_v1.json` SHA256 `87f15baf96a5dbeec6a8c07ca0952edafd86667d18dfa01d63f066d35934fba7` | 未批准。2026-10-31 用户原话：“S0-R1 验收通过。明确确认本次回复中的各项决定：五道派生题暂停 GRPO；78a5 保留为 SFT-only 来源；6D-3 验收通过，54f35603 纳入 held-out。现在只执行：生成 v3 manifest 与用途登记，提交冻结验收。……4. Teacher 候选改为 GPT-6.1 Sol，供应商为 Micu：https://www.micuapi.ai 接口兼容性、实际模型 ID、参数、版本和价格留到第 7 步验证；不静默替换模型，不照搬 DeepSeek 参数。5. S1 总费用上限为 45 美元。换用 GPT 后重新核算单请求、单轨迹和总预留；本步只更新预算说明，不调用模型。……不开始第 7 步或 S1，不调用 LLM、不启动 GPU、不训练。完成后停止，等待我验收。” 2026-10-31 用户原话：“v3 manifest 与 itsm_usage_v1 冻结验收通过。冻结依据为提交 70e6a3b 的文件内容及完整 SHA256。” |
+| 7A：离线 loop 验证与 API 兼容探测 | **待验收**（测试通过 ≠ 验收）：离线部分完成；云端付费探测**未执行**（无不启动 GPU 的云端环境、无 Micu 凭据、价格无法在请求前核实），花费 0 美元 | 未批准。2026-10-31 用户原话：“v3 manifest 与 itsm_usage_v1 冻结验收通过。冻结依据为提交 70e6a3b 的文件内容及完整 SHA256。现在只执行第 7A 步：离线 loop 验证与 API 兼容探测。1. 将批准原话、提交和两个文件的完整哈希写入进度。不为修改 candidate/frozen 状态而重写冻结文件。后续用途资格变化另建版本；轨迹审核另存文件并引用冻结哈希。2. 用确定性采样替身验证 ItsmAgentLoop 的输入渲染、单动作转换、增量观察、token/span/mask 和 logprob 字段契约。mock 验证不能当作真实采样 logprob 验收。3. 在云端核对 Micu 的 GPT-6.1 Sol：端点、Responses 与工具调用兼容性、实际模型 ID、参数、输出/推理 token 上限、usage 和价格。同时核对模拟器与裁判的实际模型标识。不照搬 DeepSeek 参数，不静默换模型，不输出密钥。4. 先核实计费并完成请求前预留，再做最小付费探测：最多 6 次收费请求，总费用不超过 1 美元，包含所有重试。此预算属于第 7A 步，与 S1 的 45 美元分开记账。无法可靠约束费用、接口不兼容或版本无法确认时停止并报告。5. 不运行 held-out，不生成 SFT 轨迹，不更新权重。不启动 GPU；40,960 继续保留为待验证候选。提交离线验证、实际请求结果、费用及第 7B 步方案后停止，等待我验收。不得自动进入 7B、第 8 步或 S1。” |
 | 7 及以后（新路线顺序 S0 → 7 → 8 → S1 → … → S5 → 9 → … → 15） | 未开始 | — |
 
 ## 运行环境
@@ -411,4 +412,30 @@
   - S1 预算：总上限 45 美元；GPT-6.1 Sol 价格未知，改为公式核算，第 7 步核实价格后代入。
 - 运行：在 `code/main` 下运行，日志在 `/home/sar/work/EnterGym/output/itsm-v3-usage/`：`build_itsm_split_v3.py --check`、`build_itsm_usage.py --check` 在哈希种子 1、7、13 下都是 up to date；S0 审计、held-out 候选、6D-2 批次、试点、v1、v2 的 `--check` 均为 up to date；`pytest tests/unit tests/remote -q`：738 passed（`pytest_full.log`），跑完没有残留子进程。另有 2 条旧断言按当前状态更新：`test_itsm_eops_heldout_v3` 原先断言 v3 文件不存在，改为断言 54f35603 在 v3 held-out、隔离题不在任何划分；`test_itsm_task_sets` 中"未知版本"的示例从 itsm_split_v3 改为 itsm_split_v4。
 - 没有开始第 7 步或 S1，没有调用 LLM，没有启动 GPU，没有训练。
+
+## 冻结记录：v3 manifest 与 `itsm_usage_v1`（2026-10-31）
+
+- 用户原话：“v3 manifest 与 itsm_usage_v1 冻结验收通过。冻结依据为提交 70e6a3b 的文件内容及完整 SHA256。”
+- 提交：`70e6a3b451149bb24ae0eba18fc544705d4c323a`（2026-10-31 08:34:14 -0400）。
+- `configs/data/itsm_split_v3.json`：SHA256 `9326167dfee696a809f685f178284e23e6e8f3402559d4b47650c4fcf85b5bc0`。
+- `configs/data/itsm_usage_v1.json`：SHA256 `87f15baf96a5dbeec6a8c07ca0952edafd86667d18dfa01d63f066d35934fba7`。
+- 冻结文件本身不改，`itsm_usage_v1.json` 中的 `status` 字段保持原文。冻结记录写在本文件和 `src/agent_rl/data/itsm_frozen.py`；加载 v3 或用途登记时会先核对上面两个 SHA256。
+- 以后用途资格有变化，新建用途版本；轨迹审核另存文件，并引用上面两个冻结哈希。
+
+## 第 7A 步证据
+
+- 报告：`docs/itsm_step7a/README.md`。
+- 改动：
+  - 新增 `src/agent_rl/rollout/itsm_agent_loop.py`、`src/agent_rl/data/itsm_frozen.py`、`src/agent_rl/utils/spend_ledger.py`、`scripts/itsm/probe_api_7a.py`；
+  - 新增测试 `tests/unit/test_itsm_agent_loop.py`（23 项）、`tests/unit/test_itsm_api_probe.py`（11 项）；`tests/unit/test_itsm_split_v3.py` 增加冻结哈希测试（+1）；
+  - `src/agent_rl/data/itsm_task_sets.py` 加载 v3 或用途登记时核对冻结哈希。
+  - 冻结文件、v1/v2、Bench2、评分、policy 和预算数值均未修改。
+- 离线验证：确定性采样替身加真实 Qwen3 分词器、真实 ItsmEnv。验证了输入渲染、单动作（6 种非法输出）、增量观察（与第 6 步计数一致）、token/span/mask、logprob 来源（缺失或条数不对时报错，不补 0）、不轮换上下文、按用途限制取题。**这些都不是真实采样 logprob 的验收**。
+- API 探测：**没有发出任何付费请求，花费 0 美元**（第 7A 步预算 1 美元 / 6 次，与 S1 分开记账）。停止原因：
+  1. 唯一的云端实例需要以 GPU 模式开机，与"不启动 GPU"冲突；
+  2. 没有 Micu 的 key 和 base URL；
+  3. Micu 的价格页要登录才能看，公开资料只有第三方列出的 OpenAI 标价，不能作为预留依据。
+  - 探测脚本和账本已经写好，并用模拟 HTTP 做了离线测试。
+- 运行（在 `code/main` 下，日志在 `/home/sar/work/EnterGym/output/itsm-step7a/`）：v3、用途登记（哈希种子 1、7）、S0 审计、held-out 候选、6D-2 批次、v1、v2 的 `--check` 均为 up to date；两个冻结文件的 SHA256 与冻结值一致；`pytest tests/unit tests/remote -q`：773 passed（`pytest_full.log`），跑完没有残留子进程。
+- 没有运行 held-out，没有生成 SFT 轨迹，没有更新权重，没有启动 GPU，没有进入第 7B 步、第 8 步或 S1。
 

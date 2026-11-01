@@ -166,3 +166,14 @@ def test_added_tasks_resolve_and_replay_to_db_1(task_id: str) -> None:
     ItsmEnvConfig(task_id=task_id, text_match=TextMatchConfig(strategy="fuzzy"), max_steps=40, split_version="itsm_split_v3")
     task = ts.resolve_task(task_id, split_version="itsm_split_v3")
     assert score_final_db(task, replay_gold_actions(task), text_match=TextMatchConfig(strategy="fuzzy")).db_reward == 1.0
+
+
+def test_frozen_files_equal_the_accepted_sha256() -> None:
+    from agent_rl.data.itsm_frozen import FREEZE_COMMIT, FROZEN, verify_frozen
+
+    verify_frozen()
+    assert FREEZE_COMMIT.startswith("70e6a3b") and len(FREEZE_COMMIT) == 40
+    for entry in FROZEN.values():
+        assert hashlib.sha256((REPO_ROOT / entry["path"]).read_bytes()).hexdigest() == entry["sha256"]
+    # The freeze is recorded outside the files: their status text is left as generated.
+    assert USAGE["status"] == "candidate for freeze acceptance"
