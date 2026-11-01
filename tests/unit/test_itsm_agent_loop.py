@@ -529,3 +529,121 @@ def test_a_failing_worker_startup_is_reclaimed():
     assert not loop.envs[0].is_alive and multiprocessing.active_children() == []
     loop.envs[0].close()
 
+
+# -- cleanup outcome propagation (7A-R3) ----------------------------------------------------------
+
+
+def _outcome(loop):
+    """Run one rollout; return (result or raised exception, seconds until run() finished).
+
+    The time is taken inside the event loop: asyncio.run() itself waits for executor
+    threads (e.g. a hung close) before it returns."""
+
+    async def go():
+        loop.loop = asyncio.get_running_loop()
+        started = time.monotonic()
+        try:
+            result = await loop.run({"temperature": 1.0}, task_id=TASK, uid="g0", rollout_n=0)
+        except BaseException as error:  # noqa: BLE001 - returned for the assertions
+            result = error
+        return result, time.monotonic() - started
+
+    return asyncio.run(go())
+
+
+def test_first_cancel_during_the_normal_cleanup_is_propagated(monkeypatch):
+    """The episode finished normally; the rollout is cancelled (for the first time) while the
+    worker is being closed: the close completes, then CancelledError -- no output, no reward."""
+    entered, finished = threading.Event(), threading.Event()
+    real_close = ItsmEnvWorker.close
+
+    def slow_close(self):
+        entered.set()
+        time.sleep(1.0)
+        real_close(self)
+        finished.set()
+
+    monkeypatch.setattr(ItsmEnvWorker, "close", slow_close)
+    sampler = StubSampler(GOLD_SCRIPT)
+    loop = make_loop(sampler, worker=True)
+
+    outcome, _ = _cancel_when(loop, lambda w: entered.is_set())
+
+    assert isinstance(outcome, asyncio.CancelledError)  # not an AgentLoopOutput
+    assert len(sampler.calls) == len(GOLD_SCRIPT)  # the episode itself had completed
+    assert finished.is_set()  # the cleanup ran to completion before the cancellation propagated
+    worker = loop.envs[0]
+    assert not worker.is_alive and multiprocessing.active_children() == []
+    real_close(worker)
+    real_close(worker)
+
+
+@pytest.mark.parametrize("origin", ["normal_end", "cancelled", "original_error"])
+def test_unreclaimed_worker_is_an_infrastructure_error(monkeypatch, origin):
+    """Fault injection: the cleanup really runs, but reports the child as not reclaimed."""
+    real = ItsmAgentLoop._reclaim_sync
+
+    def reports_not_reclaimed(self, env, started, *, cancel):
+        real(self, env, started, cancel=cancel)
+        return False
+
+    monkeypatch.setattr(ItsmAgentLoop, "_reclaim_sync", reports_not_reclaimed)
+    sampler = StubSampler(GOLD_SCRIPT, logprobs="nan" if origin == "original_error" else "ok")
+    loop = make_loop(sampler, worker=True)
+    if origin == "cancelled":
+        outcome, _ = _cancel_when(loop, lambda w: len(sampler.calls) >= 3)
+    else:
+        outcome, _ = _outcome(loop)
+
+    assert isinstance(outcome, ItsmInfrastructureError), outcome  # no output, no reward 0 either
+    assert outcome.stage == "cleanup" and outcome.kind == "not_reclaimed"
+    worker = loop.envs[0]
+    diagnosis = outcome.cleanup
+    assert diagnosis["reason"] == "the child is not confirmed gone after close()"
+    assert diagnosis["episode_id"] == worker.episode_id and diagnosis["pid"] == worker.pid
+    assert diagnosis["cancel_requested"] is (origin == "cancelled")
+    assert worker.episode_id in str(outcome) and "not_reclaimed" in str(outcome)
+    if origin == "normal_end":
+        assert outcome.__cause__ is None and diagnosis["original_error"] is None
+    elif origin == "cancelled":
+        assert isinstance(outcome.__cause__, asyncio.CancelledError)
+    else:
+        assert isinstance(outcome.__cause__, ItsmInfrastructureError) and outcome.__cause__.stage == "sampler_contract"
+        assert "non-finite log-prob" in diagnosis["original_error"]
+    assert multiprocessing.active_children() == []  # the injected fault is in the report only
+
+
+def test_cleanup_over_its_bound_is_an_infrastructure_error(monkeypatch):
+    sampler = StubSampler(GOLD_SCRIPT)
+    loop = make_loop(sampler, worker=True, call_timeout_s=2.0, kill_grace_s=0.5, cleanup_margin_s=0.2)
+    bound = loop.cleanup_bound_s(cancel=False)
+    hang = bound + 3.0
+    real_close = ItsmEnvWorker.close
+    close_entered = []
+    real_run = ItsmAgentLoop.run
+
+    def hung_close(self):
+        close_entered.append(time.monotonic())
+        time.sleep(hang)
+        real_close(self)
+
+    async def timed_run(self, *args, **kwargs):
+        try:
+            return await real_run(self, *args, **kwargs)
+        finally:
+            raised_at.append(time.monotonic())
+
+    raised_at = []
+    monkeypatch.setattr(ItsmEnvWorker, "close", hung_close)
+    monkeypatch.setattr(ItsmAgentLoop, "run", timed_run)
+    outcome, _ = _outcome(loop)
+    elapsed = raised_at[0] - close_entered[0]  # from the start of the close to the report
+
+    assert isinstance(outcome, ItsmInfrastructureError), outcome
+    assert outcome.stage == "cleanup" and outcome.kind == "not_reclaimed"
+    assert outcome.cleanup["reason"] == f"cleanup exceeded its bound of {bound:.1f}s"
+    assert outcome.cleanup["cancel_requested"] is False and outcome.__cause__ is None
+    assert bound - 1.0 <= elapsed < hang  # reported at the bound, not after the hang
+    # hygiene: the hung close eventually reclaims the child (asyncio.run waited for it)
+    assert not loop.envs[0].is_alive and multiprocessing.active_children() == []
+

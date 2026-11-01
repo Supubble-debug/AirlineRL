@@ -34,11 +34,25 @@ next -- normal end, error, startup timeout, or cancellation during startup or
 during the episode -- the handle is reclaimed by one bounded cleanup that runs
 in its own task: ``cancel()`` (kills the child, or stops it from being spawned),
 a bounded wait for the start thread to return, then ``close()`` (kill + join).
-A second cancellation cannot interrupt that cleanup, and the rollout's
-``CancelledError`` propagates only after it finished, so no worker outlives its
-rollout, no in-flight tool finishes a late write and no reward is produced. A
-child that cannot be confirmed gone within the bound is logged as
-``not_reclaimed``.
+A cancellation cannot interrupt that cleanup; it is remembered and re-raised
+after it, so no worker outlives its rollout, no in-flight tool finishes a late
+write and no reward is produced.
+
+Propagation after the cleanup (7A-R3), first match wins:
+
+1. cleanup failed (child not confirmed gone, cleanup error or cleanup over its
+   bound) -> ``ItsmInfrastructureError(stage="cleanup", kind="not_reclaimed")``,
+   chained (``__cause__``) to the original exception or cancellation, with the
+   episode id, pid, reason, whether a cancellation was requested and the
+   original error in ``detail`` and in ``.cleanup``. A possibly live child must
+   not be hidden behind a ``CancelledError``.
+2. a cancellation was requested at any point, including for the first time
+   during a normal cleanup -> ``CancelledError`` (the original one if any).
+3. the episode raised -> that exception, unchanged.
+4. otherwise -> the ``AgentLoopOutput``.
+
+No branch other than 4 returns an output, so none of them yields a reward
+(and none is turned into reward 0).
 
 Task selection is purpose-gated: a ``grpo`` loop accepts only GRPO-trainable
 tasks of the usage registry, a ``dev`` loop only dev tasks, and held-out needs
@@ -98,13 +112,14 @@ class ItsmAgentLoopSettings:
     episode_timeout_s: float = 1800.0  # budget v1 worker.episode_timeout_s
     startup_timeout_s: float = 120.0  # worker spawn + ItsmEnv construction (7A-R2)
     kill_grace_s: float = 10.0  # bound on kill + join of the child (7A-R2)
+    cleanup_margin_s: float = CLEANUP_MARGIN_S  # slack added to each cleanup bound (7A-R3: settable for tests)
 
     def __post_init__(self) -> None:
         if self.purpose not in LOOP_PURPOSES:
             raise ValueError(f"purpose must be one of {list(LOOP_PURPOSES)}")
         if self.max_steps < 1 or self.max_action_tokens < 1:
             raise ValueError("max_steps and max_action_tokens must be positive")
-        if min(self.call_timeout_s, self.episode_timeout_s, self.startup_timeout_s, self.kill_grace_s) <= 0:
+        if min(self.call_timeout_s, self.episode_timeout_s, self.startup_timeout_s, self.kill_grace_s, self.cleanup_margin_s) <= 0:
             raise ValueError("worker timeouts must be positive")
 
 
@@ -226,7 +241,7 @@ class ItsmAgentLoop(AgentLoopBase):
                 started.set()
 
         self.loop.run_in_executor(None, run_start)
-        deadline = time.monotonic() + self.settings.startup_timeout_s + self.settings.kill_grace_s + CLEANUP_MARGIN_S
+        deadline = time.monotonic() + self.settings.startup_timeout_s + self.settings.kill_grace_s + self.settings.cleanup_margin_s
         while not started.is_set():
             if time.monotonic() > deadline:
                 raise ItsmInfrastructureError("startup", task_id, "worker start did not return within its bound", kind="not_reclaimed")
@@ -238,34 +253,52 @@ class ItsmAgentLoop(AgentLoopBase):
         """Blocking, bounded: stop the child (if cancelling), let start() return, close; True if gone."""
         if cancel and hasattr(env, "cancel"):
             env.cancel()
-        started.wait(self.settings.kill_grace_s + CLEANUP_MARGIN_S)
+        started.wait(self.settings.kill_grace_s + self.settings.cleanup_margin_s)
         if not cancel and not started.is_set() and hasattr(env, "cancel"):
             env.cancel()  # start() still running: never close under a live startup
-            started.wait(self.settings.kill_grace_s + CLEANUP_MARGIN_S)
+            started.wait(self.settings.kill_grace_s + self.settings.cleanup_margin_s)
         env.close()
         return not getattr(env, "is_alive", False)
 
-    async def _reclaim(self, env, started: threading.Event, *, cancel: bool) -> None:
-        """Run the cleanup in its own task so a (second) cancellation cannot interrupt it."""
-        healthy_close = 0.0 if cancel else 2 * self.settings.call_timeout_s  # export_trace + shutdown
-        bound = 2 * (self.settings.kill_grace_s + CLEANUP_MARGIN_S) + healthy_close + self.settings.kill_grace_s + CLEANUP_MARGIN_S
+    def cleanup_bound_s(self, *, cancel: bool) -> float:
+        """Upper bound of one cleanup: start wait(s) + (healthy export + shutdown) + kill/join."""
+        step = self.settings.kill_grace_s + self.settings.cleanup_margin_s
+        healthy_close = 0.0 if cancel else 2 * self.settings.call_timeout_s
+        return 2 * step + healthy_close + step
+
+    async def _reclaim(self, env, started: threading.Event, *, cancel: bool) -> tuple[bool, str | None]:
+        """Run the bounded cleanup in its own task; a cancellation cannot interrupt it.
+
+        Returns ``(cancel_requested, failure)``: whether the rollout was cancelled while the
+        cleanup ran, and ``None`` or the reason the child is not confirmed reclaimed.
+        """
+        bound = self.cleanup_bound_s(cancel=cancel)
         cleanup = asyncio.ensure_future(
             asyncio.wait_for(self.loop.run_in_executor(None, lambda: self._reclaim_sync(env, started, cancel=cancel)), bound)
         )
-        reclaimed = False
+        cancel_requested = False
         while not cleanup.done():
             try:
                 await asyncio.shield(cleanup)
             except asyncio.CancelledError:
-                if cleanup.done():
-                    break
-                continue  # finish the cleanup first; the rollout's cancellation is re-raised by run()
-            except Exception:  # noqa: BLE001 - reported below
+                if not cancel_requested and hasattr(env, "cancel"):
+                    env.cancel()  # first cancellation during a normal cleanup: stop the child now
+                cancel_requested = True  # remembered; run() re-raises it after the cleanup
+            except BaseException:  # noqa: BLE001 - inspected below
                 break
-        if cleanup.done() and not cleanup.cancelled() and cleanup.exception() is None:
-            reclaimed = cleanup.result()
-        if not reclaimed:
-            logger.error("ITSM worker %s not reclaimed (pid %s)", getattr(env, "episode_id", "?"), getattr(env, "pid", None))
+        failure = None
+        if cleanup.cancelled():
+            failure = "cleanup task was cancelled"
+        elif isinstance(cleanup.exception(), (asyncio.TimeoutError, TimeoutError)):
+            failure = f"cleanup exceeded its bound of {bound:.1f}s"
+        elif cleanup.exception() is not None:
+            error = cleanup.exception()
+            failure = f"cleanup raised {type(error).__name__}: {error}"
+        elif cleanup.result() is not True:
+            failure = "the child is not confirmed gone after close()"
+        if failure is not None:
+            logger.error("ITSM worker %s not reclaimed (pid %s): %s", getattr(env, "episode_id", "?"), getattr(env, "pid", None), failure)
+        return cancel_requested, failure
 
     # -- contract ------------------------------------------------------------------------------
 
@@ -292,18 +325,37 @@ class ItsmAgentLoop(AgentLoopBase):
         episode_id = f"{task_id}:{group_id}:{sample_index}:{uuid4().hex[:8]}"
         env = self._make_env(task_id, episode_id)  # handle first, before any child exists
         started = threading.Event()
-        cancelled = False
+        output: AgentLoopOutput | None = None
+        error: BaseException | None = None
         try:
             await self._start_env(env, started, task_id)
-            return await self._run_episode(env, sampling_params, group_id, sample_index, task_id)
-        except asyncio.CancelledError:
-            # Stop the child itself, not only the awaiting coroutine or thread. Other errors
-            # take the normal close (a failed worker skips the trace export and is killed;
-            # a healthy one keeps its trace for diagnosis).
-            cancelled = True
-            raise
-        finally:
-            await self._reclaim(env, started, cancel=cancelled)
+            output = await self._run_episode(env, sampling_params, group_id, sample_index, task_id)
+        except BaseException as raised:  # noqa: BLE001 - re-raised below, after the cleanup
+            error = raised
+        # Only a cancellation kills the child directly; other errors take the normal close
+        # (a failed worker skips the trace export and is killed, a healthy one keeps its trace).
+        cancelled = isinstance(error, asyncio.CancelledError)
+        cancel_during_cleanup, failure = await self._reclaim(env, started, cancel=cancelled)
+        cancel_requested = cancelled or cancel_during_cleanup
+        if failure is not None:
+            diagnosis = {
+                "episode_id": getattr(env, "episode_id", episode_id),
+                "pid": getattr(env, "pid", None),
+                "reason": failure,
+                "cancel_requested": cancel_requested,
+                "original_error": None if error is None else f"{type(error).__name__}: {error}",
+                "worker_failure": getattr(env, "failure", None),
+            }
+            infra = ItsmInfrastructureError("cleanup", task_id, json.dumps(diagnosis, sort_keys=True, default=str), kind="not_reclaimed")
+            infra.cleanup = diagnosis
+            raise infra from error
+        if cancel_requested:
+            if cancelled:
+                raise error
+            raise asyncio.CancelledError("rollout cancelled during worker cleanup")
+        if error is not None:
+            raise error
+        return output
 
     async def _run_episode(self, env, sampling_params: dict[str, Any], group_id: str, sample_index: int, task_id: str) -> AgentLoopOutput:
         reset = await self.loop.run_in_executor(None, env.reset)
