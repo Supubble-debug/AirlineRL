@@ -23,6 +23,7 @@ MODEL=/root/autodl-tmp/models/Qwen3-8B
 OUT=${OUTPUT_ROOT:?OUTPUT_ROOT must be set}/step7b
 BUDGET_S=$((3 * 3600 - 600))
 : "${BOOT_EPOCH:?BOOT_EPOCH must be set}"
+PRIOR_GPU_S=${PRIOR_GPU_S:-0}  # GPU seconds of earlier 7B boots (power-on request -> confirmed off)
 mkdir -p "$OUT"
 cd "$(dirname "$0")/../.."
 unset OPENAI_API_KEY DEEPSEEK_API_KEY MICU_API_KEY ANTHROPIC_API_KEY
@@ -33,7 +34,7 @@ export PYTHONHASHSEED=0
 
 log_phase() { # phase status start end [detail]
   printf '{"phase":"%s","status":"%s","start_utc":"%s","end_utc":"%s","elapsed_since_boot_s":%s,"detail":%s}\n' \
-    "$1" "$2" "$3" "$4" "$(( $(date +%s) - BOOT_EPOCH ))" "${5:-null}" >> "$OUT/phases.jsonl"
+    "$1" "$2" "$3" "$4" "$(( $(date +%s) - BOOT_EPOCH + PRIOR_GPU_S ))" "${5:-null}" >> "$OUT/phases.jsonl"
 }
 utc() { date -u +%Y-%m-%dT%H:%M:%SZ; }
 stop() { # code reason
@@ -45,7 +46,7 @@ gpu_sampler_start() { nvidia-smi --query-gpu=timestamp,memory.used,memory.total,
 gpu_sampler_stop() { kill "$SAMPLER" 2>/dev/null; wait "$SAMPLER" 2>/dev/null; }
 phase() { # name estimate_s command...   (ALLOW_RC="2 3": record these exit codes and continue)
   local name=$1 est=$2; shift 2
-  local elapsed=$(( $(date +%s) - BOOT_EPOCH ))
+  local elapsed=$(( $(date +%s) - BOOT_EPOCH + PRIOR_GPU_S ))
   if (( elapsed + est > BUDGET_S )); then stop 5 "budget: ${elapsed}s used + ${est}s estimate for $name > ${BUDGET_S}s"; fi
   local start; start=$(utc)
   echo "[7b] phase $name start $start (elapsed ${elapsed}s)"
@@ -84,7 +85,19 @@ download() {
   fi
   [ "$code" = 200 ] || { echo "no reachable HF endpoint"; return 1; }
   echo "endpoint ${HF_ENDPOINT:-https://huggingface.co}"
-  $P scripts/itsm/model_files_7b.py download --dir "$MODEL"
+  # Plain HTTP into local_dir (no Xet chunk store elsewhere): one copy on disk, progress measurable.
+  export HF_HUB_DISABLE_XET=1
+  $P scripts/itsm/model_files_7b.py download --dir "$MODEL" &
+  local pid=$! last=-1 still=0
+  while kill -0 "$pid" 2>/dev/null; do
+    sleep 15
+    local now; now=$(du -sb "$MODEL" 2>/dev/null | cut -f1)
+    echo "$(utc) bytes=$now" >> "$OUT/download_progress.log"
+    if [ "$now" = "$last" ]; then still=$((still + 15)); else still=0; fi
+    last=$now
+    if (( still >= 180 )); then echo "download stalled for ${still}s, killing"; kill "$pid"; wait "$pid"; return 6; fi
+  done
+  wait "$pid"
 }
 
 caches() {
@@ -92,9 +105,9 @@ caches() {
   du -sh "$MODEL" ~/.cache/vllm ~/.cache/flashinfer ~/.triton ~/.cache/huggingface ~/.cache/torch /tmp 2>/dev/null
 }
 
-echo "[7b] start $(utc), boot epoch $BOOT_EPOCH"
+echo "[7b] start $(utc), boot epoch $BOOT_EPOCH, prior GPU seconds $PRIOR_GPU_S"
 phase env 120 env_report
-$P scripts/itsm/model_files_7b.py check-space --dir "$MODEL" > "$OUT/space.json"
+$P scripts/itsm/model_files_7b.py check-space --dir "$MODEL" > "$OUT/space.json" 2> "$OUT/space.err"
 rc=$?
 cat "$OUT/space.json"
 log_phase space "rc_$rc" "$(utc)" "$(utc)" "$(cat "$OUT/space.json")"
