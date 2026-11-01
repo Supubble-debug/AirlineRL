@@ -423,6 +423,22 @@ class ItsmRewardInfo:
   - 两个 worker 子进程并行，进程号互不相同，均得 DB=1；
   - 以上测试前后，`Bench2/data/itsmbench/` 下全部文件的 sha256 不变。
 
+### 13.1 固定哈希种子 `PYTHONHASHSEED=0`（2026-11-01，第 7B 步发现后写入）
+
+- **原因**：Bench2 的 `slice_db_to_orgs` 在重建 org 切片后的数据库时遍历 `set`，所以不带过滤条件的列表类工具（如 `list_incidents`），返回结果的**顺序**会随 Python 的字符串哈希种子变化，内容不变。种子只在解释器启动时读取一次。不修改 Bench2。
+- **规则**：所有构建 ITSM 环境的进程，都必须在 **Python 启动之前**设置 `PYTHONHASHSEED=0`：
+  - shell 启动入口负责导出：`scripts/itsm/itsm_python.sh`（通用启动器）、`scripts/itsm/run_7b.sh`；以后的第 8 步、第 9 步启动脚本也一样；
+  - `ItsmEnvWorker` 子进程（spawn）在启动时继承父进程的环境变量，并在就绪消息中报告自己的 `sys.flags.hash_randomization`（`ItsmEnvWorker.child_hash_seed`）；
+  - `ItsmAgentLoop` 默认 `require_fixed_hash_seed=True`：子进程没有固定种子时，以 `ItsmInfrastructureError(stage="startup")` 结束，此时还没有 reset、没有采样、没有 reward；
+  - verl 的 Ray worker（第 9 步）通过 `runtime_env.env_vars` 传入，并在第 9 步验证；
+  - 确定性 CLI（`build_7b_length_inputs.py`）没有固定种子时会先重新启动自己；`run_7b_gpu.py` 没有固定种子时直接报错。
+- **在运行中的解释器里改 `os.environ` 无效**：只会影响此后启动的子进程，当前进程的哈希不变。airline 的 `seed_everything` 就属于这种情况，没有修改。
+- **已验证**（`tests/unit/test_itsm_hash_seed.py`）：
+  - 调用方环境中没有这个变量，经启动器新起两个独立进程，worker 子进程都报告 `hash_randomization=0`；同一题（msp_013）的 `list_incidents`、`list_users` 观察逐字节相同；
+  - 反例：种子分别为 1 和 2 的两个进程，`list_incidents` 的条数相同、顺序不同；
+  - 子进程没有固定种子时，在启动阶段就被拒绝。
+- **范围**：固定哈希种子只让列表观察的顺序可复现，**不代表**模型采样、用户模拟器或 vLLM 数值是确定的。
+
 ## 14. 已定决策
 
 2026-10-28 用户认可 D1–D6，其中 D5 改为 deepseek flash；2026-10-29 用户决定 D7、D8（随第 3 步验收）。下表 "决定" 列即为固定规则；修改需用户重新批准。

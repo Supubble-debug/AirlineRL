@@ -28,8 +28,8 @@ mkdir -p "$OUT"
 cd "$(dirname "$0")/../.."
 unset OPENAI_API_KEY DEEPSEEK_API_KEY MICU_API_KEY ANTHROPIC_API_KEY
 export HF_HUB_DISABLE_TELEMETRY=1 TOKENIZERS_PARALLELISM=false
-# Bench2 slice_db_to_orgs iterates a set: fix the hash seed so list-result order is reproducible
-# (inherited by every ItsmEnvWorker child). Recorded as a 7B finding, not an environment fix.
+# Protocol §13.1: Bench2 slice_db_to_orgs iterates a set, so list-result order depends on the hash
+# seed. Exported here, before any Python starts; inherited by every ItsmEnvWorker child.
 export PYTHONHASHSEED=0
 
 log_phase() { # phase status start end [detail]
@@ -136,6 +136,9 @@ fi
 unset http_proxy https_proxy HTTP_PROXY HTTPS_PROXY HF_ENDPOINT
 export HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1
 phase verify 600 $P scripts/itsm/model_files_7b.py verify --dir "$MODEL"
+# Runtime dependencies outside the code sync (configs/itsm/runtime_dependencies.json), pushed
+# beforehand with runtime_deps.py push; usage validation and task gates run here, before sampling.
+phase preflight 120 $P scripts/itsm/runtime_deps.py preflight
 phase inputs 600 $P scripts/itsm/build_7b_length_inputs.py --tokenizer-dir "$MODEL" --out "$OUT/length_inputs.json" --check configs/itsm/step7b/length_inputs_meta.json
 ALLOW_RC="2" phase len32k 1200 $P scripts/itsm/run_7b_gpu.py length --model "$MODEL" --max-model-len 32768 --tiers a,b --inputs "$OUT/length_inputs.json" --out "$OUT/len32k"
 ALLOW_RC="2 3" phase len40k 3000 $P scripts/itsm/run_7b_gpu.py length --model "$MODEL" --max-model-len 40960 --tiers a,b,c --episodes --inputs "$OUT/length_inputs.json" --out "$OUT/len40k"

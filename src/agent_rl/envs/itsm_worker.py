@@ -31,6 +31,7 @@ from typing import Any
 
 from agent_rl.envs.itsm_env import ItsmAction, ItsmEnv, ItsmEnvConfig, UserModel
 from agent_rl.envs.itsm_scoring import ItsmInfrastructureError
+from agent_rl.utils.hash_seed import REQUIRED_PYTHONHASHSEED, hash_seed_report
 
 
 FORWARDED_METHODS = frozenset({"reset", "step", "truncate", "score", "export_trace", "close"})
@@ -61,7 +62,7 @@ def _worker_main(
     except BaseException as error:
         conn.send(("startup_error", _portable(error), None))
         return
-    conn.send(("ready", os.getpid(), env.status))
+    conn.send(("ready", {"pid": os.getpid(), "hash_seed": hash_seed_report()}, env.status))
     while True:
         try:
             method, args = conn.recv()
@@ -101,6 +102,7 @@ class ItsmEnvWorker:
         startup_timeout_s: float = 120.0,
         kill_grace_s: float = 10.0,
         start: bool = True,
+        require_fixed_hash_seed: bool = False,
     ) -> None:
         if call_timeout_s <= 0:
             raise ValueError("call_timeout_s must be positive")
@@ -115,6 +117,9 @@ class ItsmEnvWorker:
         self.kill_grace_s = kill_grace_s
         self.startup_timeout_s = startup_timeout_s
         self.pid: int | None = None
+        #: The child's own startup hash flags (protocol §13.1), reported in its ready message.
+        self.child_hash_seed: dict[str, Any] | None = None
+        self.require_fixed_hash_seed = require_fixed_hash_seed
         self._started = False
         self._call_lock = threading.Lock()
         self._state_lock = threading.Lock()
@@ -164,8 +169,18 @@ class ItsmEnvWorker:
             if kind == "startup_error":
                 self._stop_process()
                 raise payload
-            self.pid = payload
+            self.pid = payload["pid"]
+            self.child_hash_seed = payload["hash_seed"]
             self._child_status = status
+            if self.require_fixed_hash_seed and not self.child_hash_seed["fixed"]:
+                # Fail at startup, before reset or any sampling: list-result order would depend on
+                # this child's random hash seed (Bench2 slice_db_to_orgs iterates sets).
+                self._terminate(
+                    "startup",
+                    f"child started without PYTHONHASHSEED={REQUIRED_PYTHONHASHSEED} "
+                    f"(env {self.child_hash_seed['pythonhashseed_env']!r}, hash_randomization "
+                    f"{self.child_hash_seed['hash_randomization']})",
+                )
 
     # -- forwarded episode API -------------------------------------------------
 

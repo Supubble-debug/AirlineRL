@@ -316,6 +316,9 @@ def main() -> int:
     recompute.add_argument("--length-inputs", required=True)
     recompute.add_argument("--out", required=True)
     args = parser.parse_args()
+    from agent_rl.utils.hash_seed import require_fixed_hash_seed
+
+    require_fixed_hash_seed("run_7b_gpu.py")  # protocol §13.1 (run_7b.sh exports it before Python starts)
     for key in ("OPENAI_API_KEY", "DEEPSEEK_API_KEY", "MICU_API_KEY", "ANTHROPIC_API_KEY"):
         os.environ.pop(key, None)
     return cmd_length(args) if args.cmd == "length" else cmd_recompute(args)

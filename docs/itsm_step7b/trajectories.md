@@ -4,6 +4,8 @@
 策略：Qwen3-8B @ b968826d，初始权重，温度 1.0。用户：`persona_scripted_user_v1`，不告知任务目标。
 策略回合原样列出（含特殊 token）；环境回合（用户回复或工具观察）只列前 400 个字符。
 
+**说明（2026-11-01 更正）**：4 条的第一个动作都是写调用。只有 msp_013 的 `link_knowledge_to_incident` 成功（`INC_001`、`KB_001` 恰好存在）；887f5580、msp_019、single_008 的首个 `update_incident` 都返回 `error(domain_error)`，见各自"策略回合 0"之后的观察。
+
 ## grpo · itsmbench_msp_013
 
 结束原因 `user_stop`，reward 0.0，策略回合 12，prompt 28166 token，策略 token 956，response 共 2478 token。

@@ -1,0 +1,33 @@
+{
+  "version": "itsm_runtime_deps_v1",
+  "purpose": "Files read at run time (task selection / usage validation, i.e. before any sampling) that live under paths the projtool code-sync session does not copy to the remote. Pushed and verified by scripts/itsm/runtime_deps.py; checked by agent_rl.data.itsm_runtime_deps before use.",
+  "sync_ignored_roots": {
+    "source": "mutagen sync list --long projtool-code-c3055f3d6904458f871f284691e42e89-exp-main, 2026-11-01 (projtool-managed; not edited)",
+    "roots": [
+      "/data",
+      "/output",
+      "/.proj-tool",
+      "/.claude",
+      "/.codex",
+      "/docs",
+      "/.mutagen.yml",
+      "/CLAUDE.md",
+      "/AGENTS.md"
+    ],
+    "also": "VCS directories (.git) are not synced"
+  },
+  "files": [
+    {
+      "path": "docs/itsm_stepS0/usage_audit.json",
+      "sha256": "ebb2df5671072512c8edf7409c034da05b1d5d69d0426555d0842fd3e04bcb3e",
+      "read_by": "agent_rl.data.itsm_usage._s0_audit: validate_usage_registry / build_usage_registry, run on every usage-registry load (itsm_task_sets.training_task_ids, ItsmAgentLoop allowed_task_ids)",
+      "frozen_basis": "unchanged since freeze commit 70e6a3b451149bb24ae0eba18fc544705d4c323a (input of the frozen itsm_usage_v1 registry)"
+    }
+  ],
+  "not_runtime": [
+    {
+      "path": "docs/itsm_step6d/candidate_screening.json",
+      "read_by": "agent_rl.data.itsm_s0_usage (offline S0 audit builder scripts/data/build_itsm_s0_usage_audit.py and its tests only)"
+    }
+  ]
+}

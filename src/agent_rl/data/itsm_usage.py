@@ -84,7 +84,11 @@ def _rel(path: Path) -> str:
 
 
 def _s0_audit() -> dict[str, Any]:
-    return json.loads(S0_AUDIT_PATH.read_text(encoding="utf-8"))
+    # Runtime dependency outside the code-sync set (configs/itsm/runtime_dependencies.json):
+    # missing or modified -> RuntimeDependencyError here, before any registry use or sampling.
+    from agent_rl.data.itsm_runtime_deps import require_dependency
+
+    return json.loads(require_dependency(_rel(S0_AUDIT_PATH), root=REPO_ROOT).read_text(encoding="utf-8"))
 
 
 def _grpo_basis(task_id: str, s0_rows: dict[str, dict[str, Any]]) -> str:

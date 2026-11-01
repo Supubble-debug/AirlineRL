@@ -112,6 +112,8 @@ class ItsmAgentLoopSettings:
     episode_timeout_s: float = 1800.0  # budget v1 worker.episode_timeout_s
     startup_timeout_s: float = 120.0  # worker spawn + ItsmEnv construction (7A-R2)
     kill_grace_s: float = 10.0  # bound on kill + join of the child (7A-R2)
+    #: protocol §13.1: refuse an env worker whose interpreter was not started with PYTHONHASHSEED=0
+    require_fixed_hash_seed: bool = True
     cleanup_margin_s: float = CLEANUP_MARGIN_S  # slack added to each cleanup bound (7A-R3: settable for tests)
 
     def __post_init__(self) -> None:
@@ -220,6 +222,7 @@ class ItsmAgentLoop(AgentLoopBase):
             startup_timeout_s=self.settings.startup_timeout_s,
             kill_grace_s=self.settings.kill_grace_s,
             start=False,
+            require_fixed_hash_seed=self.settings.require_fixed_hash_seed,
         )
 
     # -- worker lifecycle (7A-R2) --------------------------------------------------------------

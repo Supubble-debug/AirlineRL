@@ -42,9 +42,11 @@ from pathlib import Path
 from types import SimpleNamespace
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-if __name__ == "__main__" and os.environ.get("PYTHONHASHSEED") != "0":
-    os.execve(sys.executable, [sys.executable, *sys.argv], {**os.environ, "PYTHONHASHSEED": "0"})
 sys.path.insert(0, str(REPO_ROOT / "src"))
+from agent_rl.utils.hash_seed import reexec_with_fixed_hash_seed  # noqa: E402
+
+if __name__ == "__main__":
+    reexec_with_fixed_hash_seed()  # protocol §13.1: the seed must be set before the interpreter starts
 
 from transformers import AutoTokenizer  # noqa: E402
 

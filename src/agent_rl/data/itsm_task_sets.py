@@ -130,6 +130,9 @@ def _usage(usage_version: str) -> dict[str, Any]:
     if usage_version not in USAGE_VERSIONS:
         raise ValueError(f"unknown usage_version {usage_version!r}; expected one of {list(USAGE_VERSIONS)}")
     verify_frozen()
+    from agent_rl.data.itsm_runtime_deps import verify_runtime_dependencies
+
+    verify_runtime_dependencies()  # files outside the code-sync set, checked before the registry is used
     return load_usage_registry()
 
 
