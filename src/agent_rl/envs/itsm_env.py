@@ -68,7 +68,7 @@ from agent_rl.envs.itsm_scoring import (
 
 DONE_TOOL_NAME = DONE_TOOL_SCHEMA["function"]["name"]
 #: Decision D5: the user simulator model, temperature 0.
-DEFAULT_USER_LLM = "deepseek/deepseek-v4-flash"
+DEFAULT_USER_LLM = "deepseek/deepseek-flash"  # D5, updated 2026-10-31: DeepSeek-V4.1-Flash (old v4-flash alias retired)
 DEFAULT_USER_LLM_ARGS = {"temperature": 0.0}
 #: Bound on each user-simulator HTTP call (passed to litellm as ``timeout``).
 DEFAULT_USER_LLM_TIMEOUT_S = 60.0

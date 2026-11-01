@@ -66,7 +66,7 @@ class ItsmAgentLoopSettings:
     split_version: str = "itsm_split_v3"
     usage_version: str = "itsm_usage_v1"
     text_match: str = "fuzzy"  # D1b
-    user_llm: str = "deepseek/deepseek-v4-flash"  # D5
+    user_llm: str = "deepseek/deepseek-flash"  # D5 (2026-10-31)
     user_llm_args: dict[str, Any] = field(default_factory=lambda: {"temperature": 0.0})
     user_llm_timeout_s: float = 60.0
 

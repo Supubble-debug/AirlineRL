@@ -83,7 +83,7 @@ train:
   context_rotation: false  # decision D3
   observation_rule: full_tool_results_no_truncation
   text_match: fuzzy  # decision D1b
-  user_llm: deepseek/deepseek-v4-flash  # decision D5
+  user_llm: deepseek/deepseek-flash  # decision D5 (2026-10-31: DeepSeek-V4.1-Flash; the deepseek-v4-flash alias is retired)
   user_llm_temperature: 0.0
   # No checkpoint is chosen by dev score (dev is 12/13 one workflow) or by
   # held-out. The number of optimisation steps and the checkpoint rule are fixed
@@ -111,7 +111,7 @@ eval:
   observation_rule: full_tool_results_no_truncation
   db_text_match: [fuzzy, llm]  # llm judge = deepseek/deepseek-v4-pro, decision D7
   nl_judge: deepseek/deepseek-v4-pro  # decision D7
-  user_llm: deepseek/deepseek-v4-flash
+  user_llm: deepseek/deepseek-flash
   user_llm_temperature: 0.0
   worker:
     user_llm_timeout_s: 60

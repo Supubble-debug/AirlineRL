@@ -1,4 +1,4 @@
-# 第 7A 步：离线 loop 验证与 API 兼容探测（待验收；付费探测只完成 1 次，已按停止条件停止）
+# 第 7A 步：离线 loop 验证与 API 兼容探测（待验收；付费探测已完成，共 6 次、0.028066 美元）
 
 范围：只做第 7A 步。没有运行 held-out，没有生成 SFT 轨迹，没有更新权重，没有启动 GPU。40,960 仍是待验证的候选值。
 
@@ -179,6 +179,35 @@
 - Teacher 实际返回的模型 ID；
 - B4 模拟器（需要 DeepSeek key，并且要你先决定 D5 怎么处理）；
 - B5 裁判（需要 DeepSeek key）。
+
+### 3.6 补完的付费探测（2026-10-31，云端）
+
+**你的决定**（原话）：\"那就deepseek吗，api在deepseek.md\"。据此：
+- D5 模拟器继续用 DeepSeek，改为现行名称 `deepseek/deepseek-flash`（DeepSeek-V4.1-Flash）；
+- ITSM 的代码默认值、`budget_v1.yaml` 和协议 D5 都已同步。airline/tau2 的配置仍写着旧名，那是原 airline 协议的一部分，没有改动，但同样受到下线影响。
+
+**凭据**：`deepseek.md` 已从代码目录移到 `/home/sar/work/EnterGym/.secrets/`（600 权限）。上传到云端时用的是只有 root 可读的文件，跑完已删除，实例已关机，平台确认为 shutdown。
+
+**免费核对**（本机）：
+- DeepSeek 的 `/models` 列出 `deepseek-flash`（DeepSeek-V4.1-Flash）和 `deepseek-v4-pro`；
+- 账户余额 **¥5.92**，探测前后没有变化：两次调用约 0.00004 美元，低于余额的显示精度。
+
+**付费探测结果**：沿用累计账本，**总计 6 次请求、0.028066 美元**，没有超过第 7A 步的 6 次、1 美元上限，没有触发任何停止条件。Teacher 的预留另加了 8,192 token 的隐藏指令余量。
+
+| 探测 | 返回的模型 | 结果 |
+|---|---|---|
+| B1 Responses 纯文本 | `gpt-5.6-sol` | 正常；input 4,393（隐藏指令 4,380），output 5，推理 0；本次计费 0.006805 美元 |
+| B2 Responses 工具调用 | `gpt-5.6-sol` | **恰好一个 function_call**，工具名正确，参数是 JSON 对象；input 4,540，output 24，推理 0 |
+| B3 Chat 工具调用 | `gpt-5.6-sol` | 恰好一个 tool_call，`finish_reason=tool_calls`；prompt 4,540，与 B2 相同，说明 **Chat 接口同样被注入了隐藏指令** |
+| B5 裁判 `deepseek-v4-pro`（D7 参数） | `deepseek-v4-pro` | 服务端接受关闭思考，没有 `reasoning_content`，`finish_reason=stop`，满足 D7 第 7/8 步核对的全部条件 |
+| B4 模拟器 `deepseek-flash` | `deepseek-flash` | `finish_reason=stop`；**默认开启思考**，响应带 `reasoning_content` |
+
+**结论与需要决定的事**：
+1. **Teacher 接口兼容**：`gpt-5.6-sol` 的 Responses 和 Chat 两条路径都支持单个工具调用，返回的模型 ID 与请求一致，输出上限有效，简单请求没有产生推理 token。
+2. **隐藏指令**：两条路径都有约 4,380 token 的隐藏指令，改走 Chat 接口避不开。按此前的说明，它不会进入学生的训练输入；在 S1 中需要把它记为偏离 S0 §4.2 的偏差，每条轨迹都记录返回的模型 ID 和输入 token 数，并把 S1 预留的输入上界加上 8,192 token。是否接受这项偏差，待你决定。
+3. **模拟器的思考模式**：deepseek-flash 默认开启思考。开启时每个用户回合会多出推理 token，带来额外的费用和延迟，也可能让回复更不稳定。建议与裁判一样，显式传 `extra_body={\"thinking\": {\"type\": \"disabled\"}}` 关闭，具体由你决定；选定后写入 D5，并在第 7B 步复核。
+4. **DeepSeek 余额只有 ¥5.92**：够第 7B 步少量采样用，但第 8 步基线和 GRPO 训练之前必须充值。
+5. **Micu 账号用量**：探测期间 Micu 的用量增加了约 ¥0.51，其中混有同一账号上其他人的用量，**无法**用来核对我们的扣费。第 3.5 节里\"实际约 ¥0.011\"那条核对也因此作废。费用以本地账本为准；账本按乘 2 价格和保守汇率记账，偏保守。
 
 **参考，不作为依据**：如果 Micu 按 OpenAI 标价（2 / 10 美元）收费，代入 S0 §6.1 的公式（`k = 1.3`、`N_in = 40,960`、`O_max = 512`），单次请求预留约 0.112 美元，超过"12 条轨迹都能预留"所需的 0.0728 美元。那样 45 美元只能预留约 7 条轨迹；推理 token 上限越大，能预留的条数越少。实际售价要等核实后再算。
 

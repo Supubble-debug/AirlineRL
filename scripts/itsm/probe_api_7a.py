@@ -24,7 +24,7 @@ Probes:
   B2 teacher POST {base}/responses, one Bench2 function tool, tool_choice required,
              parallel_tool_calls false: exactly one function_call with JSON args?
   B3 teacher POST {base}/chat/completions, same tool: the chat tool-call path.
-  B4 simulator deepseek/deepseek-v4-flash via litellm (D5 path), temperature 0.
+  B4 simulator deepseek/deepseek-flash via litellm (D5 path), temperature 0.
   B5 judge    deepseek/deepseek-v4-pro via litellm, D7 parameters (thinking disabled).
 Each records the model identifier the provider returns, usage, finish reason and
 the check results. Stops at the first: model mismatch / unconfirmable model,
@@ -60,7 +60,10 @@ TEACHER_MAX_OUTPUT = 256
 SIM_MAX_OUTPUT = 32
 JUDGE_MAX_OUTPUT = 32
 INPUT_OVERHEAD_TOKENS = 64
-SIMULATOR_MODEL = "deepseek/deepseek-v4-flash"  # D5
+#: Micu injects hidden instructions into every request (4,380 tokens measured on 2026-10-31);
+#: teacher reservations add this bound on top of the body-size bound.
+TEACHER_HIDDEN_INPUT_TOKENS = 8192
+SIMULATOR_MODEL = "deepseek/deepseek-flash"  # D5 (2026-10-31): DeepSeek-V4.1-Flash; the old deepseek-v4-flash alias is retired
 JUDGE_MODEL = "deepseek/deepseek-v4-pro"  # D7
 JUDGE_EXTRA_BODY = {"thinking": {"type": "disabled"}}  # D7
 PROBE_TOOL = {
@@ -112,12 +115,13 @@ def planned_reservations(prices: dict[str, "Price"], teacher_model: str) -> list
         ("B5_judge", "judge", deepseek_body(JUDGE_MODEL, JUDGE_MAX_OUTPUT, extra_body=JUDGE_EXTRA_BODY), JUDGE_MAX_OUTPUT),
         ("B4_simulator", "simulator", deepseek_body(SIMULATOR_MODEL, SIM_MAX_OUTPUT), SIM_MAX_OUTPUT),
     ]
-    return [{"probe": name, "role": role, "input_bound_tokens": input_bound(body), "max_output_tokens": out,
-             "reservation_usd": round(prices[role].cost(input_bound(body), out), 6)} for name, role, body, out in plan]
+    return [{"probe": name, "role": role, "input_bound_tokens": input_bound(body, role), "max_output_tokens": out,
+             "reservation_usd": round(prices[role].cost(input_bound(body, role), out), 6)} for name, role, body, out in plan]
 
 
-def input_bound(body: dict[str, Any]) -> int:
-    return len(json.dumps(body, ensure_ascii=False).encode("utf-8")) + INPUT_OVERHEAD_TOKENS
+def input_bound(body: dict[str, Any], role: str = "") -> int:
+    hidden = TEACHER_HIDDEN_INPUT_TOKENS if role == "teacher" else 0
+    return len(json.dumps(body, ensure_ascii=False).encode("utf-8")) + INPUT_OVERHEAD_TOKENS + hidden
 
 
 def _redact(text: str, secrets: list[str]) -> str:
@@ -161,11 +165,11 @@ class Probe:
 
     def _reserve(self, probe: str, role: str, body: dict[str, Any], max_output: int) -> tuple[str, float]:
         price = self.prices[role]
-        amount = price.cost(input_bound(body), max_output)
+        amount = price.cost(input_bound(body, role), max_output)
         request_id = f"{probe}:{uuid.uuid4().hex[:8]}"
         if not self.billing:
             raise StopProbe("dry run: billed probes are not sent without --confirm-billing")
-        self.ledger.reserve(request_id, amount, {"probe": probe, "role": role, "input_bound_tokens": input_bound(body), "max_output_tokens": max_output, "price_source": price.source})
+        self.ledger.reserve(request_id, amount, {"probe": probe, "role": role, "input_bound_tokens": input_bound(body, role), "max_output_tokens": max_output, "price_source": price.source})
         return request_id, amount
 
     def _settle(self, request_id: str, role: str, usage_in: int | None, usage_out: int | None, usage: Any) -> float:

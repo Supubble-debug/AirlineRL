@@ -179,7 +179,7 @@ def test_default_user_is_bench2_simulator_with_decision_d5() -> None:
         DEFAULT_USER_LLM,
         {"temperature": 0.0, "timeout": 60.0},
     )
-    assert DEFAULT_USER_LLM == "deepseek/deepseek-v4-flash"
+    assert DEFAULT_USER_LLM == "deepseek/deepseek-flash"
 
 
 def test_config_rejects_degrading_text_match() -> None:

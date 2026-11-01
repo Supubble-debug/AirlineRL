@@ -458,3 +458,13 @@
   - 云端和本机都没有 DeepSeek key，B4、B5 没有运行。
 - 待用户决定：隐藏指令与 S0 §4.2 输入边界的冲突；D5 模拟器模型；DeepSeek key；剩余探测（预算还剩 0.993 美元、5 次请求）。详见 `docs/itsm_step7a/README.md` §3.5。
 
+### 第 7A 步补充：D5 改为 deepseek-flash，补完付费探测（2026-10-31）
+
+- 用户原话：\"那就deepseek吗，api在deepseek.md\"。D5 改为 `deepseek/deepseek-flash`（DeepSeek-V4.1-Flash），不用 Micu GPT；ITSM 代码默认值、`budget_v1.yaml` 和协议 D5 已同步，airline/tau2 的配置没有改动。
+- 凭据 `deepseek.md` 已移到 `.secrets/`（600）。云端用的是只有 root 可读的临时文件，跑完已删除，实例已关机（平台确认 shutdown）。
+- 付费探测（累计账本）：总计 6 次请求、0.028066 美元，在 6 次、1 美元上限之内，没有触发停止条件。
+  - Teacher `gpt-5.6-sol`：Responses 和 Chat 两条路径都能正确返回单个工具调用，返回的模型 ID 一致，推理 token 为 0；**两条路径都被注入了约 4,380 token 的隐藏指令**。
+  - 裁判 `deepseek-v4-pro`：接受 D7 参数，没有 `reasoning_content`，`finish_reason=stop`。
+  - 模拟器 `deepseek-flash`：返回模型一致，但默认开启思考。
+- 待用户决定：是否接受隐藏指令这项偏差；模拟器是否关闭思考；DeepSeek 余额（¥5.92）需在第 8 步前充值。Micu 账号用量里混有他人用量，不能用来核对扣费，费用以本地账本为准。详见 `docs/itsm_step7a/README.md` §3.6。
+
