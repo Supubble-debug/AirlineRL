@@ -1,0 +1,21 @@
+{
+  "note": "Fixed, hand-written review inputs (no task text is sent except the three GRPO-train scenarios used by the D5 check). Expected verdicts are what a correct judge should return; they are compared, not enforced.",
+  "simulator_tasks": "first three GRPO-trainable task ids (sorted); first user turn after the env greeting; 3 repeats each",
+  "text_pairs": [
+    {"key": "review/0", "field": "resolution_notes", "gold": "Replaced the failed power supply and confirmed the desktop boots normally.",
+     "pred": "Swapped the broken PSU; the desktop now starts up fine.", "expected_equivalent": true},
+    {"key": "review/1", "field": "resolution_notes", "gold": "Replaced the failed power supply and confirmed the desktop boots normally.",
+     "pred": "Escalated to the network team for a firewall rule change.", "expected_equivalent": false}
+  ],
+  "nl": {
+    "assertions": ["The agent tells the user that the incident was put back into progress.", "The agent asks the user to restart the printer."],
+    "conversation": [
+      {"role": "assistant", "content": "Hi! How can I help you today?"},
+      {"role": "user", "content": "Please move incident INC0000042 back to in progress, the caller replied."},
+      {"role": "assistant", "content": "Done: INC0000042 is now In Progress again. Anything else?"},
+      {"role": "user", "content": "No, thanks."}
+    ],
+    "expected_met": [true, false]
+  },
+  "repeats": {"simulator": 3, "text_judge": 2, "nl_judge": 2}
+}

@@ -1,0 +1,32 @@
+{
+  "version": "itsm_step8_plan_v1",
+  "status": "proposal: fixes the run, does NOT authorise any paid request or GPU start",
+  "split_version": "itsm_split_v3",
+  "usage_version": "itsm_usage_v1",
+  "policy": {"repo": "Qwen/Qwen3-8B", "revision": "b968826d9c46dd6066d109eabc6255188de91218", "dtype": "bfloat16", "global_step": 0},
+  "max_model_len": 40960,
+  "max_model_len_status": "candidate (engineering-only check in 7B)",
+  "counterfactual_max_model_len": 32768,
+  "sampling": {"temperature": 1.0, "top_p": 1.0, "top_k": -1, "repetition_penalty": 1.0, "logprobs": true},
+  "parts": {
+    "A": {"name": "E0-base dev diagnostic", "purpose": "dev", "tasks": "dev", "samples_per_task": 4, "auxiliary_evaluation": true},
+    "B": {"name": "GRPO train within-group diagnostic", "purpose": "grpo", "tasks": "grpo_trainable", "samples_per_task": 4, "auxiliary_evaluation": false}
+  },
+  "max_attempts": 4,
+  "discard_stop": {"fraction": 0.25, "min_groups": 4},
+  "ramp": {"levels": [2, 4, 8], "promote_after": 4, "engine_error_stop": 3},
+  "budget": {"budget_id": "step8_diagnostics", "cap_usd": 12.0, "max_billed_requests": 20000},
+  "gpu": {"cap_gpu_h": 2.0, "shutdown_margin_s": 600, "group_estimate_s": 600},
+  "envelope": {
+    "note": "planned per-group pre-reservation (first attempt of every sample); requests beyond it and every retry are topped up from the cap BEFORE they are sent, refused -> not sent. Bounds are in request-body bytes + 64 (>= billed tokens).",
+    "simulator_calls_per_attempt": 12,
+    "simulator_input_bound_tokens": 32768,
+    "simulator_max_tokens": 1024,
+    "text_judge_calls_per_attempt": 1,
+    "text_judge_input_bound_tokens": 32768,
+    "nl_judge_calls_per_attempt": 1,
+    "nl_judge_input_bound_tokens": 98304,
+    "judge_max_tokens": 4096
+  },
+  "review": {"budget_id": "step8_api_review", "cap_usd": 1.0, "max_billed_requests": 20}
+}

@@ -366,6 +366,7 @@ def test_default_simulator_sends_thinking_disabled_to_litellm(monkeypatch):
         assert call["model"] == "deepseek/deepseek-flash"
         assert call["temperature"] == 0.0
         assert call["extra_body"] == {"thinking": {"type": "disabled"}}
+        assert call["max_tokens"] == 1024  # D5 (step 8)
         assert call["timeout"] == 60.0
 
 

@@ -34,7 +34,7 @@ from agent_rl.envs.itsm_scoring import ItsmInfrastructureError
 from agent_rl.utils.hash_seed import REQUIRED_PYTHONHASHSEED, hash_seed_report
 
 
-FORWARDED_METHODS = frozenset({"reset", "step", "truncate", "score", "export_trace", "close"})
+FORWARDED_METHODS = frozenset({"reset", "step", "truncate", "score", "export_trace", "close", "aux_evaluate"})
 POLL_INTERVAL_S = 0.02
 
 
@@ -53,11 +53,13 @@ def _worker_main(
     user_factory: Callable[[], UserModel] | None,
     initializer: Callable[[], None] | None,
     episode_id: str,
+    aux_evaluator_factory: Callable[[], Callable[[ItsmEnv], Any]] | None = None,
 ) -> None:
     try:
         if initializer is not None:
             initializer()
         user = user_factory() if user_factory is not None else None
+        aux_evaluator = aux_evaluator_factory() if aux_evaluator_factory is not None else None
         env = ItsmEnv(config, user=user, episode_id=episode_id)
     except BaseException as error:
         conn.send(("startup_error", _portable(error), None))
@@ -73,7 +75,12 @@ def _worker_main(
             conn.send(("ok", None, env.status))
             return
         try:
-            value = getattr(env, method)(*args)
+            if method == "aux_evaluate":
+                if aux_evaluator is None:
+                    raise RuntimeError("no auxiliary evaluator configured for this worker")
+                value = aux_evaluator(env)
+            else:
+                value = getattr(env, method)(*args)
         except BaseException as error:
             conn.send(("error", _portable(error), env.status))
         else:
@@ -97,6 +104,7 @@ class ItsmEnvWorker:
         episode_timeout_s: float | None = None,
         user_factory: Callable[[], UserModel] | None = None,
         initializer: Callable[[], None] | None = None,
+        aux_evaluator_factory: Callable[[], Callable[[ItsmEnv], Any]] | None = None,
         episode_id: str | None = None,
         start_method: str = "spawn",
         startup_timeout_s: float = 120.0,
@@ -134,7 +142,7 @@ class ItsmEnvWorker:
         self._conn, self._child_conn = context.Pipe(duplex=True)
         self._process = context.Process(
             target=_worker_main,
-            args=(self._child_conn, config, user_factory, initializer, self.episode_id),
+            args=(self._child_conn, config, user_factory, initializer, self.episode_id, aux_evaluator_factory),
             daemon=True,
             name=f"itsm-episode-{self.episode_id}",
         )
@@ -196,6 +204,10 @@ class ItsmEnvWorker:
     def truncate(self, reason: str):
         return self._call("truncate", reason)
 
+    def aux_evaluate(self, timeout_s: float):
+        """Auxiliary judges in the child on the same final DB (step 8); own bound, not the episode's."""
+        return self._call("aux_evaluate", timeout_s=timeout_s)
+
     def score(self):
         return self._call("score")
 
@@ -253,7 +265,7 @@ class ItsmEnvWorker:
 
     # -- internals ---------------------------------------------------------------
 
-    def _call(self, method: str, *args: Any) -> Any:
+    def _call(self, method: str, *args: Any, timeout_s: float | None = None) -> Any:
         if method not in FORWARDED_METHODS:
             raise ValueError(f"unknown method {method!r}")
         with self._call_lock:
@@ -263,9 +275,12 @@ class ItsmEnvWorker:
                 raise RuntimeError("the worker is closed")
             if self._failure is not None:
                 raise RuntimeError(f"the worker failed ({self._failure['stage']})")
-            deadline = time.monotonic() + self.call_timeout_s
-            if self._episode_deadline is not None:
-                deadline = min(deadline, self._episode_deadline)
+            if timeout_s is not None:  # auxiliary evaluation: its own bound (scoring, not the episode)
+                deadline = time.monotonic() + timeout_s
+            else:
+                deadline = time.monotonic() + self.call_timeout_s
+                if self._episode_deadline is not None:
+                    deadline = min(deadline, self._episode_deadline)
             try:
                 self._conn.send((method, args))
             except (OSError, EOFError) as error:

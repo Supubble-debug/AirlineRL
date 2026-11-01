@@ -86,6 +86,7 @@ train:
   user_llm: deepseek/deepseek-flash  # decision D5 (2026-10-31: DeepSeek-V4.1-Flash; the deepseek-v4-flash alias is retired)
   user_llm_temperature: 0.0
   user_llm_thinking: disabled  # D5 (7A-R1): extra_body thinking disabled; live check pending a separate API approval
+  user_llm_max_tokens: 1024  # D5 (2026-11-01, step 8): finish_reason "length" = user_sim infrastructure failure
   # No checkpoint is chosen by dev score (dev is 12/13 one workflow) or by
   # held-out. The number of optimisation steps and the checkpoint rule are fixed
   # in advance, at the latest in step 8.
@@ -115,6 +116,7 @@ eval:
   user_llm: deepseek/deepseek-flash
   user_llm_temperature: 0.0
   user_llm_thinking: disabled  # D5 (7A-R1): extra_body thinking disabled; live check pending a separate API approval
+  user_llm_max_tokens: 1024  # D5 (2026-11-01, step 8): finish_reason "length" = user_sim infrastructure failure
   worker:
     user_llm_timeout_s: 60
     call_timeout_s: 90

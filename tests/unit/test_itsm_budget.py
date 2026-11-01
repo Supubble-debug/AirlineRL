@@ -30,6 +30,7 @@ SHARED_KEYS = (
     "user_llm",
     "user_llm_temperature",
     "user_llm_thinking",
+    "user_llm_max_tokens",
     "worker",
 )
 

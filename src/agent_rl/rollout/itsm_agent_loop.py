@@ -112,6 +112,10 @@ class ItsmAgentLoopSettings:
     episode_timeout_s: float = 1800.0  # budget v1 worker.episode_timeout_s
     startup_timeout_s: float = 120.0  # worker spawn + ItsmEnv construction (7A-R2)
     kill_grace_s: float = 10.0  # bound on kill + join of the child (7A-R2)
+    #: step 8 (dev): after the fuzzy training reward, run the D7 judges in the worker on the same
+    #: final DB (``aux_evaluator_factory``); results go to extra_fields["itsm_aux_eval"] only.
+    auxiliary_evaluation: bool = False
+    aux_timeout_s: float = 2 * 4 * 120.0 + 60.0  # two judges x four attempts x judge timeout + margin
     #: protocol §13.1: refuse an env worker whose interpreter was not started with PYTHONHASHSEED=0
     require_fixed_hash_seed: bool = True
     cleanup_margin_s: float = CLEANUP_MARGIN_S  # slack added to each cleanup bound (7A-R3: settable for tests)
@@ -200,6 +204,7 @@ class ItsmAgentLoop(AgentLoopBase):
     #: fault injectors here). ``None`` = Bench2's user simulator, no initializer.
     user_factory = None
     worker_initializer = None
+    aux_evaluator_factory = None
 
     def _make_env(self, task_id: str, episode_id: str) -> ItsmEnvWorker:
         """The worker *handle*: no child process yet (``start=False``); ``_start_env`` spawns it."""
@@ -218,6 +223,7 @@ class ItsmAgentLoop(AgentLoopBase):
             episode_timeout_s=self.settings.episode_timeout_s,
             user_factory=self.user_factory,
             initializer=self.worker_initializer,
+            aux_evaluator_factory=self.aux_evaluator_factory if self.settings.auxiliary_evaluation else None,
             episode_id=episode_id,
             startup_timeout_s=self.settings.startup_timeout_s,
             kill_grace_s=self.settings.kill_grace_s,
@@ -431,6 +437,10 @@ class ItsmAgentLoop(AgentLoopBase):
         if reward is None:
             raise RuntimeError("ITSM episode ended without reward info")
         trace = env.export_trace()
+        aux = None
+        if self.settings.auxiliary_evaluation:
+            # Same final DB and trajectory; the fuzzy reward above is not touched.
+            aux = await self.loop.run_in_executor(None, lambda: env.aux_evaluate(self.settings.aux_timeout_s))
         return AgentLoopOutput(
             prompt_ids=prompt_ids,
             response_ids=response_ids,
@@ -443,6 +453,7 @@ class ItsmAgentLoop(AgentLoopBase):
                 "itsm_turn_spans": turn_spans,
                 "itsm_env_spans": env_spans,
                 "itsm_logprob_sources": {"mask_1": LOGPROB_SOURCE_SAMPLER, "mask_0": LOGPROB_SOURCE_PLACEHOLDER},
+                "itsm_aux_eval": aux,
                 "reward_extra_info": {
                     "itsm_episode_id": trace["episode_id"],
                     "itsm_task_id": trace["task_id"],

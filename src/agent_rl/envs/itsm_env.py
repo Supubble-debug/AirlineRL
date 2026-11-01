@@ -72,7 +72,11 @@ DEFAULT_USER_LLM = "deepseek/deepseek-flash"  # D5, updated 2026-10-31: DeepSeek
 #: D5 (2026-10-31, 7A-R1): thinking explicitly disabled. deepseek-flash thinks by default
 #: and litellm drops {"type": "disabled"} from ``thinking``, so it goes in ``extra_body``
 #: (same route as the D7 judge). The live acceptance is a separately approved API check.
-DEFAULT_USER_LLM_ARGS = {"temperature": 0.0, "extra_body": {"thinking": {"type": "disabled"}}}
+#: D5 (2026-11-01, step 8): explicit output cap of 1024 tokens so every simulator request has
+#: a bounded reservation; a reply cut at the cap (finish_reason "length") is a user_sim
+#: infrastructure failure and is never used (agent_rl.envs.itsm_ledgered_user).
+USER_LLM_MAX_TOKENS = 1024
+DEFAULT_USER_LLM_ARGS = {"temperature": 0.0, "max_tokens": USER_LLM_MAX_TOKENS, "extra_body": {"thinking": {"type": "disabled"}}}
 #: Bound on each user-simulator HTTP call (passed to litellm as ``timeout``).
 DEFAULT_USER_LLM_TIMEOUT_S = 60.0
 #: Protocol §12: three retries after the first scoring attempt, four in total.
@@ -496,6 +500,18 @@ class ItsmEnv:
     def trajectory(self) -> list[Message]:
         """Every message in Bench2 form, in ``Orchestrator.run`` order."""
         return list(self._messages)
+
+    def auxiliary_inputs(self):
+        """``(task, final environment, trajectory)`` for auxiliary judges (step 8), read only.
+
+        Only after the training reward was computed and while the final DB is unchanged; the
+        auxiliary evaluation never alters the episode, its reward or its DB.
+        """
+        if self._status != "scored":
+            raise RuntimeError(f"auxiliary evaluation needs a scored episode (status {self._status!r})")
+        if self._environment.get_db_hash() != self._final_db_hash:
+            raise RuntimeError("the final DB changed after the interaction ended")
+        return self.task, self._environment, list(self._messages)
 
     @property
     def tool_records(self) -> tuple[ItsmToolCallRecord, ...]:
