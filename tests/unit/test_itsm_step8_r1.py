@@ -340,3 +340,20 @@ def test_model_mismatch_under_concurrency_stops_requests_and_groups(tmp_path, fa
     assert all(a["attempt"] == 1 for a in attempts)  # never retried
     assert_books_closed(events, fake)  # in-flight costs settled and kept
     assert multiprocessing.active_children() == []
+
+
+def test_review_report_keeps_every_required_record(tmp_path, monkeypatch):
+    monkeypatch.setenv("DEEPSEEK_API_KEY", "test-key")
+    review = load_review()
+    http, sent = review_http("ok")
+    report = review.run(tmp_path / "out", billing=True, http=http)
+    assert report["stop_reason"] is None and report["http_requests"] == len(sent) == 13
+    events = report["ledger_events"]
+    assert sum(e["event"] == "reserve" for e in events) == sum(e["event"] == "settle" for e in events) == 13
+    for call in report["requests"]:
+        assert {"returned_model", "finish_reason", "usage", "reasoning_present", "reasoning_tokens", "reserved_usd", "charged_usd", "http_status"} <= set(call)
+        assert call["usage"]["completion_tokens"] == 20
+    checked = [r for r in report["results"] if r["check"] in ("simulator", "text_judge", "nl_judge")]
+    assert len(checked) == 13 and all(r["ok"] and all(r["checks"].values()) for r in checked)
+    assert any("1024 truncation behaviour not observed" in item for item in report["unverified"])
+    assert "test-key" not in json.dumps(report)

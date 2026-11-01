@@ -207,3 +207,38 @@ python scripts/itsm/summarize_8.py --run-dir output/exp-itsm/<run>/step8/run --t
 
 **其他说明**：`make_step8_loop` 新增 `settings_overrides`（测试用来缩短辅助评测的超时，默认行为不变）；测试支持里新增两个会出错的评测器工厂（`raising_aux_factory`、`crashing_aux_factory`）。
 
+## 12. 已定决策与 API 复核状态（2026-11-01）
+
+**费用方案：你选择①（已定）**
+- 正式诊断维持 12 美元上限，采用组级计划预留加逐请求预留；
+- 接受预算耗尽时会有未完成的组；
+- 不加请求大小限制，不改重试次数。
+
+§11 中的方案②③不采用。`hard_cap_table` 的结果只作为记录保留，运行时不使用。
+
+**R1 前四项**：你已验收通过。
+
+**汇总中漏计顶层 `not_evaluated`（已修复，必须在正式 GPU 诊断之前修好）**：
+- 问题：辅助评测整体失败（预算、超时、worker 崩溃、评测器异常）时，记录只在顶层写 `status = not_evaluated`，没有 `db_llm`/`nl` 两个子项。`summarize_8.py` 只看子项，于是这些样本既不算 evaluated 也不算 not_evaluated，被漏掉了。
+- 修复：顶层 `not_evaluated` 和缺失的记录，在两个子项里都计为 `not_evaluated`，并按原因计数（`not_evaluated_reasons`），保证 evaluated + not_evaluated = n。
+- 新测试 `tests/unit/test_itsm_step8_summary.py` 在修复前失败，修复后通过。
+
+**小额 API 复核：已获批，但尚未执行**：
+- 你要求使用云端可用的 CPU 环境，不启动 GPU，"若必须启动 GPU 才能执行，停下报告"。
+- 实际情况：本项目唯一的云端实例 `exp-itsm` 处于关机状态；AutoDL 的开机 API 不支持无卡模式，projtool 的 `instance_up` 只能以 GPU 模式开机（`projtool/autodl/client.py` 的 `power_on` 固定 `payload="gpu"`）。云端没有别的可用 CPU 环境。
+- **所以我停在这里，没有开机，没有发出任何请求。**
+
+**复核所需的离线准备已完成**：报告会保存
+- 实际 HTTP 请求数；
+- 每次请求的返回模型、`finish_reason`、usage、`reasoning_present` / `reasoning_tokens`、预留和实际计费；
+- 每一项的逐项检查；
+- 账本中全部预留和结算事件；
+- 自动列出的未验证项，例如输出没有接近 1024 时，写明"截断行为未验证"。
+
+测试固定了：计划 13 次请求，账本 13 次预留、13 次结算，报告里没有密钥。
+
+**执行复核的方式，需要你选一种**：
+1. 你在 AutoDL 控制台以**无卡模式**开机 `exp-itsm`，然后告诉我。我推送运行时依赖，经 ssh 标准输入写入只含 `DEEPSEEK_API_KEY` 的临时文件（600 权限，用后删除），用 `remote_exec` 运行 `review_8_api.py --confirm-billing`，结束后请你在控制台关机，或由我确认已经关机。
+2. 批准在本机（WSL，CPU）运行。这与你"云端"的要求不同，需要你明确同意。
+3. 批准以 GPU 模式短暂开机，只用于发请求。这与"不启动 GPU"冲突，需要你明确同意。
+

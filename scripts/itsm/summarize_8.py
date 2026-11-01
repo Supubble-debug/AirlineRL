@@ -42,6 +42,29 @@ def pass_at_k(n: int, c: int, k: int) -> float | None:
     return 1.0 - (math.comb(n - c, k) / math.comb(n, k) if n - c >= k else 0.0)
 
 
+def aux_parts(aux: dict | None) -> tuple[dict, dict]:
+    """(LLM-DB part, NL part) of one sample. A missing record or a top-level ``not_evaluated``
+    (the auxiliary evaluation failed as a whole: budget, timeout, worker crash, evaluator
+    error) makes BOTH parts not evaluated -- counted, with the reason; never dropped, never 0."""
+    if not aux:
+        missing = {"status": "not_evaluated", "reason": "missing"}
+        return missing, dict(missing)
+    if aux.get("status") == "not_evaluated":
+        whole = {"status": "not_evaluated", "reason": aux.get("reason") or "unknown"}
+        return whole, dict(whole)
+    parts = []
+    for name in ("db_llm", "nl"):
+        part = dict(aux.get(name) or {"status": "not_evaluated", "reason": "missing"})
+        if part.get("status") == "not_evaluated":
+            part.setdefault("reason", "judge_attempts_exhausted")
+        parts.append(part)
+    return parts[0], parts[1]
+
+
+def reasons(parts) -> dict:
+    return dict(collections.Counter(p["reason"] for p in parts if p["status"] == "not_evaluated"))
+
+
 def summarise(run_dir: Path, tokenizer=None, budget_id: str = "step8_diagnostics") -> dict:
     groups = read_jsonl(run_dir / "groups.jsonl")
     trajectories = read_jsonl(run_dir / "trajectories.jsonl")
@@ -61,17 +84,17 @@ def summarise(run_dir: Path, tokenizer=None, budget_id: str = "step8_diagnostics
         n, c = len(rewards), sum(r == 1.0 for r in rewards)
         base = {"task_id": group["task_id"], "n": n, "successes_fuzzy": c}
         if group["part"] == "A":
-            aux = [t["extra_fields"].get("itsm_aux_eval") or {} for t in rows]
-            db = [a.get("db_llm", {}) for a in aux]
-            nl = [a.get("nl", {}) for a in aux]
-            db_eval = [d for d in db if d.get("status") == "evaluated"]
-            nl_eval = [x for x in nl if x.get("status") == "evaluated"]
-            joint = [(d.get("db_match"), x.get("nl_met")) for d, x in zip(db, nl) if d.get("status") == "evaluated" and x.get("status") == "evaluated"]
+            db, nl = zip(*(aux_parts(t["extra_fields"].get("itsm_aux_eval")) for t in rows)) if rows else ((), ())
+            db_eval = [d for d in db if d["status"] == "evaluated"]
+            nl_eval = [x for x in nl if x["status"] == "evaluated"]
+            joint = [(d.get("db_match"), x.get("nl_met")) for d, x in zip(db, nl) if d["status"] == "evaluated" and x["status"] == "evaluated"]
             part_a.append({**base, "pass_at_k_fuzzy": {k: pass_at_k(n, c, k) for k in (1, 2, 4)},
-                           "llm_db": {"evaluated": len(db_eval), "not_evaluated": sum(d.get("status") == "not_evaluated" for d in db),
-                                      "matches": sum(bool(d.get("db_match")) for d in db_eval)},
-                           "nl": {"evaluated": len(nl_eval), "not_evaluated": sum(x.get("status") == "not_evaluated" for x in nl),
-                                  "no_assertions": sum(x.get("status") == "no_assertions" for x in nl), "met": sum(bool(x.get("nl_met")) for x in nl_eval)},
+                           "llm_db": {"evaluated": len(db_eval), "not_evaluated": sum(d["status"] == "not_evaluated" for d in db),
+                                      "matches": sum(bool(d.get("db_match")) for d in db_eval),
+                                      "not_evaluated_reasons": reasons(db)},
+                           "nl": {"evaluated": len(nl_eval), "not_evaluated": sum(x["status"] == "not_evaluated" for x in nl),
+                                  "no_assertions": sum(x["status"] == "no_assertions" for x in nl), "met": sum(bool(x.get("nl_met")) for x in nl_eval),
+                                  "not_evaluated_reasons": reasons(nl)},
                            "joint_db_llm_and_nl": {"evaluated": len(joint), "successes": sum(bool(d) and bool(m) for d, m in joint)}})
         else:
             part_b.append({**base, "rewards": rewards, "mixed": len(set(rewards)) > 1})

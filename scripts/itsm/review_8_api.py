@@ -91,8 +91,12 @@ def run(out: Path, *, billing: bool, http=None) -> dict:
         manager = BudgetManager(ledger, prices)
         manager.open_group("review", review["cap_usd"], {"purpose": "step8 API review"})
 
+        clients: list = []
+
         def chat(role):
-            return DeepSeekChat(api_key=key, budget=manager, group_id="review", role=role, http=http, tag=f"review:{role}")
+            client = DeepSeekChat(api_key=key, budget=manager, group_id="review", role=role, http=http, tag=f"review:{role}")
+            clients.append(client)
+            return client
 
         try:
             for task_id in tasks:
@@ -110,7 +114,8 @@ def run(out: Path, *, billing: bool, http=None) -> dict:
                         row["call"] = user.chat.calls[-1] if user.chat.calls else None
                         fail(row, error.kind, str(error))
                     replies.append(message.content)
-                    report["results"].append({**row, "ok": True, "call": user.chat.calls[-1]})
+                    report["results"].append({**row, "ok": True, "call": user.chat.calls[-1],
+                                              "checks": {"returned_model_matches": True, "finish_reason_stop": True, "thinking_off": True, "non_empty_reply": True}})
                 # diagnostic only: temperature 0 is not assumed to be deterministic
                 report["results"].append({"check": "simulator_agreement", "task_id": task_id, "replies": len(replies),
                                           "distinct": len(set(replies)), "diagnostic_only": True})
@@ -132,7 +137,8 @@ def run(out: Path, *, billing: bool, http=None) -> dict:
                 expected = [p["expected_equivalent"] for p in pairs]
                 if verdicts != expected:
                     fail(row | {"verdicts": verdicts}, "fixed_case_verdict", f"got {verdicts}, expected {expected}")
-                report["results"].append({**row, "ok": True, "verdicts": verdicts})
+                report["results"].append({**row, "ok": True, "verdicts": verdicts,
+                                          "checks": {"returned_model_matches": True, "finish_reason_stop": True, "thinking_off": True, "parseable": True, "fixed_cases_as_expected": True}})
             nl = inputs["nl"]
             conversation = [AssistantMessage(content=m["content"]) if m["role"] == "assistant" else UserMessage(content=m["content"]) for m in nl["conversation"]]
             for _ in range(inputs["repeats"]["nl_judge"]):
@@ -150,7 +156,8 @@ def run(out: Path, *, billing: bool, http=None) -> dict:
                     fail(row, "protocol", str(error))
                 if met != nl["expected_met"]:
                     fail(row | {"met": met}, "fixed_case_verdict", f"got {met}, expected {nl['expected_met']}")
-                report["results"].append({**row, "ok": True, "met": met})
+                report["results"].append({**row, "ok": True, "met": met,
+                                          "checks": {"returned_model_matches": True, "finish_reason_stop": True, "thinking_off": True, "parseable": True, "fixed_cases_as_expected": True}})
         except ReviewStop as stop:
             report["stop_reason"] = str(stop)
         except (BudgetExceeded, BudgetUnavailable, ReservationTooSmall) as error:
@@ -158,7 +165,32 @@ def run(out: Path, *, billing: bool, http=None) -> dict:
         finally:
             manager.close_group("review", reason="review finished" if report["stop_reason"] is None else "review stopped")
             report["budget"] = manager.summary()
+            calls = [record for client in clients for record in client.calls]
+            report["requests"] = calls
+            report["http_requests"] = len(calls)  # every reserved request was handed to the HTTP client
+            report["ledger_events"] = [json.loads(line) for line in (out / "ledger.jsonl").read_text().splitlines()]
+            report["unverified"] = unverified_items(calls)
     return report
+
+
+def unverified_items(calls: list[dict]) -> list[str]:
+    """What this review does NOT establish (listed in the report, not inferred away)."""
+    sim_out = [((c.get("usage") or {}).get("completion_tokens")) for c in calls if c.get("model") == "deepseek/deepseek-flash"]
+    judge_out = [((c.get("usage") or {}).get("completion_tokens")) for c in calls if c.get("model") == "deepseek/deepseek-v4-pro"]
+    items = []
+    if not any(c.get("finish_reason") == "length" for c in calls if c.get("model") == "deepseek/deepseek-flash"):
+        top = max([x for x in sim_out if isinstance(x, int)], default=None)
+        items.append(f"D5 max_tokens=1024 truncation behaviour not observed (longest simulator output {top} tokens); short outputs do not show the cap is enforced")
+    top = max([x for x in judge_out if isinstance(x, int)], default=None)
+    items.append(f"D7 max_tokens=4096 not approached (longest judge output {top} tokens)")
+    items += [
+        "thinking off is shown only for these inputs; long multi-turn simulator histories were not sent",
+        "simulator behaviour inside real episodes (multi-turn, real agent messages, STOP timing) is not reviewed here",
+        "judge agreement with humans is not measured (2 fixed text pairs and 1 NL case only)",
+        "latency/rate limits under concurrency 8 not tested (requests were sequential)",
+        "the ledger estimate is not the DeepSeek bill; the bill must be read separately",
+    ]
+    return items
 
 
 def main() -> int:

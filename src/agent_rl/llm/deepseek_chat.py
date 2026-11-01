@@ -134,6 +134,7 @@ class DeepSeekChat:
             charged = self.budget.settle_unknown(request_id=request_id, note="usage missing: charged in full")
             record["usage_reported"] = False
         record["charged_usd"] = charged
+        record["usage"] = usage  # provider-reported token counts only (no content, no secrets)
         choices = data.get("choices") if isinstance(data, dict) else None
         if not isinstance(choices, list) or not choices or not isinstance(choices[0], dict):
             record["outcome"] = "missing_choices"
