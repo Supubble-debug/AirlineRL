@@ -109,8 +109,8 @@ def planned_reservations(prices: dict[str, "Price"], teacher_model: str) -> list
         ("B1_responses_text", "teacher", b1_body(teacher_model), TEACHER_MAX_OUTPUT),
         ("B2_responses_tool", "teacher", b2_body(teacher_model), TEACHER_MAX_OUTPUT),
         ("B3_chat_tool", "teacher", b3_body(teacher_model), TEACHER_MAX_OUTPUT),
-        ("B4_simulator", "simulator", deepseek_body(SIMULATOR_MODEL, SIM_MAX_OUTPUT), SIM_MAX_OUTPUT),
         ("B5_judge", "judge", deepseek_body(JUDGE_MODEL, JUDGE_MAX_OUTPUT, extra_body=JUDGE_EXTRA_BODY), JUDGE_MAX_OUTPUT),
+        ("B4_simulator", "simulator", deepseek_body(SIMULATOR_MODEL, SIM_MAX_OUTPUT), SIM_MAX_OUTPUT),
     ]
     return [{"probe": name, "role": role, "input_bound_tokens": input_bound(body), "max_output_tokens": out,
              "reservation_usd": round(prices[role].cost(input_bound(body), out), 6)} for name, role, body, out in plan]
@@ -197,7 +197,16 @@ class Probe:
             usage_in = usage_out = reasoning = None
         result["usage"] = usage
         result["reasoning_tokens"] = reasoning
-        result["charged_usd"] = round(self._settle(request_id, "teacher", usage_in, usage_out, usage), 6)
+        if isinstance(payload, dict):
+            result["returned_model"] = payload.get("model")
+            result["response_id"] = payload.get("id")
+        try:
+            result["charged_usd"] = round(self._settle(request_id, "teacher", usage_in, usage_out, usage), 6)
+        except ReservationTooSmall:
+            # Record what came back before stopping: the model ID and usage are evidence.
+            result["charged_usd"] = round(self.prices["teacher"].cost(usage_in, usage_out), 6)
+            self.results.append(result)
+            raise
         if response.status_code != 200 or not isinstance(payload, dict):
             result["error"] = _redact(response.text[:500], self.secrets)
             self.results.append(result)
@@ -284,7 +293,7 @@ def load_prices(path: Path) -> dict[str, Price]:
     return {role: Price(**raw[role]) for role in ("teacher", "simulator", "judge")}
 
 
-def run_probe(probe: Probe) -> dict[str, Any]:
+def run_probe(probe: Probe, *, skip_deepseek: bool = False) -> dict[str, Any]:
     plan = planned_reservations(probe.prices, probe.teacher_model)
     planned_total = sum(p["reservation_usd"] for p in plan)
     if len(plan) > MAX_BILLED_REQUESTS or planned_total > CAP_USD:
@@ -294,7 +303,14 @@ def run_probe(probe: Probe) -> dict[str, Any]:
     if models.get("http_status") != 200 or not models.get("teacher_model_listed"):
         stop_reason = "teacher model not listed for this key (or listing failed): version cannot be confirmed"
     else:
-        for step in (probe.teacher_text, probe.teacher_tool_responses, probe.teacher_tool_chat, probe.simulator, probe.judge):
+        # Judge before simulator: the D5 simulator alias is reported retired upstream, and a
+        # simulator model mismatch (a stop condition) must not prevent the judge check.
+        steps = [probe.teacher_text, probe.teacher_tool_responses, probe.teacher_tool_chat]
+        if skip_deepseek:
+            probe.results += [{"probe": name, "billed": False, "not_run": "no DeepSeek credential"} for name in ("B5_judge", "B4_simulator")]
+        else:
+            steps += [probe.judge, probe.simulator]
+        for step in steps:
             try:
                 step()
             except StopProbe as stop:
@@ -315,17 +331,20 @@ def main() -> int:
     parser.add_argument("--teacher-model", required=True, help="model ID exactly as listed by the provider")
     parser.add_argument("--out-dir", type=Path, required=True)
     parser.add_argument("--confirm-billing", action="store_true")
+    parser.add_argument("--skip-deepseek", action="store_true", help="run only the teacher probes (no DeepSeek credential)")
     args = parser.parse_args()
     base, key, ds_key = os.environ.get("MICU_BASE_URL"), os.environ.get("MICU_API_KEY"), os.environ.get("DEEPSEEK_API_KEY")
-    if not base or not key or not ds_key:
-        raise SystemExit("MICU_BASE_URL, MICU_API_KEY and DEEPSEEK_API_KEY must be set in the environment")
+    if not base or not key or (not ds_key and not args.skip_deepseek):
+        raise SystemExit("MICU_BASE_URL, MICU_API_KEY and DEEPSEEK_API_KEY (unless --skip-deepseek) must be set")
+    ds_key = ds_key or ""
     import litellm
 
+    args.out_dir.mkdir(parents=True, exist_ok=True)
     ledger = SpendLedger(args.out_dir / "ledger.jsonl", cap_usd=CAP_USD, max_billed_requests=MAX_BILLED_REQUESTS, budget_id=BUDGET_ID)
     with httpx.Client() as http:
         probe = Probe(base_url=base, api_key=key, prices=load_prices(args.prices), teacher_model=args.teacher_model, ledger=ledger,
                       billing=args.confirm_billing, http=http, deepseek_call=litellm.completion, secrets=[key, ds_key])
-        report = run_probe(probe)
+        report = run_probe(probe, skip_deepseek=args.skip_deepseek)
     report["litellm_version"] = getattr(litellm, "version", None) or __import__("importlib.metadata").metadata.version("litellm")
     report["prices_file_sha256"] = __import__("hashlib").sha256(args.prices.read_bytes()).hexdigest()
     text = _redact(json.dumps(report, indent=2, ensure_ascii=False), [key, ds_key])

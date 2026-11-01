@@ -159,3 +159,28 @@ def test_secrets_never_reach_the_report(tmp_path):
     text = json.dumps(report)
     assert KEY not in text and DS_KEY not in text and "<redacted>" in text
     assert KEY not in (tmp_path / "ledger.jsonl").read_text()
+
+
+def test_skip_deepseek_sends_only_teacher_probes(tmp_path):
+    probe, sent, ledger = make_probe(tmp_path)
+    report = probe_module.run_probe(probe, skip_deepseek=True)
+    assert report["stop_reason"] is None and ledger.billed_requests == 3
+    assert {r["probe"]: r.get("not_run") for r in report["results"] if r.get("not_run")} == {"B5_judge": "no DeepSeek credential", "B4_simulator": "no DeepSeek credential"}
+
+
+def test_reservation_overrun_keeps_the_returned_model_and_usage(tmp_path):
+    """A provider that bills hidden instructions (input far above the body bound)."""
+    def handler(request):
+        if request.url.path.endswith("/models"):
+            return httpx.Response(200, json={"data": [{"id": MODEL}]})
+        payload = responses_payload()
+        payload["usage"]["input_tokens"] = 50_000
+        return httpx.Response(200, json=payload)
+
+    ledger = SpendLedger(tmp_path / "ledger.jsonl", cap_usd=1.0, max_billed_requests=6, budget_id="step7a_api_probe")
+    probe = probe_module.Probe(base_url="https://example.invalid/v1", api_key=KEY, prices=PRICES, teacher_model=MODEL, ledger=ledger,
+                               billing=True, http=httpx.Client(transport=httpx.MockTransport(handler)), deepseek_call=fake_deepseek, secrets=[KEY])
+    report = probe_module.run_probe(probe)
+    assert report["stop_reason"].startswith("ReservationTooSmall") and ledger.billed_requests == 1
+    b1 = next(r for r in report["results"] if r["probe"] == "B1_responses_text")
+    assert b1["returned_model"] == MODEL and b1["usage"]["input_tokens"] == 50_000
