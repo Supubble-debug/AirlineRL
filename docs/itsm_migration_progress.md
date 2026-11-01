@@ -579,5 +579,6 @@
 - 代码：`spend_ledger.py`（组级预留、追加、关闭和恢复）、`budget_manager.py`（单一管理者和 IPC）、`llm/deepseek_chat.py`、`envs/itsm_ledgered_user.py`、`eval/itsm_aux_eval.py`、`eval/itsm_length_counterfactual.py`、`rollout/itsm_diagnostic_runner.py`、`rollout/itsm_step8.py`；`ItsmEnv.auxiliary_inputs`、`ItsmEnvWorker.aux_evaluate`、`ItsmAgentLoopSettings.auxiliary_evaluation`（默认关闭）。脚本：`run_8.sh`、`run_8_diagnostics.py`、`summarize_8.py`、`review_8_api.py`。
 - D5 改为 `max_tokens=1024`：`DEFAULT_USER_LLM_ARGS`、`budget_v1.yaml` 的 `user_llm_max_tokens` 和协议 D5 已同步。D5/D7 的付费请求改走直连客户端，请求体与 litellm 1.82.6 一致，已写入协议 §14.3。
 - 新增测试（41 项）：`test_itsm_step8_budget.py`（17）、`test_itsm_step8_eval.py`（12）、`test_itsm_step8_runner.py`（8，真实 worker 子进程 + 本机 fake DeepSeek 服务端 + 采样替身）、`test_itsm_step8_plan.py`（4）。
+- 回归：`pytest tests/unit tests/remote -q`：**882 passed**，退出码 0（`output/itsm-step7b/local/pytest_full_8impl2.log`），没有残留子进程；冻结文件哈希不变。上一次全量运行中，litellm 等价测试因为别的测试先把 litellm 换成了替身而失败（测试隔离问题，产品代码不受影响）；修正测试后重跑通过。
 - 没有调用 LLM，没有启动 GPU，没有发出付费请求，没有修改 Bench2、policy、reward、冻结数据或用途范围，没有进入 S1。
 
