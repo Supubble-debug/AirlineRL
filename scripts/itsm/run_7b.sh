@@ -73,7 +73,7 @@ env_report() {
 
 download() {
   if [ -f /etc/network_turbo ]; then source /etc/network_turbo >/dev/null 2>&1; echo "network_turbo sourced"; fi
-  local rev; rev=$($P -c "import json;print(json.load(open('docs/itsm_step7b/model_files.json'))['revision'])")
+  local rev; rev=$($P -c "import json;print(json.load(open('configs/itsm/step7b/model_files.json'))['revision'])")
   local code; code=$(curl -s -m 20 -o /dev/null -w '%{http_code}' "https://huggingface.co/api/models/Qwen/Qwen3-8B/revision/$rev")
   echo "huggingface.co -> $code"
   if [ "$code" != 200 ]; then
@@ -109,7 +109,7 @@ fi
 unset http_proxy https_proxy HTTP_PROXY HTTPS_PROXY HF_ENDPOINT
 export HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1
 phase verify 600 $P scripts/itsm/model_files_7b.py verify --dir "$MODEL"
-phase inputs 600 $P scripts/itsm/build_7b_length_inputs.py --tokenizer-dir "$MODEL" --out "$OUT/length_inputs.json" --check docs/itsm_step7b/length_inputs_meta.json
+phase inputs 600 $P scripts/itsm/build_7b_length_inputs.py --tokenizer-dir "$MODEL" --out "$OUT/length_inputs.json" --check configs/itsm/step7b/length_inputs_meta.json
 ALLOW_RC="2" phase len32k 1200 $P scripts/itsm/run_7b_gpu.py length --model "$MODEL" --max-model-len 32768 --tiers a,b --inputs "$OUT/length_inputs.json" --out "$OUT/len32k"
 ALLOW_RC="2 3" phase len40k 3000 $P scripts/itsm/run_7b_gpu.py length --model "$MODEL" --max-model-len 40960 --tiers a,b,c --episodes --inputs "$OUT/length_inputs.json" --out "$OUT/len40k"
 phase recompute 1200 $P scripts/itsm/run_7b_gpu.py recompute --model "$MODEL" --trajectories "$OUT/len40k/episodes.json" --length-inputs "$OUT/length_inputs.json" --out "$OUT/recompute"

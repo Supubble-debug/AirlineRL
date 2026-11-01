@@ -5,7 +5,7 @@ Usage (cloud):
     python scripts/itsm/model_files_7b.py download    --dir DIR
     python scripts/itsm/model_files_7b.py verify      --dir DIR
 
-Expected files, sizes and hashes: docs/itsm_step7b/model_files.json (HF model
+Expected files, sizes and hashes: configs/itsm/step7b/model_files.json (HF model
 info of Qwen/Qwen3-8B @ b968826d). LFS files are checked by SHA256, the others
 by git blob SHA1; the small tokenizer/config files must also equal the locally
 pinned tokenizer's files. ``download`` uses ``snapshot_download(local_dir=DIR)``
@@ -25,7 +25,7 @@ import time
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-MANIFEST = REPO_ROOT / "docs" / "itsm_step7b" / "model_files.json"
+MANIFEST = REPO_ROOT / "configs" / "itsm" / "step7b" / "model_files.json"
 
 
 def load_manifest() -> dict:

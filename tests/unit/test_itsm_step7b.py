@@ -216,7 +216,7 @@ def test_length_inputs_reproduce_the_committed_meta(tmp_path):
     out = tmp_path / "inputs.json"
     env = {k: v for k, v in os.environ.items() if k != "PYTHONHASHSEED"}
     result = subprocess.run([sys.executable, "scripts/itsm/build_7b_length_inputs.py", "--tokenizer-dir", str(TOKENIZER_DIR), "--out", str(out),
-                             "--check", "docs/itsm_step7b/length_inputs_meta.json"], cwd=REPO_ROOT, env=env, capture_output=True, text=True, timeout=900)
+                             "--check", "configs/itsm/step7b/length_inputs_meta.json"], cwd=REPO_ROOT, env=env, capture_output=True, text=True, timeout=900)
     assert result.returncode == 0, result.stderr[-2000:]
     tiers = json.loads(out.read_text())["tiers"]
     assert tiers["a"]["prompt_tokens"] == 28104  # step 6 measurement

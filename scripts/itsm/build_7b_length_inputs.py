@@ -25,7 +25,7 @@ Determinism: Bench2's ``slice_db_to_orgs`` builds the sliced DB by iterating a
 runs with ``PYTHONHASHSEED=0`` (it re-executes itself if needed).
 
 ``--check META`` compares the built token sequences' SHA256 with a committed meta
-file (docs/itsm_step7b/length_inputs_meta.json), e.g. on the remote with the
+file (configs/itsm/step7b/length_inputs_meta.json), e.g. on the remote with the
 model directory's tokenizer.
 """
 
