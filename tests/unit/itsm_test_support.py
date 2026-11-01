@@ -89,3 +89,21 @@ def failing_startup(message: str) -> None:
     """Worker initializer that fails inside the child before the env exists."""
     raise RuntimeError(message)
 
+
+
+def _raising_aux(env):
+    raise RuntimeError("auxiliary evaluator bug (test)")
+
+
+def _crashing_aux(env):
+    os._exit(5)  # the worker child dies during the auxiliary evaluation
+
+
+def raising_aux_factory():
+    """Worker ``aux_evaluator_factory`` whose evaluator raises (step 8 R1 tests)."""
+    return _raising_aux
+
+
+def crashing_aux_factory():
+    """Worker ``aux_evaluator_factory`` whose evaluator kills the child (step 8 R1 tests)."""
+    return _crashing_aux

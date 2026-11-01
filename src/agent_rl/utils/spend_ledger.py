@@ -53,6 +53,10 @@ class ReservationTooSmall(RuntimeError):
     """Actual cost exceeded the reservation: the bound is wrong, stop sending."""
 
 
+class RunHalted(BudgetExceeded):
+    """A non-retryable fault halted the ledger: nothing new may be reserved, extended or opened."""
+
+
 class LedgerBusy(RuntimeError):
     """Another writer already owns this ledger file; nothing is reserved."""
 
@@ -83,6 +87,7 @@ class _LedgerState:
         self.envelopes: dict[str, dict[str, Any]] = {}
         self.settled = 0.0
         self.requests = 0
+        self.halted: str | None = None
 
     def apply(self, event: dict[str, Any]) -> None:
         kind = event["event"]
@@ -102,6 +107,8 @@ class _LedgerState:
             self.envelopes[event["envelope"]] = {"amount": event["amount_usd"], "used": 0.0, "open": True}
         elif kind == "envelope_extend":
             self.envelopes[event["envelope"]]["amount"] += event["amount_usd"]
+        elif kind == "halt":
+            self.halted = self.halted or event["reason"]
         elif kind == "envelope_close":
             self.envelopes[event["envelope"]]["open"] = False
 
@@ -219,10 +226,30 @@ class SpendLedger:
 
     # -- operations ------------------------------------------------------------------------------
 
+    @property
+    def halt_reason(self) -> str | None:
+        return self._state.halted
+
+    def _refuse_if_halted(self) -> None:
+        if self._state.halted is not None:
+            raise RunHalted(f"ledger halted: {self._state.halted}")
+
+    def halt(self, reason: str) -> None:
+        """Non-retryable fault (model mismatch, actual above reservation): stop all new spending.
+
+        Recorded in the file, so a restarted owner stays halted; settling in-flight requests is
+        still allowed so their costs are kept.
+        """
+        with self._lock:
+            self._require_owner()
+            if self._state.halted is None:
+                self._append({"event": "halt", "reason": reason})
+
     def open_envelope(self, envelope: str, amount_usd: float, detail: dict[str, Any]) -> None:
         """Reserve a group's worst case before it starts; ``BudgetExceeded`` = do not start it."""
         with self._lock:
             self._require_owner()
+            self._refuse_if_halted()
             if envelope in self._state.envelopes:
                 raise ValueError(f"envelope {envelope} already exists")
             if amount_usd <= 0:
@@ -235,6 +262,7 @@ class SpendLedger:
         """Top up an open envelope from the cap BEFORE a request that would not fit; refused = not sent."""
         with self._lock:
             self._require_owner()
+            self._refuse_if_halted()
             entry = self._state.envelopes.get(envelope)
             if entry is None or not entry["open"]:
                 raise BudgetExceeded(f"envelope {envelope} is not open")
@@ -247,6 +275,7 @@ class SpendLedger:
     def reserve(self, request_id: str, amount_usd: float, detail: dict[str, Any], *, envelope: str | None = None) -> None:
         with self._lock:
             self._require_owner()
+            self._refuse_if_halted()
             if request_id in self._state.open or request_id in self._state.request_envelope:
                 raise ValueError(f"request {request_id} already reserved")
             if self._state.requests + 1 > self.max_billed_requests:
@@ -275,7 +304,11 @@ class SpendLedger:
             if note:
                 event["note"] = note
             self._append(event)
-        if actual_usd is not None and actual_usd > reserved + 1e-12:
+            over = actual_usd is not None and actual_usd > reserved + 1e-12
+            if over and self._state.halted is None:
+                # The bound was wrong: nothing else may be sent (non-retryable, survives a restart).
+                self._append({"event": "halt", "reason": f"actual above reservation: request {request_id} {actual_usd:.6f} > {reserved:.6f} USD"})
+        if over:
             raise ReservationTooSmall(f"request {request_id}: actual {actual_usd:.6f} > reserved {reserved:.6f} USD")
         return charged
 
@@ -322,4 +355,5 @@ class SpendLedger:
                 "open_reservations_usd": round(sum(self._state.open.values()), 6),
                 "open_envelopes_unused_usd": round(sum(self._state.envelope_remaining(e) for e in self._state.envelopes), 6),
                 "committed_usd": round(self._state.committed, 6),
+                "halted": self._state.halted,
             }

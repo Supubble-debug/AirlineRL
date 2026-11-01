@@ -25,6 +25,11 @@ Rules (all fixed before a run; see docs/itsm_step8/proposal.md):
   soft deadline; at the hard deadline every running episode is cancelled.
 * Cancellation / failure: the loop reclaims every worker (7A-R2/R3); groups in flight are
   closed in the ledger (open requests booked in full); diagnostics are kept in the records.
+* Non-retryable faults (returned model differs, actual cost above its reservation) halt the
+  manager: the affected attempt is not retried, no request is reserved and no group opened
+  afterwards; in-flight requests are still settled.
+* Auxiliary evaluation (part A) never decides whether a sample is valid: its failures are
+  recorded as ``not_evaluated`` on the valid sample; a budget refusal there stops new groups.
 
 Records (JSON lines, written as they happen): ``attempts.jsonl``, ``groups.jsonl``,
 ``trajectories.jsonl`` (valid samples: tokens, mask, log-probs, spans, rewards, auxiliary
@@ -166,10 +171,8 @@ class DiagnosticRunner:
 
     # -- slots -----------------------------------------------------------------------------------
 
-    async def _acquire(self, first: bool) -> None:
+    async def _acquire(self) -> None:
         async with self._cond:
-            if first:
-                self._unqueued -= 1  # this sample is now visible as waiting
             self._waiting += 1
             try:
                 await self._cond.wait_for(lambda: self._running < self.ramp.limit)
@@ -196,8 +199,14 @@ class DiagnosticRunner:
             for attempt in range(1, self.max_attempts + 1):
                 if self.stop_reason is not None and attempt > 1:
                     return {"status": "stopped", "attempts": attempts}
-                await self._acquire(first=not queued)
-                queued = True
+                if not queued:
+                    async with self._cond:
+                        # decrement and mark in one step (no await in between): a cancellation
+                        # can never make the finally below decrement a second time
+                        self._unqueued -= 1
+                        queued = True
+                        self._cond.notify_all()
+                await self._acquire()
                 outcome = await self._attempt(plan, loop, index, attempt, attempts)
                 if outcome is not None:
                     return outcome
@@ -225,15 +234,21 @@ class DiagnosticRunner:
                 self._stop("rollout engine errors at the lowest concurrency")
             self._event("ramp", limit=self.ramp.limit)
         except (BudgetExceeded, BudgetUnavailable, ReservationTooSmall) as error:
-            row = {**base, "status": "budget", "error": f"{type(error).__name__}: {error}"[:2000]}
-            self._stop(f"budget: {type(error).__name__}")
-            outcome = {"status": "budget"}
+            halted = self.budget.halt_reason
+            row = {**base, "status": "halted" if halted else "budget", "error": f"{type(error).__name__}: {error}"[:2000]}
+            self._stop(f"halted: {halted}" if halted else f"budget: {type(error).__name__}")
+            outcome = {"status": row["status"]}
         except ItsmInfrastructureError as error:
             refused = self.budget.refused(plan.group_id)
-            row = {**base, "status": "budget" if refused else "infra_failure", "stage": error.stage, "kind": error.kind,
+            halted = self.budget.halt_reason
+            status = "halted" if halted else ("budget" if refused else "infra_failure")
+            row = {**base, "status": status, "stage": error.stage, "kind": error.kind,
                    "error": str(error)[:2000], "cleanup": getattr(error, "cleanup", None), "budget_refusals": refused}
             self.ramp.on_unclean()
-            if refused:
+            if halted:  # non-retryable (model mismatch / actual above reservation): never retried
+                self._stop(f"halted: {halted}")
+                outcome = {"status": "halted"}
+            elif refused:
                 self._stop("budget: a request inside a group was refused")
                 outcome = {"status": "budget"}
         except Exception as error:  # noqa: BLE001 - an unexpected bug: keep the diagnosis, stop the run
@@ -253,6 +268,13 @@ class DiagnosticRunner:
                                                 "response_mask": list(output.response_mask), "response_logprobs": list(output.response_logprobs),
                                                 "reward_score": output.reward_score, "extra_fields": output.extra_fields})
             outcome = {"status": "valid", "reward": output.reward_score}
+            # The business result stands whatever happened to the auxiliary evaluation; a budget
+            # problem or a halt there only stops new groups (it is never a reason to re-sample).
+            aux = output.extra_fields.get("itsm_aux_eval") or {}
+            if self.budget.halt_reason:
+                self._stop(f"halted: {self.budget.halt_reason}")
+            elif aux.get("status") == "not_evaluated" and aux.get("reason") in ("budget", "reservation_too_small"):
+                self._stop(f"budget: auxiliary evaluation {aux['reason']}")
         finally:
             await self._release()
         row["wall_s"] = round(time.monotonic() - started, 3)
@@ -317,6 +339,8 @@ class DiagnosticRunner:
                 async with self._cond:  # open the next group only when a slot is free and no sample is queued
                     await self._cond.wait_for(lambda: self.stop_reason is not None
                                               or (self._unqueued == 0 and self._waiting == 0 and self._running < self.ramp.limit))
+                if self.stop_reason is None and self.budget.halt_reason:
+                    self._stop(f"halted: {self.budget.halt_reason}")
                 if self.stop_reason is None and self._discard_stop():
                     self._stop("more than 25% of the started B groups discarded (D6)")
                 if self.stop_reason is None and self.soft_deadline is not None and time.monotonic() + self.group_estimate_s > self.soft_deadline:
@@ -332,6 +356,9 @@ class DiagnosticRunner:
                         break
                     except BudgetExceeded as error:
                         in_flight = [t for t in group_tasks if not t.done()]
+                        if self.budget.halt_reason:
+                            self._stop(f"halted: {self.budget.halt_reason}")
+                            break
                         if not in_flight or self.stop_reason is not None:
                             self._stop(f"budget: group {plan.group_id} envelope not reservable with no group in flight ({error})")
                             break

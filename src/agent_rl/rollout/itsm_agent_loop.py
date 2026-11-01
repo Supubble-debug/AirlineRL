@@ -153,6 +153,22 @@ def check_sampler_output(token_ids: list[int], log_probs: Any, task_id: str) -> 
         fail(f"non-finite log-prob at positions {bad[:8]} (of {len(token_ids)})")
 
 
+def classify_aux_failure(error: BaseException) -> str:
+    """Why an auxiliary evaluation produced no result (never counted as 0)."""
+    from agent_rl.utils.budget_manager import BudgetUnavailable
+    from agent_rl.utils.spend_ledger import BudgetExceeded, ReservationTooSmall
+
+    if isinstance(error, ReservationTooSmall):
+        return "reservation_too_small"
+    if isinstance(error, (BudgetExceeded, BudgetUnavailable)):
+        return "budget"
+    if isinstance(error, ItsmInfrastructureError) and error.stage in ("timeout", "worker_crashed", "cancelled"):
+        return error.stage
+    if getattr(error, "kind", None) == "model_mismatch":
+        return "model_mismatch"
+    return "evaluator_error"
+
+
 def allowed_task_ids(settings: ItsmAgentLoopSettings) -> frozenset[str]:
     if settings.purpose == "grpo":
         return frozenset(itsm_task_sets.training_task_ids(purpose="grpo", usage_version=settings.usage_version))
@@ -439,8 +455,17 @@ class ItsmAgentLoop(AgentLoopBase):
         trace = env.export_trace()
         aux = None
         if self.settings.auxiliary_evaluation:
-            # Same final DB and trajectory; the fuzzy reward above is not touched.
-            aux = await self.loop.run_in_executor(None, lambda: env.aux_evaluate(self.settings.aux_timeout_s))
+            # Same final DB and trajectory; the fuzzy reward above is not touched. Whatever goes
+            # wrong here (budget refusal, timeout, worker crash, evaluator error) is recorded as
+            # not_evaluated on this valid sample -- it must never cause the policy or the user
+            # simulator to be sampled again. Cancellation still propagates (no output).
+            try:
+                aux = {"status": "completed", **await self.loop.run_in_executor(None, lambda: env.aux_evaluate(self.settings.aux_timeout_s))}
+            except asyncio.CancelledError:
+                raise
+            except BaseException as error:  # noqa: BLE001 - classified and kept
+                aux = {"status": "not_evaluated", "reason": classify_aux_failure(error), "error": f"{type(error).__name__}: {error}"[:2000],
+                       "worker_failure": getattr(env, "failure", None)}
         return AgentLoopOutput(
             prompt_ids=prompt_ids,
             response_ids=response_ids,

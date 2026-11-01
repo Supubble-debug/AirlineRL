@@ -11,7 +11,9 @@ plain ``httpx.Client`` (no retries), after reserving it. The JSON body equals wh
 Accounting: input bound = UTF-8 bytes of the body + 64 (byte-level BPE never yields more
 tokens than bytes), output bound = ``max_tokens``. A timeout, transport error, non-200
 status, unparseable body or missing usage books the FULL reservation (the request may have
-been billed); otherwise the reported usage is booked. Any retry is a new ``complete`` call,
+been billed); otherwise the reported usage is booked. A returned model that differs from the
+requested one is settled and then HALTS the budget manager (non-retryable); an actual cost
+above the reservation halts it in the ledger. Any retry is a new ``complete`` call,
 so it is reserved again. Secrets never appear in errors.
 """
 
@@ -32,6 +34,7 @@ class Budget(Protocol):
     def reserve(self, *, group_id: str, role: str, input_bound_tokens: int, max_output_tokens: int, detail: dict) -> dict: ...
     def settle(self, *, request_id: str, input_tokens: int | None, output_tokens: int | None, usage: Any) -> float: ...
     def settle_unknown(self, *, request_id: str, note: str) -> float: ...
+    def halt(self, *, reason: str) -> None: ...
 
 
 class LlmCallFailed(RuntimeError):
@@ -148,5 +151,8 @@ class DeepSeekChat:
         expected = body["model"]
         if result.returned_model != expected:
             record["outcome"] = "model_mismatch"
-            raise LlmCallFailed("model_mismatch", f"returned {result.returned_model!r}, requested {expected!r}")
+            detail = f"returned {result.returned_model!r}, requested {expected!r}"
+            # Non-retryable: no silent model change. Halt the single manager (already settled above).
+            self.budget.halt(reason=f"model_mismatch ({self.role}): {detail}")
+            raise LlmCallFailed("model_mismatch", detail)
         return result

@@ -15,6 +15,8 @@ Groups:
 * ``settle`` books the provider-reported usage; ``settle_unknown`` (timeout, transport error,
   missing usage, cancelled in flight) books the full reservation.
 * ``close_group`` books every still-open request of the group in full and releases the rest.
+* ``halt`` (non-retryable: returned model differs, actual cost above its reservation) refuses
+  every later reservation, top-up and group; in-flight requests can still be settled.
 """
 
 from __future__ import annotations
@@ -28,7 +30,7 @@ from multiprocessing.connection import Client, Listener
 from pathlib import Path
 from typing import Any
 
-from agent_rl.utils.spend_ledger import BudgetExceeded, Price, ReservationTooSmall, SpendLedger
+from agent_rl.utils.spend_ledger import BudgetExceeded, Price, ReservationTooSmall, RunHalted, SpendLedger
 
 
 class BudgetUnavailable(RuntimeError):
@@ -80,6 +82,16 @@ class BudgetManager:
             self._request_group[request_id] = group_id
         return {"request_id": request_id, "reserved_usd": amount}
 
+    # -- non-retryable faults ------------------------------------------------------------------
+
+    def halt(self, *, reason: str) -> None:
+        """Stop new reservations, requests and groups (model mismatch, actual above reservation)."""
+        self.ledger.halt(reason)
+
+    @property
+    def halt_reason(self) -> str | None:
+        return self.ledger.halt_reason
+
     def refused(self, group_id: str) -> list[str]:
         with self._lock:
             return list(self.refusals.get(group_id, []))
@@ -97,7 +109,7 @@ class BudgetManager:
 
 
 #: operations a child may call (nothing that opens/closes groups or reads other state)
-CHILD_OPERATIONS = ("reserve", "settle", "settle_unknown")
+CHILD_OPERATIONS = ("reserve", "settle", "settle_unknown", "halt")
 
 
 class BudgetServer:
@@ -153,7 +165,7 @@ class BudgetServer:
             pass
 
 
-_ERRORS = {"BudgetExceeded": BudgetExceeded, "ReservationTooSmall": ReservationTooSmall}
+_ERRORS = {"BudgetExceeded": BudgetExceeded, "RunHalted": RunHalted, "ReservationTooSmall": ReservationTooSmall}
 
 
 class BudgetClient:
@@ -186,3 +198,6 @@ class BudgetClient:
 
     def settle_unknown(self, **kwargs: Any) -> float:
         return self._call("settle_unknown", **kwargs)
+
+    def halt(self, **kwargs: Any) -> None:
+        return self._call("halt", **kwargs)

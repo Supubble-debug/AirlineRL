@@ -23,13 +23,20 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO_ROOT / "src"))
 
-from agent_rl.rollout.itsm_step8 import build_plan, load_plan, load_prices, reservation_table  # noqa: E402
+from agent_rl.rollout.itsm_step8 import build_plan, hard_cap_table, load_plan, load_prices, max_system_prompt_bytes, reservation_table  # noqa: E402
+
+#: evaluated in `plan` only; NOT enforced by the current code (a proposal, see the step-8 proposal §3)
+PROPOSED_REQUEST_BYTE_CAPS = {"simulator": 65536, "text_judge": 65536, "nl_judge": 262144}
 
 
 def cmd_plan(args) -> int:
     plan, prices = load_plan(), load_prices()
     groups = build_plan(plan, prices)
+    system_bytes = max_system_prompt_bytes(plan)
     print(json.dumps({"reservations": reservation_table(plan, prices),
+                      "complete_group_hard_cap": {"current_rules": hard_cap_table(plan, prices, system_bytes=system_bytes),
+                                                  "with_proposed_request_size_rule": hard_cap_table(plan, prices, system_bytes=system_bytes,
+                                                                                                    request_byte_caps=PROPOSED_REQUEST_BYTE_CAPS)},
                       "groups": [{"group_id": g.group_id, "part": g.part, "samples": g.samples, "envelope_usd": g.envelope_usd} for g in groups]}, indent=1))
     return 0
 

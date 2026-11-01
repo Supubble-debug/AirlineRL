@@ -66,3 +66,21 @@ def test_counterfactual_cut_rules():
     long_action = [{"turn_index": 0, "start": 3800, "end": 4100}]  # 300 tokens, 296 allowed
     assert first_cut(28200, long_action, [], max_model_len=32768)["rule"] == "action_token_limit"  # only 296 allowed
     assert "not an actual run" in COUNTERFACTUAL_LABEL
+
+
+def test_complete_group_hard_cap_counts_every_allowed_retry():
+    from agent_rl.rollout.itsm_step8 import hard_cap_table
+
+    plan, prices = load_plan(), load_prices()
+    system = {"simulator": 3263, "text_judge": 1296, "nl_judge": 427}
+    caps = {"simulator": 65536, "text_judge": 65536, "nl_judge": 262144}
+    table = hard_cap_table(plan, prices, system_bytes=system, request_byte_caps=caps)
+    sim = prices["simulator"].cost(65536 + 64, 1024)
+    judges = prices["judge"].cost(65536 + 64, 4096) + prices["judge"].cost(262144 + 64, 4096)
+    assert table["counts"] == {"simulator_calls_per_attempt": 40, "attempts_per_sample": 4, "judge_calls_per_valid_sample": 8,
+                               "samples_per_group": {"A": 4, "B": 4}}
+    assert table["complete_group_hard_cap_usd"]["B"] == pytest.approx(4 * 4 * 40 * sim, abs=1e-3)
+    assert table["complete_group_hard_cap_usd"]["A"] == pytest.approx(4 * (4 * 40 * sim + 4 * judges), abs=1e-3)
+    assert table["groups_that_fit_at_once"] == {"A": 0, "B": 0}  # 12 USD cannot pre-reserve even one complete group
+    unbounded = hard_cap_table(plan, prices, system_bytes=system)
+    assert unbounded["complete_group_hard_cap_usd"]["B"] > 1000  # without a request-size rule the hard cap is not practical

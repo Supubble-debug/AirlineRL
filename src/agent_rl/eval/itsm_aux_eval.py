@@ -116,6 +116,8 @@ class AuxEvaluator:
                     raise JudgeProtocolError("thinking_not_disabled", f"reasoning returned ({result.reasoning_tokens} tokens)")
                 parsed = parse(result.content)
             except LlmCallFailed as error:
+                if error.kind == "model_mismatch":
+                    raise  # non-retryable: the manager is halted, the run stops
                 attempts.append({"attempt": attempt, "stage": f"{part}_judge_call", "kind": error.kind, "detail": error.detail[:300]})
                 continue
             except (JudgeProtocolError, NlProtocolError) as error:

@@ -93,8 +93,73 @@ def reservation_table(plan: dict[str, Any], prices: dict[str, Price]) -> dict[st
     }
 
 
+# -- hard caps (R1 item 5) ------------------------------------------------------------------------
+
+#: Measured on the pinned Qwen3-8B tokenizer (token 56940 decodes to 128 bytes of spaces).
+QWEN_MAX_BYTES_PER_TOKEN = 128
+#: json.dumps(ensure_ascii=False) turns one raw byte into at most 6 (control chars -> \\u00XX).
+JSON_ESCAPE_FACTOR = 6
+#: Every text the simulator/judges can see is either in the policy prompt (<= max_prompt_length)
+#: or in the response (<= response_length) of the attempt, in Qwen tokens.
+CONTEXT_TOKENS = 28672 + 12288
+
+
+def max_system_prompt_bytes(plan: dict[str, Any]) -> dict[str, int]:
+    """Largest D5 system prompt over the planned tasks, and the two D7 system prompts (raw bytes)."""
+    from enterprise_worlds.evaluator import evaluator_nl, text_match_strategy
+    from enterprise_worlds.user.user_simulator import UserSimulator
+
+    from agent_rl.data.itsm_task_sets import resolve_task
+
+    ids = part_task_ids(plan, "A") + part_task_ids(plan, "B")
+    sim = max(len(UserSimulator(resolve_task(t, split_version=plan["split_version"]).scenario, llm="x", llm_args={}).system_prompt.encode()) for t in ids)
+    return {"simulator": sim, "text_judge": len(text_match_strategy.JUDGE_SYSTEM_PROMPT.encode()), "nl_judge": len(evaluator_nl.JUDGE_SYSTEM_PROMPT.encode())}
+
+
+def hard_cap_table(plan: dict[str, Any], prices: dict[str, Price], *, system_bytes: dict[str, int] | None = None,
+                   request_byte_caps: dict[str, int] | None = None) -> dict[str, Any]:
+    """Hard maximum spend of one COMPLETE group, every allowed retry included.
+
+    Counts (all from the rules, nothing estimated):
+    * simulator calls per attempt <= max_steps (40): every user turn, the opening one included,
+      is a step in ``ItsmEnv``, and the user is not asked once steps reach max_steps;
+    * attempts per sample <= max_attempts (4) (protocol §12);
+    * auxiliary judges (part A) run once per valid sample, each <= 4 attempts: <= 2 x 4 calls;
+    * per request: input bound = request bytes + 64 (as reserved), output = the max_tokens cap.
+    Request bytes: without a size rule they are only bounded by the context
+    (``CONTEXT_TOKENS`` x 128 bytes x JSON escape 6 + the system prompt); ``request_byte_caps``
+    evaluates a proposed explicit size rule instead (not enforced by the current code).
+    """
+    system_bytes = system_bytes or max_system_prompt_bytes(plan)
+    e, attempts, steps = plan["envelope"], plan["max_attempts"], 40
+    out_cap = {"simulator": e["simulator_max_tokens"], "text_judge": e["judge_max_tokens"], "nl_judge": e["judge_max_tokens"]}
+    role = {"simulator": "simulator", "text_judge": "judge", "nl_judge": "judge"}
+
+    def body_bytes(kind: str) -> int:
+        if request_byte_caps is not None:
+            return request_byte_caps[kind]
+        return JSON_ESCAPE_FACTOR * (system_bytes[kind] + CONTEXT_TOKENS * QWEN_MAX_BYTES_PER_TOKEN) + 1024  # + JSON framing
+
+    per_request = {k: prices[role[k]].cost(body_bytes(k) + 64, out_cap[k]) for k in role}
+    per_sample = {"B": attempts * steps * per_request["simulator"]}
+    per_sample["A"] = per_sample["B"] + attempts * (per_request["text_judge"] + per_request["nl_judge"])
+    samples = {p: plan["parts"][p]["samples_per_task"] for p in plan["parts"]}
+    group = {p: samples[p] * per_sample[p] for p in plan["parts"]}
+    cap = plan["budget"]["cap_usd"]
+    return {
+        "counts": {"simulator_calls_per_attempt": steps, "attempts_per_sample": attempts, "judge_calls_per_valid_sample": 2 * attempts,
+                   "samples_per_group": samples},
+        "request_bytes": {k: body_bytes(k) for k in role},
+        "per_request_usd": {k: round(v, 4) for k, v in per_request.items()},
+        "per_sample_usd": {k: round(v, 4) for k, v in per_sample.items()},
+        "complete_group_hard_cap_usd": {k: round(v, 4) for k, v in group.items()},
+        "fits_in_cap_usd": cap,
+        "groups_that_fit_at_once": {k: int(cap // v) for k, v in group.items()},
+    }
+
+
 def make_step8_loop(group: GroupPlan, *, server: Any, tokenizer: Any, plan: dict[str, Any], budget_address: str, budget_authkey: bytes,
-                    response_length: int = 12288, prompt_length: int = 28672):
+                    response_length: int = 12288, prompt_length: int = 28672, settings_overrides: dict[str, Any] | None = None):
     from verl.utils.tokenizer.chat_template import initialize_system_prompt, initialize_turn_separator
 
     from agent_rl.envs.itsm_ledgered_user import make_ledgered_user
@@ -111,7 +176,7 @@ def make_step8_loop(group: GroupPlan, *, server: Any, tokenizer: Any, plan: dict
 
     loop = object.__new__(Step8Loop)
     loop.settings = ItsmAgentLoopSettings(purpose=group.purpose, split_version=plan["split_version"], usage_version=plan["usage_version"],
-                                          auxiliary_evaluation=auxiliary)
+                                          auxiliary_evaluation=auxiliary, **(settings_overrides or {}))
     loop.tokenizer = tokenizer
     loop.processor = None
     loop.apply_chat_template_kwargs = {"enable_thinking": False}
