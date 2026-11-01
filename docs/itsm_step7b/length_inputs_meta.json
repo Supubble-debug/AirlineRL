@@ -1,0 +1,57 @@
+{
+  "task_id": "itsmbench_msp_013",
+  "split_version": "itsm_split_v3",
+  "limits": {
+    "b": 32256,
+    "c": 40448
+  },
+  "placeholder_user": [
+    "Hi, I need help with a ticket.",
+    "Thanks, that is all."
+  ],
+  "tiers": {
+    "a": {
+      "natural": true,
+      "description": "initial prompt (step 6 construction)",
+      "prompt_tokens": 28104,
+      "prompt_sha256": "f841567566a90f35d213ba9e7e1e80799645d82f86aec2993d377023371ec37b",
+      "target_tokens": null,
+      "target_sha256": null
+    },
+    "b": {
+      "natural": true,
+      "description": "gold replay cut before gold action 9 (retrieve_knowledge_articles)",
+      "cut_before_gold_action": 9,
+      "prompt_tokens": 30836,
+      "prompt_sha256": "ec8a42c4b18eb6d47ca7c1dd35896b8347537fbb0dcb335b8bdd05cda2f59391",
+      "target_tokens": 22,
+      "target_sha256": "9172d00961f5c4719ce3ace862a746a90545e0cdc54b4c32ab65578d375f3c56"
+    },
+    "c": {
+      "natural": false,
+      "description": "SPLICED: gold actions 0..8, then 4 extra read-only calls, cut before gold action 9",
+      "extra_reads": [
+        {
+          "tool": "list_incidents",
+          "observation_turn_tokens": 6385
+        },
+        {
+          "tool": "list_problems",
+          "observation_turn_tokens": 1375
+        },
+        {
+          "tool": "find_locations",
+          "observation_turn_tokens": 764
+        },
+        {
+          "tool": "find_sla_definitions",
+          "observation_turn_tokens": 974
+        }
+      ],
+      "prompt_tokens": 40402,
+      "prompt_sha256": "3fbd74ad0ce95ab1168db25ba9979353117ad19b341d2f8b1eb38c2852984aef",
+      "target_tokens": 22,
+      "target_sha256": "9172d00961f5c4719ce3ace862a746a90545e0cdc54b4c32ab65578d375f3c56"
+    }
+  }
+}
