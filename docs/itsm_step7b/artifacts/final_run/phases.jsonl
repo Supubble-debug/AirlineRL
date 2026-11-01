@@ -1,0 +1,10 @@
+{"phase":"env","status":"ok","start_utc":"2026-11-01T04:45:03Z","end_utc":"2026-11-01T04:45:10Z","elapsed_since_boot_s":3024,"detail":null}
+{"phase":"space","status":"rc_0","start_utc":"2026-11-01T04:45:11Z","end_utc":"2026-11-01T04:45:11Z","elapsed_since_boot_s":3025,"detail":{"dir": "/root/autodl-tmp/models/Qwen3-8B", "free_bytes": 108475592704, "missing_bytes": 0, "margin_bytes": 2147483648, "enough": true}}
+{"phase":"download","status":"skipped_present","start_utc":"2026-11-01T04:45:11Z","end_utc":"2026-11-01T04:45:11Z","elapsed_since_boot_s":3025,"detail":null}
+{"phase":"verify","status":"ok","start_utc":"2026-11-01T04:45:11Z","end_utc":"2026-11-01T04:45:16Z","elapsed_since_boot_s":3030,"detail":null}
+{"phase":"inputs","status":"ok","start_utc":"2026-11-01T04:45:16Z","end_utc":"2026-11-01T04:45:36Z","elapsed_since_boot_s":3050,"detail":null}
+{"phase":"len32k","status":"ok","start_utc":"2026-11-01T04:45:36Z","end_utc":"2026-11-01T04:49:09Z","elapsed_since_boot_s":3263,"detail":null}
+{"phase":"len40k","status":"ok","start_utc":"2026-11-01T04:49:09Z","end_utc":"2026-11-01T04:52:19Z","elapsed_since_boot_s":3453,"detail":null}
+{"phase":"recompute","status":"ok","start_utc":"2026-11-01T04:52:19Z","end_utc":"2026-11-01T04:52:54Z","elapsed_since_boot_s":3488,"detail":null}
+{"phase":"caches","status":"failed_rc_1","start_utc":"2026-11-01T04:52:54Z","end_utc":"2026-11-01T04:52:54Z","elapsed_since_boot_s":3488,"detail":null}
+{"phase":"stop","status":"exit_1","start_utc":"2026-11-01T04:52:54Z","end_utc":"2026-11-01T04:52:54Z","elapsed_since_boot_s":3488,"detail":"phase caches failed (see caches.log)"}

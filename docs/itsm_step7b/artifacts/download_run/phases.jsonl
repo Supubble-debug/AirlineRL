@@ -1,0 +1,6 @@
+{"phase":"env","status":"ok","start_utc":"2026-11-01T04:04:47Z","end_utc":"2026-11-01T04:04:54Z","elapsed_since_boot_s":608,"detail":null}
+{"phase":"space","status":"rc_0","start_utc":"2026-11-01T04:04:54Z","end_utc":"2026-11-01T04:04:54Z","elapsed_since_boot_s":608,"detail":{"dir": "/root/autodl-tmp/models/Qwen3-8B", "free_bytes": 124858314752, "missing_bytes": 16381516776, "margin_bytes": 2147483648, "enough": true}}
+{"phase":"download","status":"ok","start_utc":"2026-11-01T04:04:54Z","end_utc":"2026-11-01T04:41:19Z","elapsed_since_boot_s":2793,"detail":null}
+{"phase":"verify","status":"ok","start_utc":"2026-11-01T04:41:19Z","end_utc":"2026-11-01T04:41:25Z","elapsed_since_boot_s":2799,"detail":null}
+{"phase":"inputs","status":"failed_rc_1","start_utc":"2026-11-01T04:41:25Z","end_utc":"2026-11-01T04:41:57Z","elapsed_since_boot_s":2831,"detail":null}
+{"phase":"stop","status":"exit_1","start_utc":"2026-11-01T04:41:57Z","end_utc":"2026-11-01T04:41:57Z","elapsed_since_boot_s":2831,"detail":"phase inputs failed (see inputs.log)"}

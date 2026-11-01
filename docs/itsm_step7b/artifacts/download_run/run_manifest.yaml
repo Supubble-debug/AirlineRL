@@ -1,0 +1,52 @@
+run_id: exp-itsm/2026-11-01T04:03:58.749199Z
+experiment_id: exp-itsm
+git:
+  branch: main
+  commit: d9519ea20b060db81cb46182ffc82ab8253c802c
+  commit_subject: '7B pipeline: download files from hf-mirror at the pinned revision,
+    parallel and resumable (HF via proxy ~3-4 MB/s)'
+  is_dirty: false
+  is_unpushed: false
+  parent_branch: main
+  parent_commit: d9519ea20b060db81cb46182ffc82ab8253c802c
+config:
+  config_path: script:bash scripts/itsm/run_7b.sh; rc=$?; rm -f /root/no_autoshutdown;
+    exit $rc
+  config_hash: sha256:3765331f315d5a2fdbd7434ea0192f8d988268c4f71ebe907fe1685ea1ed8721
+  resolved_overrides: {}
+runtime:
+  started_at: '2026-11-01T04:03:58.749199Z'
+  finished_at: null
+  duration_seconds: null
+  status: running
+  exit_code: null
+  failure_reason: ''
+  gpu: ''
+  hostname: ''
+  python_version: ''
+  torch_version: ''
+  projtool_version: 0.1.0.dev0
+data:
+  data_root: /root/autodl-fs/datasets/entergym
+  data_version: ''
+  data_hash: ''
+artifacts:
+  synced_to_local: []
+  remote_only:
+  - step7b
+metrics_summary: {}
+code_provenance:
+  sync_code: true
+  checked: true
+  matches: true
+  files_compared: 319
+  local_tree_digest: sha256:3838e01e165870745e16f9fed442349f11e87553d24d502dedae3b94abced24d
+  remote_tree_digest: sha256:3838e01e165870745e16f9fed442349f11e87553d24d502dedae3b94abced24d
+  differing: []
+  missing_on_remote: []
+  deleted_locally_but_on_remote: []
+  differing_count: 0
+  missing_on_remote_count: 0
+run_control:
+  after: null
+  auto_shutdown_after_min: 3
