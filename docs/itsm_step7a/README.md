@@ -109,6 +109,30 @@
 | Micu 价格 | 提供 Micu 控制台里 GPT-6.1 Sol 的价格依据（截图或价格页导出均可）：输入单价、输出单价（是否包含推理 token）、有无按次费用、币种与汇率、分组倍率。我把它写进 `PRICES.json` 的 `source` 字段，作为预留的依据 |
 | 模型 ID | 如果 F1 列出的 ID 不是 `gpt-6.1-sol` 这样一眼能对上的名字，要由你确认用哪个，我不自行选择 |
 
+### 3.4 免费核对结果（2026-10-31，本机，只发 GET，未扣费）
+
+你的决定：免费查询在本机跑；付费探测允许以 GPU 模式开机，跑完立即关机；价格以价格接口为准，查不到就停，等你提供截图。
+
+凭据来自 `code/main/micu.md`（一个 API key 加网址 `https://www.micuapi.ai`）。该文件没有被 git 跟踪，已加入本地的 `.git/info/exclude`，权限改为 600；key 没有出现在任何输出或日志里。原始返回（key 已替换掉）存放在 `/home/sar/work/EnterGym/output/itsm-step7a/free_checks/`，不入 git。
+
+| 查询 | 结果 |
+|---|---|
+| `GET /api/status`（公开） | 站点为 New API 面板（\"米醋API\"），额度显示单位为 CNY，`quota_per_unit=500000`；**不含**按模型的价格或倍率 |
+| `GET /v1/models`（用 key） | 列出 `gpt-6.1-sol`，与请求的 ID **完全一致**；同时列出 `gpt-6-sol`、`gpt-5.6-sol`、`gpt-6-astra`、`codex-auto-review`。`gpt-6.1-sol` 的 `supported_endpoint_types` 只有 `openai`，是否支持 Responses API 仍要靠 B1/B2 实测 |
+| `GET /api/pricing`（用 key） | **拒绝**：`Unauthorized, invalid access token`。这个接口要的是账号的系统访问令牌，和 API key 不是同一个凭据 |
+| `GET /v1/dashboard/billing/subscription`、`/usage`（用 key） | 成功。该 key 的额度上限远高于第 7A 步的 1 美元预算，**不能**拿它当控费手段，只能靠我们自己的预留账本。usage 总量可以在探测前后各读一次，独立核对实际扣费 |
+
+**结论**：模型 ID 已确认；**价格仍无法核实**，按你的规则停下。没有开机，没有发出付费请求，花费 0 美元。
+
+**继续需要以下二者之一**：
+- Micu 控制台中 `gpt-6.1-sol` 的价格信息（截图或数字），以及 `deepseek-v4-flash`、`deepseek-v4-pro` 的 DeepSeek 官方价格：
+  - 输入单价、输出单价，推理 token 是否按输出计费；
+  - 有无按次附加费；
+  - 分组倍率，以及 CNY 与 USD 怎么换算；
+- 或者账号的系统访问令牌，用来查询价格接口。同样写进本地文件，不要贴到对话里。
+
+拿到价格后：写入 `PRICES.json`（标明来源），先本地 dry run 核对预留合计不超过 1 美元，再以 GPU 模式开机，在云端运行 `probe_api_7a.py --confirm-billing`，跑完立即关机，最后用 usage 前后读数核对账本。
+
 **参考，不作为依据**：如果 Micu 按 OpenAI 标价（2 / 10 美元）收费，代入 S0 §6.1 的公式（`k = 1.3`、`N_in = 40,960`、`O_max = 512`），单次请求预留约 0.112 美元，超过"12 条轨迹都能预留"所需的 0.0728 美元。那样 45 美元只能预留约 7 条轨迹；推理 token 上限越大，能预留的条数越少。实际售价要等核实后再算。
 
 ## 4. 第 7B 步方案（提案，未执行）

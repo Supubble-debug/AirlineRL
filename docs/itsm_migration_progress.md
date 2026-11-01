@@ -439,3 +439,10 @@
 - 运行（在 `code/main` 下，日志在 `/home/sar/work/EnterGym/output/itsm-step7a/`）：v3、用途登记（哈希种子 1、7）、S0 审计、held-out 候选、6D-2 批次、v1、v2 的 `--check` 均为 up to date；两个冻结文件的 SHA256 与冻结值一致；`pytest tests/unit tests/remote -q`：773 passed（`pytest_full.log`），跑完没有残留子进程。
 - 没有运行 held-out，没有生成 SFT 轨迹，没有更新权重，没有启动 GPU，没有进入第 7B 步、第 8 步或 S1。
 
+### 第 7A 步补充：免费核对（2026-10-31）
+
+- 用户决定（AskUserQuestion）：免费查询在本机跑；付费探测允许以 GPU 模式开机、跑完立即关机；价格以价格接口为准，查不到就停，等用户提供截图。
+- 凭据文件 `code/main/micu.md` 没有被 git 跟踪，已加入 `.git/info/exclude`，权限 600；key 没有出现在任何输出里。
+- 结果：`/v1/models` 列出 `gpt-6.1-sol`（与请求完全一致）；`/api/pricing` 拒绝 API key（要系统访问令牌）；`/api/status` 不含按模型的价格；key 的额度上限远高于预算，不能用来控费。
+- **价格仍未核实，按用户规则停止**：没有开机，没有付费请求，花费 0 美元。详见 `docs/itsm_step7a/README.md` §3.4。
+
