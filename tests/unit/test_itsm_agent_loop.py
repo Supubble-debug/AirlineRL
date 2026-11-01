@@ -10,9 +10,13 @@ they are NOT an acceptance of real sampled log-probs (step 7B).
 from __future__ import annotations
 
 import asyncio
+import functools
 import json
+import math
+import multiprocessing
 import os
 import sys
+import time
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -29,17 +33,18 @@ from enterprise_worlds.evaluator.text_match_strategy import TextMatchConfig
 from verl.utils.tokenizer.chat_template import initialize_system_prompt, initialize_turn_separator
 
 from agent_rl.data import itsm_task_sets
-from agent_rl.envs.itsm_env import ItsmEnv, ItsmEnvConfig
+from agent_rl.envs.itsm_env import DEFAULT_USER_LLM_ARGS, ItsmEnv, ItsmEnvConfig, to_itsm_action
+from agent_rl.envs.itsm_scoring import ItsmInfrastructureError
+from agent_rl.envs.itsm_worker import ItsmEnvWorker
 from agent_rl.prompts.action_prompt import OBSERVATION_PROMPT, build_action_messages
 from agent_rl.rollout.itsm_agent_loop import (
     ItsmAgentLoop,
     ItsmAgentLoopSettings,
-    SamplerContractError,
     parse_action,
 )
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from itsm_test_support import ScriptedUser  # noqa: E402
+from itsm_test_support import ScriptedUser, install_slow_tool  # noqa: E402
 
 TOKENIZER = AutoTokenizer.from_pretrained(str(TOKENIZER_DIR), trust_remote_code=False)
 TEMPLATE_KWARGS = {"enable_thinking": False}
@@ -84,15 +89,20 @@ class StubSampler:
             lps = [-(index + 1) - 0.001 * k for k in range(len(ids))]
         elif self.logprobs == "missing":
             lps = None
-        else:
+        elif self.logprobs == "misaligned":
             lps = [-1.0] * (len(ids) - 1)
+        elif self.logprobs == "empty_tokens":
+            ids, lps = [], []
+        else:  # a non-finite value at position 1
+            lps = [-1.0] * len(ids)
+            lps[1] = {"nan": math.nan, "inf": math.inf, "-inf": -math.inf}[self.logprobs]
         self.emitted.append((ids, lps))
         return SimpleNamespace(token_ids=ids, log_probs=lps, stop_reason="completed")
 
 
-def make_loop(sampler, *, purpose="grpo", response_length=12288, replies=REPLIES, enable_thinking=False):
+def make_loop(sampler, *, purpose="grpo", response_length=12288, replies=REPLIES, enable_thinking=False, worker=False, **settings):
     loop = object.__new__(ItsmAgentLoop)
-    loop.settings = ItsmAgentLoopSettings(purpose=purpose)
+    loop.settings = ItsmAgentLoopSettings(purpose=purpose, **settings)
     loop.tokenizer = TOKENIZER
     loop.processor = None
     loop.apply_chat_template_kwargs = {"enable_thinking": enable_thinking}
@@ -108,7 +118,19 @@ def make_loop(sampler, *, purpose="grpo", response_length=12288, replies=REPLIES
         loop.envs.append(env)
         return env
 
-    loop._make_env = make_env
+    if worker:
+        # The real default path: ItsmEnvWorker child process with a picklable scripted user.
+        loop.user_factory = functools.partial(ScriptedUser, list(replies))
+        original = ItsmAgentLoop._make_env.__get__(loop)
+
+        def make_worker(task_id, episode_id):
+            created = original(task_id, episode_id)
+            loop.envs.append(created)
+            return created
+
+        loop._make_env = make_worker
+    else:
+        loop._make_env = make_env
     loop._check_template()
     return loop
 
@@ -250,11 +272,24 @@ def test_parse_action_message_and_done():
 # -- log-probs are never invented ----------------------------------------------------------------
 
 
-@pytest.mark.parametrize("mode", ["missing", "misaligned"])
-def test_missing_or_misaligned_logprobs_are_a_sampler_error(mode: str):
+@pytest.mark.parametrize(
+    ("mode", "message"),
+    [
+        ("missing", "no log-probs"),
+        ("misaligned", "one log-prob per generated token"),
+        ("empty_tokens", "no tokens"),
+        ("nan", "non-finite log-prob"),
+        ("inf", "non-finite log-prob"),
+        ("-inf", "non-finite log-prob"),
+    ],
+)
+def test_sampler_contract_violations_are_infrastructure_failures(mode: str, message: str):
     sampler = StubSampler(GOLD_SCRIPT, logprobs=mode)
-    with pytest.raises(SamplerContractError, match="one log-prob per generated token"):
-        run(make_loop(sampler))
+    loop = make_loop(sampler)
+    with pytest.raises(ItsmInfrastructureError, match=message) as raised:
+        run(loop)
+    assert raised.value.stage == "sampler_contract"
+    assert loop.envs[0].export_trace()["reward_info"] is None  # no reward for a broken sample
 
 
 # -- budget: no rotation --------------------------------------------------------------------------
@@ -292,3 +327,111 @@ def test_purpose_gate_refuses_tasks_outside_the_purpose(purpose: str, task_id: s
 def test_thinking_must_be_disabled():
     with pytest.raises(ValueError, match="enable_thinking"):
         make_loop(StubSampler([]), enable_thinking=True)
+
+
+def test_simulator_defaults_disable_thinking():
+    """D5 (7A-R1): deepseek-flash with thinking disabled through extra_body (offline check only)."""
+    assert ItsmAgentLoopSettings(purpose="grpo").user_llm == "deepseek/deepseek-flash"
+    assert ItsmAgentLoopSettings(purpose="grpo").user_llm_args == DEFAULT_USER_LLM_ARGS
+    assert DEFAULT_USER_LLM_ARGS["extra_body"] == {"thinking": {"type": "disabled"}}
+
+
+def test_default_simulator_sends_thinking_disabled_to_litellm(monkeypatch):
+    """D5 end to end, offline: the config the loop hands its worker reaches litellm.completion
+    with deepseek-flash, temperature 0 and extra_body thinking disabled (fake litellm, no network)."""
+    import types
+
+    import agent_rl.rollout.itsm_agent_loop as loop_module
+
+    captured = {}
+    monkeypatch.setattr(loop_module, "ItsmEnvWorker", lambda config, **kwargs: captured.setdefault("config", config))
+    loop = object.__new__(ItsmAgentLoop)
+    loop.settings = ItsmAgentLoopSettings(purpose="grpo")
+    loop._make_env(TASK, "e1")
+
+    calls = []
+
+    def completion(**kwargs):
+        calls.append(kwargs)
+        message = types.SimpleNamespace(content="Hi, I need help with an incident.", tool_calls=None)
+        return types.SimpleNamespace(choices=[types.SimpleNamespace(message=message)])
+
+    monkeypatch.setitem(sys.modules, "litellm", types.SimpleNamespace(completion=completion))
+    env = ItsmEnv(captured["config"])  # default user = Bench2 UserSimulator
+    env.reset()
+    env.step(to_itsm_action(content="Hello, how can I help?", tool_calls=[]))
+    assert calls, "the simulator was not called"
+    for call in calls:
+        assert call["model"] == "deepseek/deepseek-flash"
+        assert call["temperature"] == 0.0
+        assert call["extra_body"] == {"thinking": {"type": "disabled"}}
+        assert call["timeout"] == 60.0
+
+
+# -- process worker: cancellation and timeout (real child processes) ------------------------------
+
+SLOW_TOOL_S = 5.0
+SLOW_TOOL = "update_configuration_item"  # the first write of the gold script (turn index 5)
+
+
+def _run_until_slow_tool(loop, sampler, *, cancel_after_s):
+    async def go():
+        loop.loop = asyncio.get_running_loop()
+        task = asyncio.create_task(loop.run({"temperature": 1.0}, task_id=TASK, uid="g0", rollout_n=0))
+        while len(sampler.calls) < 6 and not task.done():
+            await asyncio.sleep(0.05)
+        started = time.monotonic()
+        if cancel_after_s is not None:
+            await asyncio.sleep(cancel_after_s)
+            task.cancel()
+        try:
+            return await task, started
+        except BaseException as error:  # noqa: BLE001 - returned for the assertions
+            return error, started
+
+    return asyncio.run(go())
+
+
+def _assert_child_stopped(worker: ItsmEnvWorker, marker, started: float, stage: str) -> None:
+    assert not worker.is_alive
+    assert worker.failure["stage"] == stage and worker.failure["execution_stopped"] is True
+    time.sleep(max(0.0, started + SLOW_TOOL_S + 1.0 - time.monotonic()))
+    assert not marker.exists()  # the slow write never completed: stopped, not abandoned
+    assert multiprocessing.active_children() == []
+
+
+def test_cancel_during_a_slow_tool_kills_the_worker_child(tmp_path):
+    marker = tmp_path / "slow-write-finished"
+    sampler = StubSampler(GOLD_SCRIPT)
+    loop = make_loop(sampler, worker=True)
+    loop.worker_initializer = functools.partial(install_slow_tool, SLOW_TOOL, SLOW_TOOL_S, str(marker))
+
+    outcome, started = _run_until_slow_tool(loop, sampler, cancel_after_s=0.5)
+
+    assert isinstance(outcome, asyncio.CancelledError)  # no AgentLoopOutput, so no reward
+    assert time.monotonic() - started < SLOW_TOOL_S
+    _assert_child_stopped(loop.envs[0], marker, started, "cancelled")
+    with pytest.raises(RuntimeError):
+        loop.envs[0].score()
+
+
+def test_call_timeout_during_a_slow_tool_is_infrastructure(tmp_path):
+    marker = tmp_path / "slow-write-finished"
+    sampler = StubSampler(GOLD_SCRIPT)
+    loop = make_loop(sampler, worker=True, call_timeout_s=2.0)
+    loop.worker_initializer = functools.partial(install_slow_tool, SLOW_TOOL, SLOW_TOOL_S, str(marker))
+
+    outcome, started = _run_until_slow_tool(loop, sampler, cancel_after_s=None)
+
+    assert isinstance(outcome, ItsmInfrastructureError) and outcome.stage == "timeout"
+    _assert_child_stopped(loop.envs[0], marker, started, "timeout")
+
+
+def test_worker_path_completes_an_episode():
+    sampler = StubSampler(GOLD_SCRIPT)
+    loop = make_loop(sampler, worker=True)
+    output = run(loop)
+    assert output.extra_fields["reward_extra_info"]["itsm_termination_reason"] == "agent_done"
+    assert output.reward_score == 1.0
+    assert not loop.envs[0].is_alive and multiprocessing.active_children() == []
+

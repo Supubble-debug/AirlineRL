@@ -29,6 +29,7 @@ SHARED_KEYS = (
     "observation_rule",
     "user_llm",
     "user_llm_temperature",
+    "user_llm_thinking",
     "worker",
 )
 

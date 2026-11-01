@@ -85,6 +85,7 @@ train:
   text_match: fuzzy  # decision D1b
   user_llm: deepseek/deepseek-flash  # decision D5 (2026-10-31: DeepSeek-V4.1-Flash; the deepseek-v4-flash alias is retired)
   user_llm_temperature: 0.0
+  user_llm_thinking: disabled  # D5 (7A-R1): extra_body thinking disabled; live check pending a separate API approval
   # No checkpoint is chosen by dev score (dev is 12/13 one workflow) or by
   # held-out. The number of optimisation steps and the checkpoint rule are fixed
   # in advance, at the latest in step 8.
@@ -113,6 +114,7 @@ eval:
   nl_judge: deepseek/deepseek-v4-pro  # decision D7
   user_llm: deepseek/deepseek-flash
   user_llm_temperature: 0.0
+  user_llm_thinking: disabled  # D5 (7A-R1): extra_body thinking disabled; live check pending a separate API approval
   worker:
     user_llm_timeout_s: 60
     call_timeout_s: 90

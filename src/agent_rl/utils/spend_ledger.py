@@ -9,11 +9,24 @@ Stopping depends only on the ledger, never on a later bill.
 
 Prices are inputs (USD per million tokens, plus an optional per-request fee);
 the ledger never assumes a price.
+
+Ownership and concurrency (7A-R1): a ledger file has exactly one writer. The
+constructor takes an exclusive, non-blocking ``flock`` on ``<path>.lock`` and
+holds it until ``close()`` (or process exit); a second ``SpendLedger`` on the
+same path -- in this process or another one on the same host -- is refused with
+``LedgerBusy`` instead of replaying a stale snapshot and over-reserving. The
+owner replays the file once at open and is then the only one appending, so its
+in-memory totals equal the file. Within the owner, a thread lock serialises
+reserve/settle. The lock is host-local: a ledger must be written on one host
+only (a synced copy elsewhere is a read-only record), and readers that only
+need totals use ``SpendLedger.read_summary`` without taking ownership.
 """
 
 from __future__ import annotations
 
+import fcntl
 import json
+import os
 import threading
 import time
 from dataclasses import dataclass
@@ -27,6 +40,10 @@ class BudgetExceeded(RuntimeError):
 
 class ReservationTooSmall(RuntimeError):
     """Actual cost exceeded the reservation: the bound is wrong, stop sending."""
+
+
+class LedgerBusy(RuntimeError):
+    """Another writer already owns this ledger file; nothing is reserved."""
 
 
 @dataclass(frozen=True, slots=True)
@@ -58,8 +75,64 @@ class SpendLedger:
         self._open: dict[str, float] = {}
         self._settled = 0.0
         self._requests = 0
-        if self.path.exists():
-            self._replay()
+        self._owner_fd: int | None = None
+        self._acquire_ownership()
+        try:
+            if self.path.exists():
+                self._replay()
+        except BaseException:
+            self.close()
+            raise
+
+    # -- ownership -------------------------------------------------------------------------------
+
+    @property
+    def lock_path(self) -> Path:
+        return self.path.with_name(self.path.name + ".lock")
+
+    def _acquire_ownership(self) -> None:
+        self.path.parent.mkdir(parents=True, exist_ok=True)
+        fd = os.open(self.lock_path, os.O_RDWR | os.O_CREAT, 0o644)
+        try:
+            fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError:
+            os.close(fd)
+            raise LedgerBusy(f"ledger {self.path} already has a writer (lock {self.lock_path}); one owner per ledger") from None
+        self._owner_fd = fd
+
+    def close(self) -> None:
+        """Release ownership; the object can no longer reserve or settle."""
+        with self._lock:
+            if self._owner_fd is not None:
+                fcntl.flock(self._owner_fd, fcntl.LOCK_UN)
+                os.close(self._owner_fd)
+                self._owner_fd = None
+
+    def __enter__(self) -> "SpendLedger":
+        return self
+
+    def __exit__(self, *exc: Any) -> None:
+        self.close()
+
+    def _require_owner(self) -> None:
+        if self._owner_fd is None:
+            raise LedgerBusy(f"ledger {self.path} was closed; open a new SpendLedger to write")
+
+    @staticmethod
+    def read_summary(path: Path, budget_id: str) -> dict[str, Any]:
+        """Totals from the file without taking ownership (reports, audits)."""
+        settled, open_, requests = 0.0, {}, 0
+        for line in Path(path).read_text(encoding="utf-8").splitlines():
+            event = json.loads(line)
+            if event["budget_id"] != budget_id:
+                raise ValueError(f"ledger {path} belongs to budget {event['budget_id']!r}")
+            if event["event"] == "reserve":
+                open_[event["request_id"]] = event["amount_usd"]
+                requests += 1
+            elif event["event"] == "settle":
+                open_.pop(event["request_id"], None)
+                settled += event["amount_usd"]
+        return {"budget_id": budget_id, "billed_requests": requests, "settled_usd": round(settled, 6), "open_reservations_usd": round(sum(open_.values()), 6)}
 
     # -- state -----------------------------------------------------------------------------------
 
@@ -94,6 +167,7 @@ class SpendLedger:
 
     def reserve(self, request_id: str, amount_usd: float, detail: dict[str, Any]) -> None:
         with self._lock:
+            self._require_owner()
             if request_id in self._open:
                 raise ValueError(f"request {request_id} already reserved")
             if self._requests + 1 > self.max_billed_requests:
@@ -107,6 +181,7 @@ class SpendLedger:
     def settle(self, request_id: str, *, actual_usd: float | None, usage: dict[str, Any] | None) -> float:
         """Settle with the reported cost; without usage the full reservation is charged."""
         with self._lock:
+            self._require_owner()
             reserved = self._open.pop(request_id)
             charged = reserved if actual_usd is None else actual_usd
             self._settled += charged

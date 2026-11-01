@@ -177,7 +177,7 @@ def test_default_user_is_bench2_simulator_with_decision_d5() -> None:
     assert isinstance(env._user, UserSimulator)
     assert (env._user.llm, env._user.llm_args) == (
         DEFAULT_USER_LLM,
-        {"temperature": 0.0, "timeout": 60.0},
+        {"temperature": 0.0, "extra_body": {"thinking": {"type": "disabled"}}, "timeout": 60.0},  # D5 (7A-R1)
     )
     assert DEFAULT_USER_LLM == "deepseek/deepseek-flash"
 

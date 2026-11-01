@@ -10,7 +10,10 @@ samples. The token contract (protocol §10, budget v1):
   is rendered: only ``ItsmReset.public_info`` and the observation.
 * each policy turn appends the sampler's ``token_ids`` with mask 1 and the
   sampler's own ``log_probs`` (``logprob_source="sampler"``). A sampler that
-  returns no or misaligned log-probs is an error; nothing is zero-filled.
+  returns no tokens, no log-probs, a count that does not match the tokens, or a
+  non-finite log-prob (NaN/Inf) is an infrastructure failure
+  (``ItsmInfrastructureError(stage="sampler_contract")``): no reward, nothing
+  zero-filled.
 * each environment turn appends ``turn_separator + user turn`` with mask 0 and
   0.0 placeholders (``logprob_source="placeholder_masked"``); the observation
   is ``ItsmTransition.observation`` verbatim (no compression, no cut).
@@ -20,6 +23,12 @@ samples. The token contract (protocol §10, budget v1):
 * one action per turn: text plus a tool call, several tool calls, a malformed
   tool call, empty output or an output cut at ``max_action_tokens`` ends the
   episode with ``env.truncate("invalid_action")`` (D2: outcome 0).
+
+Every episode runs in an ``ItsmEnvWorker`` child process (step 5): each call
+waits at most ``call_timeout_s``, the episode at most ``episode_timeout_s``. When
+the rollout task is cancelled the worker kills and joins the child before the
+cancellation propagates, so an in-flight tool cannot finish a late write and no
+reward is produced.
 
 Task selection is purpose-gated: a ``grpo`` loop accepts only GRPO-trainable
 tasks of the usage registry, a ``dev`` loop only dev tasks, and held-out needs
@@ -31,7 +40,10 @@ Verified offline with a deterministic sampler stub only; real sampled log-probs
 
 from __future__ import annotations
 
+import asyncio
+import copy
 import json
+import math
 import re
 import time
 from dataclasses import dataclass, field
@@ -42,7 +54,9 @@ from enterprise_worlds.evaluator.text_match_strategy import TextMatchConfig
 
 from agent_rl.data import itsm_task_sets
 from agent_rl.envs.action_parser import ActionFormatError, ModelToolCall
-from agent_rl.envs.itsm_env import ItsmAction, ItsmEnv, ItsmEnvConfig, to_itsm_action
+from agent_rl.envs.itsm_env import DEFAULT_USER_LLM_ARGS, ItsmAction, ItsmEnvConfig, to_itsm_action
+from agent_rl.envs.itsm_scoring import ItsmInfrastructureError
+from agent_rl.envs.itsm_worker import ItsmEnvWorker
 from agent_rl.prompts.action_prompt import OBSERVATION_PROMPT, build_action_messages
 
 from verl.experimental.agent_loop.agent_loop import AgentLoopBase, AgentLoopMetrics, AgentLoopOutput
@@ -54,10 +68,6 @@ LOGPROB_SOURCE_PLACEHOLDER = "placeholder_masked"
 _TOOL_CALL_BLOCK = re.compile(r"<tool_call>(.*?)</tool_call>", re.DOTALL)
 
 
-class SamplerContractError(RuntimeError):
-    """The rollout server broke the token/log-prob contract (infrastructure, no reward)."""
-
-
 @dataclass(frozen=True, slots=True)
 class ItsmAgentLoopSettings:
     purpose: str
@@ -67,20 +77,42 @@ class ItsmAgentLoopSettings:
     usage_version: str = "itsm_usage_v1"
     text_match: str = "fuzzy"  # D1b
     user_llm: str = "deepseek/deepseek-flash"  # D5 (2026-10-31)
-    user_llm_args: dict[str, Any] = field(default_factory=lambda: {"temperature": 0.0})
+    user_llm_args: dict[str, Any] = field(default_factory=lambda: copy.deepcopy(DEFAULT_USER_LLM_ARGS))  # D5
     user_llm_timeout_s: float = 60.0
+    call_timeout_s: float = 90.0  # budget v1 worker.call_timeout_s
+    episode_timeout_s: float = 1800.0  # budget v1 worker.episode_timeout_s
 
     def __post_init__(self) -> None:
         if self.purpose not in LOOP_PURPOSES:
             raise ValueError(f"purpose must be one of {list(LOOP_PURPOSES)}")
         if self.max_steps < 1 or self.max_action_tokens < 1:
             raise ValueError("max_steps and max_action_tokens must be positive")
+        if self.call_timeout_s <= 0 or self.episode_timeout_s <= 0:
+            raise ValueError("worker timeouts must be positive")
 
 
 @dataclass(frozen=True, slots=True)
 class ParsedAction:
     action: ItsmAction | None
     error: str | None
+
+
+def check_sampler_output(token_ids: list[int], log_probs: Any, task_id: str) -> None:
+    """Raise ``ItsmInfrastructureError(stage="sampler_contract")`` unless the sampler returned
+    tokens and exactly one finite log-prob per token."""
+
+    def fail(detail: str) -> None:
+        raise ItsmInfrastructureError("sampler_contract", task_id, detail)
+
+    if not token_ids:
+        fail("rollout server returned no tokens")
+    if log_probs is None:
+        fail(f"rollout server returned no log-probs for {len(token_ids)} tokens")
+    if len(log_probs) != len(token_ids):
+        fail(f"rollout server must return one log-prob per generated token (got {len(log_probs)} for {len(token_ids)})")
+    bad = [i for i, value in enumerate(log_probs) if not isinstance(value, (int, float)) or not math.isfinite(value)]
+    if bad:
+        fail(f"non-finite log-prob at positions {bad[:8]} (of {len(token_ids)})")
 
 
 def allowed_task_ids(settings: ItsmAgentLoopSettings) -> frozenset[str]:
@@ -129,9 +161,13 @@ class ItsmAgentLoop(AgentLoopBase):
         self.settings = ItsmAgentLoopSettings(**(settings or {}))
         self._check_template()
 
-    # -- hooks (overridden in offline tests) ---------------------------------------------------
+    # -- hooks ---------------------------------------------------------------------------------
+    #: Child-side hooks for ``ItsmEnvWorker`` (picklable; tests inject a scripted user and
+    #: fault injectors here). ``None`` = Bench2's user simulator, no initializer.
+    user_factory = None
+    worker_initializer = None
 
-    def _make_env(self, task_id: str, episode_id: str) -> ItsmEnv:
+    def _make_env(self, task_id: str, episode_id: str) -> ItsmEnvWorker:
         config = ItsmEnvConfig(
             task_id=task_id,
             text_match=TextMatchConfig(strategy=self.settings.text_match),
@@ -141,7 +177,14 @@ class ItsmAgentLoop(AgentLoopBase):
             user_llm_timeout_s=self.settings.user_llm_timeout_s,
             split_version=self.settings.split_version,
         )
-        return ItsmEnv(config, episode_id=episode_id)
+        return ItsmEnvWorker(
+            config,
+            call_timeout_s=self.settings.call_timeout_s,
+            episode_timeout_s=self.settings.episode_timeout_s,
+            user_factory=self.user_factory,
+            initializer=self.worker_initializer,
+            episode_id=episode_id,
+        )
 
     # -- contract ------------------------------------------------------------------------------
 
@@ -166,13 +209,20 @@ class ItsmAgentLoop(AgentLoopBase):
         group_id = str(kwargs.get("uid", task_id))
         sample_index = int(kwargs.get("rollout_n", 0))
         episode_id = f"{task_id}:{group_id}:{sample_index}:{uuid4().hex[:8]}"
-        env = self._make_env(task_id, episode_id)
+        env = await self.loop.run_in_executor(None, lambda: self._make_env(task_id, episode_id))
         try:
-            return await self._run_episode(env, sampling_params, group_id, sample_index)
+            return await self._run_episode(env, sampling_params, group_id, sample_index, task_id)
+        except asyncio.CancelledError:
+            # Stop the child itself, not only the awaiting thread: kill + join before the
+            # cancellation propagates, so no in-flight tool finishes a late write.
+            cancel = getattr(env, "cancel", None)
+            if cancel is not None:
+                cancel()
+            raise
         finally:
             env.close()
 
-    async def _run_episode(self, env: ItsmEnv, sampling_params: dict[str, Any], group_id: str, sample_index: int) -> AgentLoopOutput:
+    async def _run_episode(self, env, sampling_params: dict[str, Any], group_id: str, sample_index: int, task_id: str) -> AgentLoopOutput:
         reset = await self.loop.run_in_executor(None, env.reset)
         tools = reset.public_info["tools"]
         messages = build_action_messages(domain_policy=reset.public_info["policy"], observation=reset.observation)
@@ -203,13 +253,7 @@ class ItsmAgentLoop(AgentLoopBase):
             )
             metrics.generate_sequences += time.perf_counter() - started
             generated = list(output.token_ids)
-            if not generated:
-                raise SamplerContractError("rollout server returned no tokens")
-            if output.log_probs is None or len(output.log_probs) != len(generated):
-                raise SamplerContractError(
-                    "rollout server must return one log-prob per generated token "
-                    f"(got {None if output.log_probs is None else len(output.log_probs)} for {len(generated)})"
-                )
+            check_sampler_output(generated, output.log_probs, task_id)
             start = len(response_ids)
             response_ids.extend(generated)
             response_mask.extend([1] * len(generated))

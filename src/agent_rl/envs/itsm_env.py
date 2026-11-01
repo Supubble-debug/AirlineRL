@@ -69,7 +69,10 @@ from agent_rl.envs.itsm_scoring import (
 DONE_TOOL_NAME = DONE_TOOL_SCHEMA["function"]["name"]
 #: Decision D5: the user simulator model, temperature 0.
 DEFAULT_USER_LLM = "deepseek/deepseek-flash"  # D5, updated 2026-10-31: DeepSeek-V4.1-Flash (old v4-flash alias retired)
-DEFAULT_USER_LLM_ARGS = {"temperature": 0.0}
+#: D5 (2026-10-31, 7A-R1): thinking explicitly disabled. deepseek-flash thinks by default
+#: and litellm drops {"type": "disabled"} from ``thinking``, so it goes in ``extra_body``
+#: (same route as the D7 judge). The live acceptance is a separately approved API check.
+DEFAULT_USER_LLM_ARGS = {"temperature": 0.0, "extra_body": {"thinking": {"type": "disabled"}}}
 #: Bound on each user-simulator HTTP call (passed to litellm as ``timeout``).
 DEFAULT_USER_LLM_TIMEOUT_S = 60.0
 #: Protocol §12: three retries after the first scoring attempt, four in total.
@@ -164,7 +167,7 @@ class ItsmEnvConfig:
     text_match: TextMatchConfig
     max_steps: int
     user_llm: str = DEFAULT_USER_LLM
-    user_llm_args: dict[str, Any] = field(default_factory=lambda: dict(DEFAULT_USER_LLM_ARGS))
+    user_llm_args: dict[str, Any] = field(default_factory=lambda: copy.deepcopy(DEFAULT_USER_LLM_ARGS))
     user_llm_timeout_s: float = DEFAULT_USER_LLM_TIMEOUT_S
     max_scoring_retries: int = DEFAULT_MAX_SCORING_RETRIES
     score_on_finish: bool = True
@@ -332,7 +335,7 @@ class ItsmEnv:
         self._user = user if user is not None else UserSimulator(
             self.task.scenario,
             llm=config.user_llm,
-            llm_args={**config.user_llm_args, "timeout": config.user_llm_timeout_s},
+            llm_args={**copy.deepcopy(config.user_llm_args), "timeout": config.user_llm_timeout_s},
         )
         self._environment: Environment | None = None
         self._user_state: Any = None

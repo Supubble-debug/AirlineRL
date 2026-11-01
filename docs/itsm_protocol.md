@@ -434,7 +434,7 @@ class ItsmRewardInfo:
 | D2 | `invalid_action` 的 outcome | 沿用 AirLineRL：outcome 记 0，episode 终止 | 与 airline 实验协议一致，便于对照；另一种做法是 "返回错误观察让模型重试" |
 | D3 | 上下文轮换 | 首版禁用，预算不够就以 `response_length` 截断 | 避免 "只训练最后一段" 带来的信用丢失；第 6 步测出预算后再复核 |
 | D4 | 是否向模型公开 `current_time` | 不公开（与 Bench2 `LLMAgent` 一致） | 公开会改变任务难度。如果 policy 中有依赖当前时间的规则，第 6 步检查后再议 |
-| D5 | 用户模拟器的模型和温度 | `deepseek/deepseek-flash`（DeepSeek-V4.1-Flash），温度 0（用户指定 flash，不沿用 airline 的 pro）。**2026-10-31 更新**：原定的 `deepseek-v4-flash` 已被 DeepSeek 下线，旧名请求实际由 V4.1-Flash-1017 提供服务；用户决定模拟器继续用 DeepSeek，改用现行名称 `deepseek-flash`，不用 Micu GPT。第 7A 步实测返回 `deepseek-flash`，但默认开启思考（响应带 `reasoning_content`），思考是否关闭待用户决定 | Bench2 默认是 `gpt-4o-mini`、温度 0.7。温度 0 能减少用户模拟器带来的组内差异，但**不等于完全确定**：服务端批处理、浮点非确定性、模型版本更新等都可能让同一输入得到不同输出，所以组内差异不能全部归因于策略。第 7/8 步用同一输入重复调用，实测并记录用户回复的一致率。litellm 已登记该 ID；首次真实调用（第 7/8 步）时核实可用性 |
+| D5 | 用户模拟器的模型和温度 | `deepseek/deepseek-flash`（DeepSeek-V4.1-Flash），温度 0（用户指定 flash，不沿用 airline 的 pro）。**2026-10-31 更新**：原定的 `deepseek-v4-flash` 已被 DeepSeek 下线，旧名请求实际由 V4.1-Flash-1017 提供服务；用户决定模拟器继续用 DeepSeek，改用现行名称 `deepseek-flash`，不用 Micu GPT。第 7A 步实测返回 `deepseek-flash`，但默认开启思考（响应带 `reasoning_content`）。**2026-10-31（7A-R1）用户决定显式关闭思考**：`extra_body={"thinking": {"type": "disabled"}}`，与 D7 走同一条路径（`ItsmEnv` 默认值、`budget_v1.yaml` 的 `user_llm_thinking: disabled`）；目前只做了离线验证，服务端是否真的关闭思考，留到另一批 API 验证复核 | Bench2 默认是 `gpt-4o-mini`、温度 0.7。温度 0 能减少用户模拟器带来的组内差异，但**不等于完全确定**：服务端批处理、浮点非确定性、模型版本更新等都可能让同一输入得到不同输出，所以组内差异不能全部归因于策略。第 7/8 步用同一输入重复调用，实测并记录用户回复的一致率。litellm 已登记该 ID；首次真实调用（第 7/8 步）时核实可用性 |
 | D6 | 丢弃组超过多少时中止训练步 | 25% | 防止有效样本过少时仍做更新 |
 | D7 | 评测用的 DB 文本裁判与 NL 裁判 | 两者都用 `deepseek/deepseek-v4-pro`，温度 0；调用参数见 §14.3 | 与 airline 的 `evaluator_llm` 一致，并与用户模拟器（flash）使用不同模型 |
 | D8 | gold 未改变的自由文本字段 | 保持 Bench2 规则，见 §14.4；本轮不在训练 reward 或 benchmark 分数中增加严格字段检查 | 修改评分规则会使结果与 Bench2 不可比 |
@@ -444,7 +444,7 @@ class ItsmRewardInfo:
 | 角色 | 模型 | 何时调用 | 状态 |
 |---|---|---|---|
 | 策略模型（被训练） | verl 当前策略权重，由 verl rollout 的 vLLM 采样；基座为 `configs/model/qwen3_8b_lora.yaml` 中的 `Qwen/Qwen3-8B` | 每个策略回合 | 不使用任何外部 API；logprob 必须来自该采样服务（§10） |
-| 用户模拟器 | `deepseek/deepseek-flash`，温度 0（D5） | 训练、E0 和最终评测中的每个用户回合 | 第 7A 步已验证连通（1 次调用）：返回模型为 `deepseek-flash`，默认开启思考 |
+| 用户模拟器 | `deepseek/deepseek-flash`，温度 0（D5） | 训练、E0 和最终评测中的每个用户回合 | 第 7A 步已验证连通（1 次调用）：返回模型为 `deepseek-flash`，默认开启思考；7A-R1 改为显式关闭思考（离线验证），真实复核待另批 API 验证 |
 | DB 自由文本裁判 | 训练时不使用（D1b 定为 `fuzzy`）；评测时并行报告 `llm` 策略，用 `deepseek/deepseek-v4-pro`（D7） | 只在评测阶段 | **API 连通性未验证**，第 7/8 步有界验证 |
 | NL 断言裁判 | 训练时不使用（D1 定为 `db_only`）；E0 和最终评测时使用 `deepseek/deepseek-v4-pro`（D7） | 只在评测阶段 | **API 连通性未验证**，第 7/8 步有界验证 |
 
