@@ -74,3 +74,18 @@ def install_slow_tool(tool_name: str, seconds: float, marker_path: str) -> None:
 def install_crashing_tool(tool_name: str, exit_code: int) -> None:
     """The tool kills its own process, as a native crash would."""
     _patch_tool(tool_name, lambda: os._exit(exit_code))
+
+
+def slow_startup(seconds: float, marker_path: str) -> None:
+    """Worker initializer: the child exists but is not ready for ``seconds``; then a marker.
+
+    A marker that never appears proves the starting child was killed, not left to finish.
+    """
+    time.sleep(seconds)
+    Path(marker_path).write_text(str(os.getpid()), encoding="utf-8")
+
+
+def failing_startup(message: str) -> None:
+    """Worker initializer that fails inside the child before the env exists."""
+    raise RuntimeError(message)
+

@@ -25,10 +25,20 @@ samples. The token contract (protocol §10, budget v1):
   episode with ``env.truncate("invalid_action")`` (D2: outcome 0).
 
 Every episode runs in an ``ItsmEnvWorker`` child process (step 5): each call
-waits at most ``call_timeout_s``, the episode at most ``episode_timeout_s``. When
-the rollout task is cancelled the worker kills and joins the child before the
-cancellation propagates, so an in-flight tool cannot finish a late write and no
-reward is produced.
+waits at most ``call_timeout_s``, the episode at most ``episode_timeout_s``.
+
+Worker lifecycle (7A-R2): the loop takes the worker handle *before* any child
+exists (``start=False``, cheap, on the event loop), then starts it in a thread
+and waits at most ``startup_timeout_s`` plus the kill grace. Whatever happens
+next -- normal end, error, startup timeout, or cancellation during startup or
+during the episode -- the handle is reclaimed by one bounded cleanup that runs
+in its own task: ``cancel()`` (kills the child, or stops it from being spawned),
+a bounded wait for the start thread to return, then ``close()`` (kill + join).
+A second cancellation cannot interrupt that cleanup, and the rollout's
+``CancelledError`` propagates only after it finished, so no worker outlives its
+rollout, no in-flight tool finishes a late write and no reward is produced. A
+child that cannot be confirmed gone within the bound is logged as
+``not_reclaimed``.
 
 Task selection is purpose-gated: a ``grpo`` loop accepts only GRPO-trainable
 tasks of the usage registry, a ``dev`` loop only dev tasks, and held-out needs
@@ -43,8 +53,10 @@ from __future__ import annotations
 import asyncio
 import copy
 import json
+import logging
 import math
 import re
+import threading
 import time
 from dataclasses import dataclass, field
 from typing import Any
@@ -62,7 +74,10 @@ from agent_rl.prompts.action_prompt import OBSERVATION_PROMPT, build_action_mess
 from verl.experimental.agent_loop.agent_loop import AgentLoopBase, AgentLoopMetrics, AgentLoopOutput
 
 
+logger = logging.getLogger(__name__)
+
 LOOP_PURPOSES = ("grpo", "dev", "final_evaluation")
+CLEANUP_MARGIN_S = 5.0
 LOGPROB_SOURCE_SAMPLER = "sampler"
 LOGPROB_SOURCE_PLACEHOLDER = "placeholder_masked"
 _TOOL_CALL_BLOCK = re.compile(r"<tool_call>(.*?)</tool_call>", re.DOTALL)
@@ -81,13 +96,15 @@ class ItsmAgentLoopSettings:
     user_llm_timeout_s: float = 60.0
     call_timeout_s: float = 90.0  # budget v1 worker.call_timeout_s
     episode_timeout_s: float = 1800.0  # budget v1 worker.episode_timeout_s
+    startup_timeout_s: float = 120.0  # worker spawn + ItsmEnv construction (7A-R2)
+    kill_grace_s: float = 10.0  # bound on kill + join of the child (7A-R2)
 
     def __post_init__(self) -> None:
         if self.purpose not in LOOP_PURPOSES:
             raise ValueError(f"purpose must be one of {list(LOOP_PURPOSES)}")
         if self.max_steps < 1 or self.max_action_tokens < 1:
             raise ValueError("max_steps and max_action_tokens must be positive")
-        if self.call_timeout_s <= 0 or self.episode_timeout_s <= 0:
+        if min(self.call_timeout_s, self.episode_timeout_s, self.startup_timeout_s, self.kill_grace_s) <= 0:
             raise ValueError("worker timeouts must be positive")
 
 
@@ -168,6 +185,7 @@ class ItsmAgentLoop(AgentLoopBase):
     worker_initializer = None
 
     def _make_env(self, task_id: str, episode_id: str) -> ItsmEnvWorker:
+        """The worker *handle*: no child process yet (``start=False``); ``_start_env`` spawns it."""
         config = ItsmEnvConfig(
             task_id=task_id,
             text_match=TextMatchConfig(strategy=self.settings.text_match),
@@ -184,7 +202,70 @@ class ItsmAgentLoop(AgentLoopBase):
             user_factory=self.user_factory,
             initializer=self.worker_initializer,
             episode_id=episode_id,
+            startup_timeout_s=self.settings.startup_timeout_s,
+            kill_grace_s=self.settings.kill_grace_s,
+            start=False,
         )
+
+    # -- worker lifecycle (7A-R2) --------------------------------------------------------------
+
+    async def _start_env(self, env, started: threading.Event, task_id: str) -> None:
+        """Start the worker in a thread; wait at most startup + kill grace + margin."""
+        start = getattr(env, "start", None)  # in-process test envs have no start()
+        if start is None:
+            started.set()
+            return
+        outcome: dict[str, BaseException] = {}
+
+        def run_start() -> None:
+            try:
+                start()
+            except BaseException as error:  # noqa: BLE001 - re-raised on the event loop
+                outcome["error"] = error
+            finally:
+                started.set()
+
+        self.loop.run_in_executor(None, run_start)
+        deadline = time.monotonic() + self.settings.startup_timeout_s + self.settings.kill_grace_s + CLEANUP_MARGIN_S
+        while not started.is_set():
+            if time.monotonic() > deadline:
+                raise ItsmInfrastructureError("startup", task_id, "worker start did not return within its bound", kind="not_reclaimed")
+            await asyncio.sleep(0.02)
+        if "error" in outcome:
+            raise outcome["error"]
+
+    def _reclaim_sync(self, env, started: threading.Event, *, cancel: bool) -> bool:
+        """Blocking, bounded: stop the child (if cancelling), let start() return, close; True if gone."""
+        if cancel and hasattr(env, "cancel"):
+            env.cancel()
+        started.wait(self.settings.kill_grace_s + CLEANUP_MARGIN_S)
+        if not cancel and not started.is_set() and hasattr(env, "cancel"):
+            env.cancel()  # start() still running: never close under a live startup
+            started.wait(self.settings.kill_grace_s + CLEANUP_MARGIN_S)
+        env.close()
+        return not getattr(env, "is_alive", False)
+
+    async def _reclaim(self, env, started: threading.Event, *, cancel: bool) -> None:
+        """Run the cleanup in its own task so a (second) cancellation cannot interrupt it."""
+        healthy_close = 0.0 if cancel else 2 * self.settings.call_timeout_s  # export_trace + shutdown
+        bound = 2 * (self.settings.kill_grace_s + CLEANUP_MARGIN_S) + healthy_close + self.settings.kill_grace_s + CLEANUP_MARGIN_S
+        cleanup = asyncio.ensure_future(
+            asyncio.wait_for(self.loop.run_in_executor(None, lambda: self._reclaim_sync(env, started, cancel=cancel)), bound)
+        )
+        reclaimed = False
+        while not cleanup.done():
+            try:
+                await asyncio.shield(cleanup)
+            except asyncio.CancelledError:
+                if cleanup.done():
+                    break
+                continue  # finish the cleanup first; the rollout's cancellation is re-raised by run()
+            except Exception:  # noqa: BLE001 - reported below
+                break
+        if cleanup.done() and not cleanup.cancelled() and cleanup.exception() is None:
+            reclaimed = cleanup.result()
+        if not reclaimed:
+            logger.error("ITSM worker %s not reclaimed (pid %s)", getattr(env, "episode_id", "?"), getattr(env, "pid", None))
 
     # -- contract ------------------------------------------------------------------------------
 
@@ -209,18 +290,20 @@ class ItsmAgentLoop(AgentLoopBase):
         group_id = str(kwargs.get("uid", task_id))
         sample_index = int(kwargs.get("rollout_n", 0))
         episode_id = f"{task_id}:{group_id}:{sample_index}:{uuid4().hex[:8]}"
-        env = await self.loop.run_in_executor(None, lambda: self._make_env(task_id, episode_id))
+        env = self._make_env(task_id, episode_id)  # handle first, before any child exists
+        started = threading.Event()
+        cancelled = False
         try:
+            await self._start_env(env, started, task_id)
             return await self._run_episode(env, sampling_params, group_id, sample_index, task_id)
         except asyncio.CancelledError:
-            # Stop the child itself, not only the awaiting thread: kill + join before the
-            # cancellation propagates, so no in-flight tool finishes a late write.
-            cancel = getattr(env, "cancel", None)
-            if cancel is not None:
-                cancel()
+            # Stop the child itself, not only the awaiting coroutine or thread. Other errors
+            # take the normal close (a failed worker skips the trace export and is killed;
+            # a healthy one keeps its trace for diagnosis).
+            cancelled = True
             raise
         finally:
-            env.close()
+            await self._reclaim(env, started, cancel=cancelled)
 
     async def _run_episode(self, env, sampling_params: dict[str, Any], group_id: str, sample_index: int, task_id: str) -> AgentLoopOutput:
         reset = await self.loop.run_in_executor(None, env.reset)

@@ -8,6 +8,14 @@ timeout, cancellation or a crash the child is killed and joined, and the
 failure reports ``execution_stopped`` only after the process is confirmed gone.
 A killed child takes its in-memory DB with it, so it cannot touch any later
 episode, and the episode is failed (no reward, no re-scoring).
+
+Lifecycle (7A-R2): ``ItsmEnvWorker(..., start=False)`` returns the handle
+without a child; ``start()`` then spawns the child and waits for it to be ready
+(bounded by ``startup_timeout_s``). A caller that may be cancelled during
+startup holds the handle before any process exists, so ``cancel()`` + ``close()``
+can always reach and reclaim the child -- a startup cancelled mid-way never
+leaves a worker that nobody owns. ``start=True`` (the default) keeps the step-5
+behaviour of starting inside the constructor.
 """
 
 from __future__ import annotations
@@ -92,16 +100,22 @@ class ItsmEnvWorker:
         start_method: str = "spawn",
         startup_timeout_s: float = 120.0,
         kill_grace_s: float = 10.0,
+        start: bool = True,
     ) -> None:
         if call_timeout_s <= 0:
             raise ValueError("call_timeout_s must be positive")
         if episode_timeout_s is not None and episode_timeout_s <= 0:
             raise ValueError("episode_timeout_s must be positive")
+        if startup_timeout_s <= 0 or kill_grace_s <= 0:
+            raise ValueError("startup_timeout_s and kill_grace_s must be positive")
         self.config = config
         self.episode_id = episode_id or f"{config.task_id}:{uuid.uuid4().hex[:8]}"
         self.call_timeout_s = call_timeout_s
         self.episode_timeout_s = episode_timeout_s
         self.kill_grace_s = kill_grace_s
+        self.startup_timeout_s = startup_timeout_s
+        self.pid: int | None = None
+        self._started = False
         self._call_lock = threading.Lock()
         self._state_lock = threading.Lock()
         self._cancel = threading.Event()
@@ -112,21 +126,46 @@ class ItsmEnvWorker:
         self._child_status: str | None = None
 
         context = multiprocessing.get_context(start_method)
-        self._conn, child_conn = context.Pipe(duplex=True)
+        self._conn, self._child_conn = context.Pipe(duplex=True)
         self._process = context.Process(
             target=_worker_main,
-            args=(child_conn, config, user_factory, initializer, self.episode_id),
+            args=(self._child_conn, config, user_factory, initializer, self.episode_id),
             daemon=True,
             name=f"itsm-episode-{self.episode_id}",
         )
-        self._process.start()
-        child_conn.close()
-        kind, payload, status = self._receive("startup", time.monotonic() + startup_timeout_s)
-        if kind == "startup_error":
-            self._stop_process()
-            raise payload
-        self.pid: int = payload
-        self._child_status = status
+        if start:
+            self.start()
+
+    def start(self) -> None:
+        """Spawn the child and wait (at most ``startup_timeout_s``) until it is ready.
+
+        Refuses after ``cancel()``/``close()``; a cancel that arrives while starting
+        kills the child and raises ``ItsmInfrastructureError(stage="cancelled")``.
+        """
+        with self._call_lock:
+            with self._state_lock:
+                if self._started:
+                    raise RuntimeError("the worker was already started")
+                if self._closed:
+                    raise RuntimeError("the worker is closed")
+                if self._failure is None and self._cancel.is_set():
+                    self._failure = {"stage": "cancelled", "detail": "cancelled before start", "execution_stopped": True, "exitcode": None}
+                if self._failure is not None:
+                    raise ItsmInfrastructureError(
+                        self._failure["stage"], self.config.task_id,
+                        f"episode {self.episode_id}: not started ({self._failure['detail']})", kind="killed",
+                    )
+                # Spawn under the state lock: a concurrent _stop_process either runs
+                # before (and start refuses above) or after (and kills this child).
+                self._process.start()
+                self._started = True
+            self._child_conn.close()
+            kind, payload, status = self._receive("startup", time.monotonic() + self.startup_timeout_s)
+            if kind == "startup_error":
+                self._stop_process()
+                raise payload
+            self.pid = payload
+            self._child_status = status
 
     # -- forwarded episode API -------------------------------------------------
 
@@ -164,6 +203,15 @@ class ItsmEnvWorker:
         """Idempotent. Keeps the final trace when the child is still healthy."""
         if self._closed:
             return
+        if not self._started:
+            with self._state_lock:
+                self._closed = True
+                for conn in (self._conn, self._child_conn):
+                    try:
+                        conn.close()
+                    except OSError:
+                        pass
+            return
         if self._failure is None and self._process.is_alive():
             try:
                 self._final_trace = self._call("export_trace")
@@ -194,6 +242,8 @@ class ItsmEnvWorker:
         if method not in FORWARDED_METHODS:
             raise ValueError(f"unknown method {method!r}")
         with self._call_lock:
+            if not self._started and self._failure is None and not self._closed:
+                raise RuntimeError("the worker was not started")
             if self._closed:
                 raise RuntimeError("the worker is closed")
             if self._failure is not None:
@@ -272,6 +322,8 @@ class ItsmEnvWorker:
     def _stop_process(self) -> bool:
         """Kill and join the child; ``True`` only if it is confirmed to have exited."""
         with self._state_lock:
+            if not self._started:
+                return True  # no child was ever spawned
             if self._process.is_alive():
                 self._process.kill()
             self._process.join(self.kill_grace_s)

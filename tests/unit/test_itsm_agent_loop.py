@@ -16,6 +16,7 @@ import math
 import multiprocessing
 import os
 import sys
+import threading
 import time
 from pathlib import Path
 from types import SimpleNamespace
@@ -44,7 +45,7 @@ from agent_rl.rollout.itsm_agent_loop import (
 )
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from itsm_test_support import ScriptedUser, install_slow_tool  # noqa: E402
+from itsm_test_support import ScriptedUser, failing_startup, install_slow_tool, slow_startup  # noqa: E402
 
 TOKENIZER = AutoTokenizer.from_pretrained(str(TOKENIZER_DIR), trust_remote_code=False)
 TEMPLATE_KWARGS = {"enable_thinking": False}
@@ -434,4 +435,97 @@ def test_worker_path_completes_an_episode():
     assert output.extra_fields["reward_extra_info"]["itsm_termination_reason"] == "agent_done"
     assert output.reward_score == 1.0
     assert not loop.envs[0].is_alive and multiprocessing.active_children() == []
+
+
+# -- process worker: cancellation while the worker is starting (7A-R2) ----------------------------
+
+SLOW_STARTUP_S = 5.0
+
+
+def _cancel_when(loop, ready, *, second_cancel_after_s=None):
+    """Run one rollout; cancel it as soon as ``ready(worker)`` holds (polled on the event loop)."""
+
+    async def go():
+        loop.loop = asyncio.get_running_loop()
+        task = asyncio.create_task(loop.run({"temperature": 1.0}, task_id=TASK, uid="g0", rollout_n=0))
+        deadline = time.monotonic() + 60
+        while not (loop.envs and ready(loop.envs[0])):
+            assert time.monotonic() < deadline and not task.done(), "the worker never reached the cancel point"
+            await asyncio.sleep(0.01)
+        cancelled_at = time.monotonic()
+        task.cancel()
+        if second_cancel_after_s is not None:
+            await asyncio.sleep(second_cancel_after_s)
+            task.cancel()  # a second cancellation must not interrupt the cleanup
+        try:
+            return await task, cancelled_at
+        except BaseException as error:  # noqa: BLE001 - returned for the assertions
+            return error, cancelled_at
+
+    return asyncio.run(go())
+
+
+def _assert_reclaimed(worker: ItsmEnvWorker) -> None:
+    assert not worker.is_alive
+    assert worker.failure["stage"] == "cancelled" and worker.failure["execution_stopped"] is True
+    assert multiprocessing.active_children() == []
+    worker.close()
+    worker.close()  # repeated close is safe
+    assert not worker.is_alive
+
+
+@pytest.mark.parametrize("second_cancel_after_s", [None, 0.05])
+def test_cancel_while_the_worker_child_is_starting(tmp_path, second_cancel_after_s):
+    """The child exists, but the worker start has not returned yet (slow initializer)."""
+    marker = tmp_path / "startup-finished"
+    sampler = StubSampler(GOLD_SCRIPT)
+    loop = make_loop(sampler, worker=True)
+    loop.worker_initializer = functools.partial(slow_startup, SLOW_STARTUP_S, str(marker))
+
+    # child spawned, start() not returned (no pid reported back yet)
+    outcome, cancelled_at = _cancel_when(loop, lambda w: w.is_alive and w.pid is None, second_cancel_after_s=second_cancel_after_s)
+
+    assert isinstance(outcome, asyncio.CancelledError)  # no AgentLoopOutput, hence no reward
+    assert time.monotonic() - cancelled_at < SLOW_STARTUP_S  # killed, not waited out
+    assert sampler.calls == []  # nothing was generated
+    worker = loop.envs[0]
+    assert worker.pid is None  # start never returned a ready worker
+    time.sleep(max(0.0, cancelled_at + SLOW_STARTUP_S + 1.0 - time.monotonic()))
+    assert not marker.exists()  # the starting child was killed before it finished
+    _assert_reclaimed(worker)
+
+
+def test_cancel_when_the_background_start_returns_a_ready_worker(monkeypatch):
+    """The start thread still hands back a ready worker after the rollout was cancelled:
+    the loop must reclaim it, not lose it."""
+    returned = threading.Event()
+    real_start = ItsmEnvWorker.start
+
+    def start_then_linger(self):
+        real_start(self)  # child is ready here
+        returned.set()
+        time.sleep(1.0)  # the "late" return: the rollout is cancelled meanwhile
+
+    monkeypatch.setattr(ItsmEnvWorker, "start", start_then_linger)
+    sampler = StubSampler(GOLD_SCRIPT)
+    loop = make_loop(sampler, worker=True)
+
+    outcome, _ = _cancel_when(loop, lambda w: returned.is_set())
+
+    assert isinstance(outcome, asyncio.CancelledError)
+    assert sampler.calls == []
+    worker = loop.envs[0]
+    assert worker.pid is not None  # it really was a ready worker with a live child
+    _assert_reclaimed(worker)
+
+
+def test_a_failing_worker_startup_is_reclaimed():
+    sampler = StubSampler(GOLD_SCRIPT)
+    loop = make_loop(sampler, worker=True)
+    loop.worker_initializer = functools.partial(failing_startup, "boom in child")
+    with pytest.raises(RuntimeError, match="boom in child"):
+        run(loop)
+    assert sampler.calls == []
+    assert not loop.envs[0].is_alive and multiprocessing.active_children() == []
+    loop.envs[0].close()
 

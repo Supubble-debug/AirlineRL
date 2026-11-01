@@ -278,3 +278,48 @@ def test_parallel_workers_are_isolated_processes() -> None:
         for worker in workers:
             worker.close()
     assert seed_file_digests() == seeds_before
+
+
+# -- unstarted handle (7A-R2) ------------------------------------------------------------------
+
+
+def test_unstarted_handle_has_no_child_and_closes_safely() -> None:
+    import multiprocessing
+
+    worker = _worker(SINGLE_017, start=False)
+    assert not worker.is_alive and worker.pid is None
+    with pytest.raises(RuntimeError, match="not started"):
+        worker.reset()
+    worker.close()
+    worker.close()
+    with pytest.raises(RuntimeError, match="closed"):
+        worker.start()
+    assert multiprocessing.active_children() == []
+
+
+def test_cancel_before_start_prevents_the_spawn() -> None:
+    import multiprocessing
+
+    worker = _worker(SINGLE_017, start=False)
+    worker.cancel()
+    with pytest.raises(ItsmInfrastructureError) as raised:
+        worker.start()
+    assert raised.value.stage == "cancelled"
+    assert not worker.is_alive and multiprocessing.active_children() == []
+    assert worker.failure["execution_stopped"] is True
+    worker.close()
+    worker.close()
+
+
+def test_started_later_runs_like_the_default() -> None:
+    worker = _worker(SINGLE_017, start=False)
+    worker.start()
+    try:
+        assert worker.is_alive and worker.pid is not None
+        assert worker.reset().observation
+        with pytest.raises(RuntimeError, match="already started"):
+            worker.start()
+    finally:
+        worker.close()
+    assert not worker.is_alive
+
