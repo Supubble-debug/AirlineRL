@@ -84,20 +84,34 @@ download() {
     echo "hf-mirror.com -> $code"
   fi
   [ "$code" = 200 ] || { echo "no reachable HF endpoint"; return 1; }
-  echo "endpoint ${HF_ENDPOINT:-https://huggingface.co}"
-  # Plain HTTP into local_dir (no Xet chunk store elsewhere): one copy on disk, progress measurable.
-  export HF_HUB_DISABLE_XET=1
-  $P scripts/itsm/model_files_7b.py download --dir "$MODEL" &
-  local pid=$! last=-1 still=0
-  while kill -0 "$pid" 2>/dev/null; do
+  echo "endpoint ${HF_ENDPOINT:-https://huggingface.co} (metadata check only)"
+  # Files: hf-mirror.com at the pinned revision (measured ~4x faster than huggingface.co via the
+  # AutoDL proxy on 2026-11-01), one curl per file in parallel, resumable, written straight into
+  # $MODEL (one copy). The verify phase checks every file against HF's SHA256 / blob SHA1.
+  unset http_proxy https_proxy HTTP_PROXY HTTPS_PROXY
+  local base="https://hf-mirror.com/Qwen/Qwen3-8B/resolve/$rev"
+  echo "file source $base"
+  mkdir -p "$MODEL"
+  local pids=() f size
+  while read -r f size; do
+    if [ -f "$MODEL/$f" ] && [ "$(stat -c %s "$MODEL/$f")" = "$size" ]; then echo "present $f"; continue; fi
+    ( curl -sSfL --retry 5 --retry-delay 3 -C - -o "$MODEL/$f.part" "$base/$f" && mv "$MODEL/$f.part" "$MODEL/$f" ) &
+    pids+=($!)
+  done < <($P -c "import json; [print(k, v['size']) for k, v in json.load(open('configs/itsm/step7b/model_files.json'))['files'].items()]")
+  local last=-1 still=0 started; started=$(date +%s)
+  while :; do
+    local alive=0 p; for p in "${pids[@]}"; do kill -0 "$p" 2>/dev/null && alive=1; done
+    (( alive )) || break
     sleep 15
     local now; now=$(du -sb "$MODEL" 2>/dev/null | cut -f1)
     echo "$(utc) bytes=$now" >> "$OUT/download_progress.log"
     if [ "$now" = "$last" ]; then still=$((still + 15)); else still=0; fi
     last=$now
-    if (( still >= 180 )); then echo "download stalled for ${still}s, killing"; kill "$pid"; wait "$pid"; return 6; fi
+    if (( still >= 180 )); then echo "download stalled for ${still}s, killing"; kill "${pids[@]}" 2>/dev/null; return 6; fi
   done
-  wait "$pid"
+  local rc=0; for p in "${pids[@]}"; do wait "$p" || rc=1; done
+  echo "download_s=$(( $(date +%s) - started )) rc=$rc"
+  return $rc
 }
 
 caches() {
